@@ -6,4 +6,14 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: openstack-baremetal-operator
 repo: github.com/openstack-k8s-operators/openstack-baremetal-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openstack.org
+  group: baremetal
+  kind: OpenStackProvisionServer
+  path: github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1
+  version: v1beta1
 version: "3"

@@ -1,0 +1,12 @@
+apiVersion: baremetal.openstack.org/v1beta1
+kind: OpenStackProvisionServer
+metadata:
+  labels:
+    app.kubernetes.io/name: openstackprovisionserver
+    app.kubernetes.io/instance: openstackprovisionserver-sample
+    app.kubernetes.io/part-of: openstack-baremetal-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: openstack-baremetal-operator
+  name: openstackprovisionserver-sample
+spec:
+  # TODO(user): Add fields here

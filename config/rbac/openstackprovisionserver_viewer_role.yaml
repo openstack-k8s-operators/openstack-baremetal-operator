@@ -1,0 +1,27 @@
+# permissions for end users to view openstackprovisionservers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: openstackprovisionserver-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: openstack-baremetal-operator
+    app.kubernetes.io/part-of: openstack-baremetal-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: openstackprovisionserver-viewer-role
+rules:
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
+  - openstackprovisionservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
+  - openstackprovisionservers/status
+  verbs:
+  - get

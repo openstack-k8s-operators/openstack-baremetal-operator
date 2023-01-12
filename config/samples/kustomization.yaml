@@ -1,0 +1,4 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- baremetal_v1beta1_openstackprovisionserver.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
