@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
+  - openstackprovisionservers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
+  - openstackprovisionservers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
+  - openstackprovisionservers/status
+  verbs:
+  - get
+  - patch
+  - update

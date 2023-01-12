@@ -1,5 +1,5 @@
 /*
-Copyright 2023.
+
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,31 +17,51 @@ limitations under the License.
 package v1beta1
 
 import (
+	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // OpenStackProvisionServerSpec defines the desired state of OpenStackProvisionServer
 type OpenStackProvisionServerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of OpenStackProvisionServer. Edit openstackprovisionserver_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// The port on which the Apache server should listen
+	Port int `json:"port"`
+	// An optional interface to use instead of the cluster's default provisioning interface (if any)
+	Interface string `json:"interface,omitempty"`
+	// URL for RHEL qcow2 image (compressed as gz, or uncompressed)
+	BaseImageURL string `json:"baseImageUrl"`
+	// Container image URL for init container that downloads the RHEL qcow2 image (baseImageUrl)
+	DownloaderImageURL string `json:"downloaderImageUrl,omitempty"`
+	// Container image URL for the main container that serves the downloaded RHEL qcow2 image (baseImageUrl)
+	ApacheImageURL string `json:"apacheImageUrl,omitempty"`
+	// Container image URL for the sidecar container that discovers provisioning network IPs
+	AgentImageURL string `json:"agentImageUrl,omitempty"`
 }
 
 // OpenStackProvisionServerStatus defines the observed state of OpenStackProvisionServer
 type OpenStackProvisionServerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions
+	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
+	// Map of hashes to track e.g. job status
+	Hash map[string]string `json:"hash,omitempty"`
+	// IP of the provisioning interface on the node running the ProvisionServer pod
+	ProvisionIP string `json:"provisionIp,omitempty"`
+	// URL of provisioning image on underlying Apache web server
+	LocalImageURL string `json:"localImageUrl,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// IsReady - returns true if service is ready to serve requests
+func (instance *OpenStackProvisionServer) IsReady() bool {
+	return instance.Status.LocalImageURL != ""
+}
 
-// OpenStackProvisionServer is the Schema for the openstackprovisionservers API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=osprovserver;osprovservers
+// +operator-sdk:csv:customresourcedefinitions:displayName="OpenStackProvisionServer"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
+// +kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
+
+// OpenStackProvisionServer used to serve custom images for baremetal provisioning with Metal3
 type OpenStackProvisionServer struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -50,7 +70,7 @@ type OpenStackProvisionServer struct {
 	Status OpenStackProvisionServerStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // OpenStackProvisionServerList contains a list of OpenStackProvisionServer
 type OpenStackProvisionServerList struct {
