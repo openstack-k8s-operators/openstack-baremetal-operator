@@ -19,22 +19,19 @@ import (
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 )
 
-//
 // OpenStack Baremetal Condition Types used by API objects.
-//
 const (
 	// OpenStackProvisionServerReadyCondition Status=True condition which indicates if the OpenStackProvisionServer is configured and operational
 	OpenStackProvisionServerReadyCondition condition.Type = "OpenStackProvisionServerReady"
+
+	// OpenStackProvisionServerProvIntfReadyCondition Status=True condition which indicates if the OpenStackProvisionServer was provided or otherwise able to find the provisioning interface
+	OpenStackProvisionServerProvIntfReadyCondition condition.Type = "OpenStackProvisionServerProvIntfReady"
 )
 
-//
 // OpenStack Baremetal Reasons used by API objects.
-//
 const ()
 
-//
 // Common Messages used by API objects.
-//
 const (
 	//
 	// OpenStackProvisionServerReady condition messages
@@ -44,4 +41,16 @@ const (
 
 	// OpenStackProvisionServerReadyErrorMessage
 	OpenStackProvisionServerReadyErrorMessage = "OpenStackProvisionServer error occured %s"
+
+	//
+	// OpenStackProvisionServerProvIntfReady condition messages
+	//
+	// OpenStackProvisionServerProvIntfReadyInitMessage
+	OpenStackProvisionServerProvIntfReadyInitMessage = "OpenStackProvisionServerProvIntf not started"
+
+	// OpenStackProvisionServerProvIntfReadyErrorMessage
+	OpenStackProvisionServerProvIntfReadyErrorMessage = "OpenStackProvisionServerProvIntf error occured %s"
+
+	// OpenStackProvisionServerProvIntfReadyMessage
+	OpenStackProvisionServerProvIntfReadyMessage = "OpenStackProvisionServerProvIntf completed"
 )

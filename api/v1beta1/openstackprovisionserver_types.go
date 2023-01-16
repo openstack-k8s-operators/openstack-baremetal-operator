@@ -18,27 +18,41 @@ package v1beta1
 
 import (
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // OpenStackProvisionServerSpec defines the desired state of OpenStackProvisionServer
 type OpenStackProvisionServerSpec struct {
-	// The port on which the Apache server should listen
-	Port int `json:"port"`
-	// An optional interface to use instead of the cluster's default provisioning interface (if any)
+	// Port - The port on which the Apache server should listen
+	Port int32 `json:"port"`
+	// +kubebuilder:validation:Optional
+	// Interface - An optional interface to use instead of the cluster's default provisioning interface (if any)
 	Interface string `json:"interface,omitempty"`
-	// URL for RHEL qcow2 image (compressed as gz, or uncompressed)
-	BaseImageURL string `json:"baseImageUrl"`
-	// Container image URL for init container that downloads the RHEL qcow2 image (baseImageUrl)
+	// RhelImageURL - URL for RHEL qcow2 image (compressed as gz, or uncompressed)
+	RhelImageURL string `json:"baseImageUrl"`
+	// +kubebuilder:validation:Optional
+	// DownloaderImageURL - Container image URL for init container that downloads the RHEL qcow2 image (baseImageUrl)
 	DownloaderImageURL string `json:"downloaderImageUrl,omitempty"`
-	// Container image URL for the main container that serves the downloaded RHEL qcow2 image (baseImageUrl)
+	// +kubebuilder:validation:Optional
+	// ApacheImageURL - Container image URL for the main container that serves the downloaded RHEL qcow2 image (baseImageUrl)
 	ApacheImageURL string `json:"apacheImageUrl,omitempty"`
-	// Container image URL for the sidecar container that discovers provisioning network IPs
+	// +kubebuilder:validation:Optional
+	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs
 	AgentImageURL string `json:"agentImageUrl,omitempty"`
+	// +kubebuilder:validation:Optional
+	// NodeSelector to target subset of worker nodes running this provision server
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// +kubebuilder:validation:Optional
+	// Resources - Compute Resources required by this provision server (Limits/Requests).
+	// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // OpenStackProvisionServerStatus defines the observed state of OpenStackProvisionServer
 type OpenStackProvisionServerStatus struct {
+	// ReadyCount of provision server instances
+	ReadyCount int32 `json:"readyCount,omitempty"`
 	// Conditions
 	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
 	// Map of hashes to track e.g. job status
