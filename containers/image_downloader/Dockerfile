@@ -1,0 +1,39 @@
+ARG BASE_IMAGE=centos:stream8
+
+FROM $BASE_IMAGE
+
+ARG PKG_CMD=dnf
+ARG REMOTE_SOURCE=
+# Buildah expects the entrypoint.sh to be relative to pwd, podman expects
+# the file to be relative to the Dockerfile location
+ARG ENTRYPOINT_PATH=entrypoint.sh
+
+RUN ${PKG_CMD} install -y qemu-img && \
+    ${PKG_CMD} clean all
+
+ARG IMAGE_COMPONENT="openstack-baremetal-downloader-container"
+ARG IMAGE_NAME="openstack-baremetal-downloader"
+ARG IMAGE_VERSION="1.0.0"
+ARG IMAGE_SUMMARY="OpenStack Baremetal Operator Image Downloader"
+ARG IMAGE_DESC="This image includes the openstack-baremetal-downloader"
+ARG IMAGE_TAGS="openstack baremetal"
+
+### DO NOT EDIT LINES BELOW
+# Auto generated using CI tools from
+# https://github.com/openstack-k8s-operators/openstack-k8s-operators-ci
+
+# Labels required by upstream and osbs build system
+LABEL com.redhat.component="${IMAGE_COMPONENT}" \
+      name="${IMAGE_NAME}" \
+      version="${IMAGE_VERSION}" \
+      summary="${IMAGE_SUMMARY}" \
+      io.k8s.name="${IMAGE_NAME}" \
+      io.k8s.description="${IMAGE_DESC}" \
+      io.openshift.tags="${IMAGE_TAGS}"
+### DO NOT EDIT LINES ABOVE
+
+WORKDIR /
+
+COPY $REMOTE_SOURCE/$ENTRYPOINT_PATH /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
