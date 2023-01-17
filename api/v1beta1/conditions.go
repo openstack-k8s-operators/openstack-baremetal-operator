@@ -66,6 +66,9 @@ const (
 	// OpenStackProvisionServerLocalImageUrlReadyErrorMessage
 	OpenStackProvisionServerLocalImageUrlReadyErrorMessage = "OpenStackProvisionServerLocalImageUrl error occured %s"
 
+	// OpenStackProvisionServerLocalImageUrlReadyRunningMessage
+	OpenStackProvisionServerLocalImageUrlReadyRunningMessage = "OpenStackProvisionServerLocalImageUrl generation in progress"
+
 	// OpenStackProvisionServerLocalImageUrlReadyMessage
 	OpenStackProvisionServerLocalImageUrlReadyMessage = "OpenStackProvisionServerLocalImageUrl generated"
 )

@@ -332,34 +332,40 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 
 	//
 	// Check whether instance.Status.ProvisionIp has been set by the side-car agent container
+	// that is created with the deployment above and generate the LocalImageURL if so
 	//
 	// Provision IP Discovery Agent sets status' ProvisionIP
-	if instance.Status.ProvisionIP != "" {
-
-		// Get the current LocalImageURL IP (if any)
-		curURL, err := url.Parse(instance.Status.LocalImageURL)
-
-		if err != nil {
-			instance.Status.Conditions.Set(condition.FalseCondition(
-				baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition,
-				condition.ErrorReason,
-				condition.SeverityWarning,
-				baremetalv1.OpenStackProvisionServerProvIntfReadyErrorMessage,
-				err.Error()))
-
-			return ctrl.Result{}, err
-		}
-
-		// If the current LocalImageURL is empty, or its embedded IP does not equal the ProvisionIP, the update the LocalImageURL
-		if instance.Status.LocalImageURL == "" || curURL.Hostname() != instance.Status.ProvisionIP {
-			// Update status with LocalImageURL, given ProvisionIP status value
-			instance.Status.LocalImageURL = r.getLocalImageURL(instance)
-			r.Log.Info(fmt.Sprintf("OpenStackProvisionServer LocalImageURL changed: %s", instance.Status.LocalImageURL))
-		}
-
-		instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition, baremetalv1.OpenStackProvisionServerLocalImageUrlReadyMessage)
+	if instance.Status.ProvisionIP == "" {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyRunningMessage))
+		return ctrlResult, nil
 	}
-	// check ProvisionIp - end
+
+	// Get the current LocalImageURL IP (if any)
+	curURL, err := url.Parse(instance.Status.LocalImageURL)
+
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyErrorMessage,
+			err.Error()))
+
+		return ctrl.Result{}, err
+	}
+
+	// If the current LocalImageURL is empty, or its embedded IP does not equal the ProvisionIP, the update the LocalImageURL
+	if instance.Status.LocalImageURL == "" || curURL.Hostname() != instance.Status.ProvisionIP {
+		// Update status with LocalImageURL, given ProvisionIP status value
+		instance.Status.LocalImageURL = r.getLocalImageURL(instance)
+		r.Log.Info(fmt.Sprintf("OpenStackProvisionServer LocalImageURL changed: %s", instance.Status.LocalImageURL))
+	}
+	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition, baremetalv1.OpenStackProvisionServerLocalImageUrlReadyMessage)
+	// check ProvisionIp/LocalImageURL - end
 
 	r.Log.Info(fmt.Sprintf("Reconciled OpenStackProvisionServer '%s' successfully", instance.Name))
 	return ctrl.Result{}, nil
