@@ -55,15 +55,11 @@ spec:
                 type: string
               apacheImageUrl:
                 description: ApacheImageURL - Container image URL for the main container
-                  that serves the downloaded RHEL qcow2 image (baseImageUrl)
-                type: string
-              baseImageUrl:
-                description: RhelImageURL - URL for RHEL qcow2 image (compressed as
-                  gz, or uncompressed)
+                  that serves the downloaded RHEL qcow2 image (rhelImageUrl)
                 type: string
               downloaderImageUrl:
                 description: DownloaderImageURL - Container image URL for init container
-                  that downloads the RHEL qcow2 image (baseImageUrl)
+                  that downloads the RHEL qcow2 image (rhelImageUrl)
                 type: string
               interface:
                 description: Interface - An optional interface to use instead of the
@@ -106,9 +102,16 @@ spec:
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
                 type: object
+              rhelImageUrl:
+                description: RhelImageURL - URL for RHEL qcow2 image (compressed as
+                  gz, or uncompressed)
+                type: string
             required:
-            - baseImageUrl
+            - agentImageUrl
+            - apacheImageUrl
+            - downloaderImageUrl
             - port
+            - rhelImageUrl
             type: object
           status:
             description: OpenStackProvisionServerStatus defines the observed state

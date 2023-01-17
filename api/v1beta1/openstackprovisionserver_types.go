@@ -30,16 +30,13 @@ type OpenStackProvisionServerSpec struct {
 	// Interface - An optional interface to use instead of the cluster's default provisioning interface (if any)
 	Interface string `json:"interface,omitempty"`
 	// RhelImageURL - URL for RHEL qcow2 image (compressed as gz, or uncompressed)
-	RhelImageURL string `json:"baseImageUrl"`
-	// +kubebuilder:validation:Optional
-	// DownloaderImageURL - Container image URL for init container that downloads the RHEL qcow2 image (baseImageUrl)
-	DownloaderImageURL string `json:"downloaderImageUrl,omitempty"`
-	// +kubebuilder:validation:Optional
-	// ApacheImageURL - Container image URL for the main container that serves the downloaded RHEL qcow2 image (baseImageUrl)
-	ApacheImageURL string `json:"apacheImageUrl,omitempty"`
-	// +kubebuilder:validation:Optional
+	RhelImageURL string `json:"rhelImageUrl"`
+	// DownloaderImageURL - Container image URL for init container that downloads the RHEL qcow2 image (rhelImageUrl)
+	DownloaderImageURL string `json:"downloaderImageUrl"`
+	// ApacheImageURL - Container image URL for the main container that serves the downloaded RHEL qcow2 image (rhelImageUrl)
+	ApacheImageURL string `json:"apacheImageUrl"`
 	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs
-	AgentImageURL string `json:"agentImageUrl,omitempty"`
+	AgentImageURL string `json:"agentImageUrl"`
 	// +kubebuilder:validation:Optional
 	// NodeSelector to target subset of worker nodes running this provision server
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
