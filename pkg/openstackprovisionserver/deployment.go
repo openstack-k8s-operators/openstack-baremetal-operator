@@ -18,7 +18,6 @@ package openstackprovisionserver
 import (
 	"fmt"
 
-	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -71,9 +70,6 @@ func Deployment(
 		Port: intstr.IntOrString{Type: intstr.Int, IntVal: port},
 	}
 
-	envVars := map[string]env.Setter{}
-	envVars["CONFIG_HASH"] = env.SetValue(configHash)
-
 	replicas := int32(1)
 
 	deployment := &appsv1.Deployment{
@@ -104,7 +100,6 @@ func Deployment(
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: &runAsUser,
 							},
-							Env:            env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts:   getVolumeMounts(),
 							Resources:      instance.Spec.Resources,
 							ReadinessProbe: readinessProbe,
@@ -112,7 +107,7 @@ func Deployment(
 						},
 						{
 							Name:            "osp-provision-ip-discovery-agent",
-							Command:         []string{"/osp-director-agent", "provision-ip-discovery"},
+							Command:         []string{"/openstack-baremetal-agent", "provision-ip-discovery"},
 							Image:           instance.Spec.AgentImageURL,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
@@ -135,7 +130,7 @@ func Deployment(
 			},
 		},
 	}
-	deployment.Spec.Template.Spec.Volumes = getVolumes()
+	deployment.Spec.Template.Spec.Volumes = getVolumes(instance.Name)
 	// Due to host networking, provision servers must run on separate worker nodes
 	deployment.Spec.Template.Spec.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{

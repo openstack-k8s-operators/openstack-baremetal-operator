@@ -26,6 +26,9 @@ const (
 
 	// OpenStackProvisionServerProvIntfReadyCondition Status=True condition which indicates if the OpenStackProvisionServer was provided or otherwise able to find the provisioning interface
 	OpenStackProvisionServerProvIntfReadyCondition condition.Type = "OpenStackProvisionServerProvIntfReady"
+
+	// OpenStackProvisionServerLocalImageUrlReadyCondition Status=True condition which indicates if the OpenStackProvisionServer's LocalImageUrl has been successfully acquired from the provisioning agent
+	OpenStackProvisionServerLocalImageUrlReadyCondition condition.Type = "OpenStackProvisionServerLocalImageUrlReady"
 )
 
 // OpenStack Baremetal Reasons used by API objects.
@@ -52,5 +55,17 @@ const (
 	OpenStackProvisionServerProvIntfReadyErrorMessage = "OpenStackProvisionServerProvIntf error occured %s"
 
 	// OpenStackProvisionServerProvIntfReadyMessage
-	OpenStackProvisionServerProvIntfReadyMessage = "OpenStackProvisionServerProvIntf completed"
+	OpenStackProvisionServerProvIntfReadyMessage = "OpenStackProvisionServerProvIntf found"
+
+	//
+	// OpenStackProvisionServerLocalImageUrlReady condition messages
+	//
+	// OpenStackProvisionServerLocalImageUrlReadyInitMessage
+	OpenStackProvisionServerLocalImageUrlReadyInitMessage = "OpenStackProvisionServerLocalImageUrl not started"
+
+	// OpenStackProvisionServerLocalImageUrlReadyErrorMessage
+	OpenStackProvisionServerLocalImageUrlReadyErrorMessage = "OpenStackProvisionServerLocalImageUrl error occured %s"
+
+	// OpenStackProvisionServerLocalImageUrlReadyMessage
+	OpenStackProvisionServerLocalImageUrlReadyMessage = "OpenStackProvisionServerLocalImageUrl generated"
 )

@@ -19,13 +19,16 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -110,8 +113,7 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 	defer func() {
 		// update the overall status condition if service is ready
 		if instance.IsReady() {
-			instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyInitMessage)
-			instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, condition.ServiceConfigReadyInitMessage)
+			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
 		}
 
 		err := helper.PatchInstance(ctx, instance)
@@ -133,7 +135,10 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 		instance.Status.Conditions = condition.Conditions{}
 		// initialize conditions used later as Status=Unknown
 		cl := condition.CreateList(
-			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerReadyInitMessage),
+			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
+			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
+			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerProvIntfReadyInitMessage),
+			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerLocalImageUrlReadyInitMessage),
 		)
 
 		instance.Status.Conditions.Init(&cl)
@@ -158,6 +163,8 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 func (r *OpenStackProvisionServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&baremetalv1.OpenStackProvisionServer{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.ConfigMap{}).
 		Complete(r)
 }
 
@@ -323,6 +330,37 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	}
 	// create Deployment - end
 
+	//
+	// Check whether instance.Status.ProvisionIp has been set by the side-car agent container
+	//
+	// Provision IP Discovery Agent sets status' ProvisionIP
+	if instance.Status.ProvisionIP != "" {
+
+		// Get the current LocalImageURL IP (if any)
+		curURL, err := url.Parse(instance.Status.LocalImageURL)
+
+		if err != nil {
+			instance.Status.Conditions.Set(condition.FalseCondition(
+				baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityWarning,
+				baremetalv1.OpenStackProvisionServerProvIntfReadyErrorMessage,
+				err.Error()))
+
+			return ctrl.Result{}, err
+		}
+
+		// If the current LocalImageURL is empty, or its embedded IP does not equal the ProvisionIP, the update the LocalImageURL
+		if instance.Status.LocalImageURL == "" || curURL.Hostname() != instance.Status.ProvisionIP {
+			// Update status with LocalImageURL, given ProvisionIP status value
+			instance.Status.LocalImageURL = r.getLocalImageURL(instance)
+			r.Log.Info(fmt.Sprintf("OpenStackProvisionServer LocalImageURL changed: %s", instance.Status.LocalImageURL))
+		}
+
+		instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition, baremetalv1.OpenStackProvisionServerLocalImageUrlReadyMessage)
+	}
+	// check ProvisionIp - end
+
 	r.Log.Info(fmt.Sprintf("Reconciled OpenStackProvisionServer '%s' successfully", instance.Name))
 	return ctrl.Result{}, nil
 }
@@ -344,7 +382,7 @@ func (r *OpenStackProvisionServerReconciler) generateServiceConfigMaps(
 	cmLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{})
 
 	templateParameters := make(map[string]interface{})
-	templateParameters["Port"] = intstr.IntOrString{Type: intstr.Int, IntVal: instance.Spec.Port}
+	templateParameters["Port"] = strconv.FormatInt(int64(instance.Spec.Port), 10)
 
 	cms := []util.Template{
 		// Apache server config
@@ -454,4 +492,15 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 	}
 
 	return "", nil
+}
+
+func (r *OpenStackProvisionServerReconciler) getLocalImageURL(instance *baremetalv1.OpenStackProvisionServer) string {
+	baseFilename := instance.Spec.RhelImageURL[strings.LastIndex(instance.Spec.RhelImageURL, "/")+1 : len(instance.Spec.RhelImageURL)]
+	baseFilenameEnd := baseFilename[len(baseFilename)-3:]
+
+	if baseFilenameEnd == ".gz" || baseFilenameEnd == ".xz" {
+		baseFilename = baseFilename[0 : len(baseFilename)-3]
+	}
+
+	return fmt.Sprintf("http://%s:%d/images/%s/compressed-%s", instance.Status.ProvisionIP, instance.Spec.Port, baseFilename, baseFilename)
 }

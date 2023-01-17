@@ -51,7 +51,7 @@ type OpenStackProvisionServerSpec struct {
 
 // OpenStackProvisionServerStatus defines the observed state of OpenStackProvisionServer
 type OpenStackProvisionServerStatus struct {
-	// ReadyCount of provision server instances
+	// ReadyCount of provision server Apache instances
 	ReadyCount int32 `json:"readyCount,omitempty"`
 	// Conditions
 	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
@@ -65,7 +65,7 @@ type OpenStackProvisionServerStatus struct {
 
 // IsReady - returns true if service is ready to serve requests
 func (instance *OpenStackProvisionServer) IsReady() bool {
-	return instance.Status.LocalImageURL != ""
+	return instance.Status.ReadyCount > 0 && instance.Status.LocalImageURL != ""
 }
 
 // +kubebuilder:object:root=true

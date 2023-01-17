@@ -14,11 +14,13 @@ limitations under the License.
 package openstackprovisionserver
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
 // getVolumes - general provisioning service volumes
-func getVolumes() []corev1.Volume {
+func getVolumes(name string) []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: "image-data",
@@ -31,7 +33,7 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "httpd-config",
+						Name: fmt.Sprintf("%s-httpd-config", name),
 					},
 				},
 			},

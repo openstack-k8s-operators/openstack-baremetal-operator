@@ -170,7 +170,7 @@ spec:
                   the ProvisionServer pod
                 type: string
               readyCount:
-                description: ReadyCount of provision server instances
+                description: ReadyCount of provision server Apache instances
                 format: int32
                 type: integer
             type: object
