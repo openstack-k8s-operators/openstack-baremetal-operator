@@ -10,6 +10,12 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - description: OpenStackBaremetalSet is the Schema for the openstackbaremetalsets
+        API
+      displayName: OpenStack BaremetalSet
+      kind: OpenStackBaremetalSet
+      name: openstackbaremetalsets.baremetal.openstack.org
+      version: v1beta1
     - description: OpenStackProvisionServer used to serve custom images for baremetal
         provisioning with Metal3
       displayName: OpenStackProvisionServer

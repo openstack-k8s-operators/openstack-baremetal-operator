@@ -58,7 +58,7 @@ LABEL com.redhat.component="${IMAGE_COMPONENT}" \
 ### DO NOT EDIT LINES ABOVE
 
 ENV USER_UID=$USER_ID \
-    OPERATOR_TEMPLATES=/usr/share/glance-operator/templates/
+    OPERATOR_TEMPLATES=/usr/share/openstack-baremetal-operator/templates/
 
 WORKDIR /
 

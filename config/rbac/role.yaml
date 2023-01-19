@@ -20,6 +20,32 @@ rules:
 - apiGroups:
   - baremetal.openstack.org
   resources:
+  - openstackbaremetalsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
+  - openstackbaremetalsets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
+  - openstackbaremetalsets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - baremetal.openstack.org
+  resources:
   - openstackprovisionservers
   verbs:
   - create
@@ -34,7 +60,13 @@ rules:
   resources:
   - openstackprovisionservers/finalizers
   verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
   - update
+  - watch
 - apiGroups:
   - baremetal.openstack.org
   resources:
@@ -86,6 +118,30 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - volumes
   verbs:
   - create
@@ -99,13 +155,25 @@ rules:
   resources:
   - baremetalhosts
   verbs:
-  - get;list;update;patch;watch
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - baremetalhosts/status
+  verbs:
+  - get
 - apiGroups:
   - metal3.io
   resources:
   - provisionings
   verbs:
-  - get;list;watch
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

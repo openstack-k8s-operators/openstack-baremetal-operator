@@ -75,10 +75,10 @@ type OpenStackProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=volumes,verbs=get;list;create;update;delete;watch;
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;update;watch;
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;update;watch;
-// +kubebuilder:rbac:groups=metal3.io,resources="provisionings",verbs="get;list;watch"
-// +kubebuilder:rbac:groups=metal3.io,resources="baremetalhosts",verbs="get;list;update;patch;watch"
-// +kubebuilder:rbac:groups=security.openshift.io,namespace=openstack,resources="securitycontextconstraints",resourceNames="privileged",verbs="use"
-// +kubebuilder:rbac:groups=security.openshift.io,namespace=openstack,resources="securitycontextconstraints",resourceNames="anyuid",verbs="use"
+// +kubebuilder:rbac:groups=metal3.io,resources=provisionings,verbs=get;list;watch
+// +kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;update;patch;watch
+// +kubebuilder:rbac:groups=security.openshift.io,namespace=openstack,resources=securitycontextconstraints,resourceNames=privileged,verbs=use
+// +kubebuilder:rbac:groups=security.openshift.io,namespace=openstack,resources=securitycontextconstraints,resourceNames=anyuid,verbs=use
 
 // Reconcile -
 func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
