@@ -1,29 +1,27 @@
-package openstackprovisionserver
+package v1beta1
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
-	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GetExistingProvServerPorts - Get all ports currently in use by all OpenStackProvisionServers in this namespace
 func GetExistingProvServerPorts(
 	ctx context.Context,
-	helper *helper.Helper,
-	instance *baremetalv1.OpenStackProvisionServer,
+	c goClient.Client,
+	instance *OpenStackProvisionServer,
 ) (map[string]int32, error) {
 	found := map[string]int32{}
 
-	provServerList := &baremetalv1.OpenStackProvisionServerList{}
+	provServerList := &OpenStackProvisionServerList{}
 
 	listOpts := []goClient.ListOption{
 		goClient.InNamespace(instance.Namespace),
 	}
 
-	err := helper.GetClient().List(ctx, provServerList, listOpts...)
+	err := c.List(ctx, provServerList, listOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get list of all OpenStackProvisionServer(s): %s", err.Error())
 	}
@@ -38,8 +36,8 @@ func GetExistingProvServerPorts(
 // AssignProvisionServerPort - Assigns an Apache listening port for a particular OpenStackProvisionServer.
 func AssignProvisionServerPort(
 	ctx context.Context,
-	helper *helper.Helper,
-	instance *baremetalv1.OpenStackProvisionServer,
+	c goClient.Client,
+	instance *OpenStackProvisionServer,
 	portStart int32,
 ) error {
 	if instance.Spec.Port != 0 {
@@ -47,7 +45,7 @@ func AssignProvisionServerPort(
 		return nil
 	}
 
-	existingPorts, err := GetExistingProvServerPorts(ctx, helper, instance)
+	existingPorts, err := GetExistingProvServerPorts(ctx, c, instance)
 	if err != nil {
 		return err
 	}

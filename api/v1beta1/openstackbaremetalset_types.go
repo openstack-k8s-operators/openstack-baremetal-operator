@@ -23,7 +23,8 @@ import (
 
 // OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
 type OpenStackBaremetalSetSpec struct {
-	//+kubebuilder:default={}
+	// +kubebuilder:default={}
+	// +kubebuilder:validation:Optional
 	// BaremetalHosts - Map of hostname to control plane IP address for all nodes to provision
 	BaremetalHosts map[string]string `json:"baremetalHosts"`
 	// RhelImageURL - Remote URL pointing to desired RHEL qcow2 image

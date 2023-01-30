@@ -17,7 +17,4 @@ const (
 
 	// MustGatherSecret - Label placed on secrets that are safe to collect with must-gater
 	MustGatherSecret = "baremetal.openstack.org/must-gather-secret"
-
-	// ServiceName -
-	ServiceName = "openstackbaremetalset"
 )

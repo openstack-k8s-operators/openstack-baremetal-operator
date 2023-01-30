@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -34,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	metal3v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+
 	baremetalv1beta1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/openstack-baremetal-operator/controllers"
 	//+kubebuilder:scaffold:imports
@@ -120,6 +122,27 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenStackBaremetalSet")
 		os.Exit(1)
+	}
+
+	//
+	// Webhooks
+	//
+	if strings.ToLower(os.Getenv("ENABLE_WEBHOOKS")) != "false" {
+		provisionServerDefaults := baremetalv1beta1.OpenStackProvisionServerDefaults{
+			DownloaderImageURL: os.Getenv("DOWNLOADER_IMAGE_URL_DEFAULT"),
+			AgentImageURL:      os.Getenv("AGENT_IMAGE_URL_DEFAULT"),
+			ApacheImageURL:     os.Getenv("APACHE_IMAGE_URL_DEFAULT"),
+		}
+
+		if err = (&baremetalv1beta1.OpenStackBaremetalSet{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpenStackBaremetalSet")
+			os.Exit(1)
+		}
+
+		if err = (&baremetalv1beta1.OpenStackProvisionServer{}).SetupWebhookWithManager(mgr, provisionServerDefaults); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpenStackProvisionServer")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 

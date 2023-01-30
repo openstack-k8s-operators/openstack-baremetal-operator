@@ -14,56 +14,9 @@ import (
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-// GetBaremetalHosts -
-func GetBaremetalHosts(
-	ctx context.Context,
-	helper *helper.Helper,
-	namespace string,
-	labelSelector map[string]string,
-) (*metal3v1alpha1.BareMetalHostList, error) {
-
-	bmhHostsList := &metal3v1alpha1.BareMetalHostList{}
-
-	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
-	}
-
-	if len(labelSelector) > 0 {
-		labels := client.MatchingLabels(labelSelector)
-		listOpts = append(listOpts, labels)
-	}
-
-	err := helper.GetClient().List(ctx, bmhHostsList, listOpts...)
-	if err != nil {
-		return bmhHostsList, err
-	}
-
-	return bmhHostsList, nil
-}
-
-func GetExistingBaremetalHosts(
-	ctx context.Context,
-	helper *helper.Helper,
-	instance *baremetalv1.OpenStackBaremetalSet,
-	labels map[string]string,
-) (*metal3v1alpha1.BareMetalHostList, error) {
-	baremetalHostsList, err := GetBaremetalHosts(
-		ctx,
-		helper,
-		"openshift-machine-api",
-		labels,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return baremetalHostsList, nil
-}
 
 // Provision a BaremetalHost via Metal3
 func BaremetalHostProvision(
@@ -107,7 +60,7 @@ func BaremetalHostProvision(
 
 	// Prepare cloudinit (create secret)
 	sts := []util.Template{}
-	secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(ServiceName), map[string]string{})
+	secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})
 
 	if passwordSecret != nil && len(passwordSecret.Data["NodeRootPassword"]) > 0 {
 		templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
@@ -150,7 +103,7 @@ func BaremetalHostProvision(
 	networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, bmh)
 
 	// Flag the network data secret as safe to collect with must-gather
-	secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(ServiceName), map[string]string{
+	secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
 		MustGatherSecret: "yes",
 	})
 
@@ -184,7 +137,7 @@ func BaremetalHostProvision(
 		// Set our ownership labels so we can watch this resource and also indicate that this BMH
 		// belongs to the particular OSBMS.Spec.BaremetalHosts entry we have passed to this function.
 		// Set ownership labels that can be found by the respective controller kind
-		labelSelector := labels.GetLabels(instance, labels.GetGroupLabel(ServiceName), map[string]string{
+		labelSelector := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
 			fmt.Sprintf("%s%s", instance.Name, HostnameLabelSelectorSuffix): bmhStatus.Hostname,
 		})
 		foundBaremetalHost.Labels = util.MergeStringMaps(
@@ -253,7 +206,7 @@ func BaremetalHostDeprovision(
 
 	// Remove our ownership labels
 	baremetalHostLabels := baremetalHost.GetObjectMeta().GetLabels()
-	labelSelector := labels.GetLabels(instance, labels.GetGroupLabel(ServiceName), map[string]string{
+	labelSelector := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
 		fmt.Sprintf("%s%s", instance.Name, HostnameLabelSelectorSuffix): bmhStatus.Hostname,
 	})
 	for key := range labelSelector {

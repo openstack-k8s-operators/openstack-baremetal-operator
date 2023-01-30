@@ -195,7 +195,6 @@ spec:
                   image
                 type: string
             required:
-            - baremetalHosts
             - ctlplaneGateway
             - ctlplaneInterface
             - ctlplaneNetmask

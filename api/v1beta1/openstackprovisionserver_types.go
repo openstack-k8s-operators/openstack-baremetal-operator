@@ -90,6 +90,13 @@ type OpenStackProvisionServerList struct {
 	Items           []OpenStackProvisionServer `json:"items"`
 }
 
+// OpenStackProvisionServerDefaults -
+type OpenStackProvisionServerDefaults struct {
+	DownloaderImageURL string
+	AgentImageURL      string
+	ApacheImageURL     string
+}
+
 func init() {
 	SchemeBuilder.Register(&OpenStackProvisionServer{}, &OpenStackProvisionServerList{})
 }

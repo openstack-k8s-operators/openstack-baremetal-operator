@@ -157,14 +157,14 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	groupLabel := labels.GetGroupLabel(openstackbaremetalset.ServiceName)
+	groupLabel := labels.GetGroupLabel(baremetalv1.ServiceName)
 
 	openshiftMachineAPIBareMetalHostsFn := handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 		result := []reconcile.Request{}
 		label := o.GetLabels()
 		// verify object has ownerUIDLabelSelector
 		if uid, ok := label[labels.GetOwnerUIDLabelSelector(groupLabel)]; ok {
-			r.Log.Info(fmt.Sprintf("BareMetalHost object %s marked with OSP owner ref: %s", o.GetName(), uid))
+			r.Log.Info(fmt.Sprintf("BareMetalHost object %s marked with OpenStackBaremetalSet owner ref: %s", o.GetName(), uid))
 
 			// return namespace and Name of CR
 			name := client.ObjectKey{
@@ -335,7 +335,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	//
 	// either find the provided provision server or create a new one
 	//
-	var provisionServer *baremetalv1.OpenStackProvisionServer
+	provisionServer := &baremetalv1.OpenStackProvisionServer{}
 
 	// TODO: webook should validate that either ProvisionServerName or RhelImageUrl is set in the instance spec
 	if instance.Spec.ProvisionServerName == "" {
@@ -379,7 +379,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	// If so, we cannot proceed further as we will risk placing the CR into an
 	// inconsistent state and/or introducing unbounded reconciliation thrashing.
 	//
-	err = openstackbaremetalset.VerifyBaremetalStatusBmhRefs(ctx, helper, instance)
+	err = baremetalv1.VerifyBaremetalStatusBmhRefs(ctx, helper.GetClient(), instance)
 
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
@@ -392,7 +392,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	}
 	// check for erroneous BMH deletion - end
 
-	bmhLabels := labels.GetLabels(instance, labels.GetGroupLabel(openstackbaremetalset.ServiceName), map[string]string{})
+	bmhLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})
 
 	//
 	// handle BMH removal from BMSet
@@ -472,9 +472,9 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 	op, err := controllerutil.CreateOrPatch(ctx, helper.GetClient(), provisionServer, func() error {
 		// Assign the prov server its existing port if this is an update, otherwise pick a new one
 		// based on what is available
-		err := openstackprovisionserver.AssignProvisionServerPort(
+		err := baremetalv1.AssignProvisionServerPort(
 			ctx,
-			helper,
+			helper.GetClient(),
 			provisionServer,
 			openstackprovisionserver.DefaultPort,
 		)
@@ -483,10 +483,6 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		}
 
 		provisionServer.Spec.RhelImageURL = instance.Spec.RhelImageURL
-		// TODO: Remove hardcoded images below once handled elsewhere
-		provisionServer.Spec.AgentImageURL = "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:v0.0.1"
-		provisionServer.Spec.ApacheImageURL = "registry.redhat.io/rhel8/httpd-24:latest"
-		provisionServer.Spec.DownloaderImageURL = "quay.io/openstack-k8s-operators/openstack-baremetal-downloader:v0.0.1"
 
 		err = controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())
 		if err != nil {
@@ -506,7 +502,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 	return provisionServer, nil
 }
 
-// deleteBmh - Deprovision BaremetalHost resources based on replica count
+// deleteBmh - Deprovision BaremetalHost resources based on spec's BaremetalHost map contrasted with status' BaremetalHost map
 func (r *OpenStackBaremetalSetReconciler) deleteBmh(
 	ctx context.Context,
 	helper *helper.Helper,
@@ -514,7 +510,7 @@ func (r *OpenStackBaremetalSetReconciler) deleteBmh(
 	labels map[string]string,
 ) error {
 	// Get BaremetalHosts that this instance is currently using
-	existingBaremetalHosts, err := openstackbaremetalset.GetExistingBaremetalHosts(ctx, helper, instance, labels)
+	existingBaremetalHosts, err := baremetalv1.GetBaremetalHosts(ctx, helper.GetClient(), "openshift-machine-api", labels)
 	if err != nil {
 		return err
 	}
@@ -570,10 +566,10 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	envVars *map[string]env.Setter,
 ) error {
 
-	// Get all openshift-machine-api BaremetalHosts
-	baremetalHostsList, err := openstackbaremetalset.GetBaremetalHosts(
+	// Get all openshift-machine-api BaremetalHosts (and, optionally, only those that match instance.Spec.BmhLabelSelector if there is one)
+	baremetalHostsList, err := baremetalv1.GetBaremetalHosts(
 		ctx,
-		helper,
+		helper.GetClient(),
 		"openshift-machine-api",
 		instance.Spec.BmhLabelSelector,
 	)
@@ -582,13 +578,13 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	}
 
 	// Get all existing BaremetalHosts of this CR
-	existingBaremetalHosts, err := openstackbaremetalset.GetExistingBaremetalHosts(ctx, helper, instance, bmhLabels)
+	existingBaremetalHosts, err := baremetalv1.GetBaremetalHosts(ctx, helper.GetClient(), "openshift-machine-api", bmhLabels)
 	if err != nil {
 		return err
 	}
 
 	// Verify that we have enough hosts with the right hardware reqs available for scaling-up
-	availableBaremetalHosts, err := openstackbaremetalset.VerifyBaremetalSetScaleUp(ctx, helper, instance, baremetalHostsList, existingBaremetalHosts)
+	availableBaremetalHosts, err := baremetalv1.VerifyBaremetalSetScaleUp(log.FromContext(ctx), instance, baremetalHostsList, existingBaremetalHosts)
 
 	if err != nil {
 		return err
