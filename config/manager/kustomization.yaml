@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/openstack-k8s-operators/openstack-baremetal-operator
-  newTag: v0.0.1
+  newTag: latest
