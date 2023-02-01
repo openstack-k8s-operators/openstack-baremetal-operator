@@ -11,11 +11,11 @@ ARG ENTRYPOINT_PATH=entrypoint.sh
 RUN ${PKG_CMD} install -y qemu-img && \
     ${PKG_CMD} clean all
 
-ARG IMAGE_COMPONENT="openstack-baremetal-downloader-container"
-ARG IMAGE_NAME="openstack-baremetal-downloader"
+ARG IMAGE_COMPONENT="openstack-baremetal-operator-downloader-container"
+ARG IMAGE_NAME="openstack-baremetal-operator-downloader"
 ARG IMAGE_VERSION="1.0.0"
 ARG IMAGE_SUMMARY="OpenStack Baremetal Operator Image Downloader"
-ARG IMAGE_DESC="This image includes the openstack-baremetal-downloader"
+ARG IMAGE_DESC="This image includes the openstack-baremetal-operator-downloader"
 ARG IMAGE_TAGS="openstack baremetal"
 
 ### DO NOT EDIT LINES BELOW
