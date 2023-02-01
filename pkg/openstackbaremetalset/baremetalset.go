@@ -6,6 +6,7 @@ import (
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 )
 
+// GetBmhRefStatus ...
 func GetBmhRefStatus(
 	instance *baremetalv1.OpenStackBaremetalSet,
 	bmh string,
