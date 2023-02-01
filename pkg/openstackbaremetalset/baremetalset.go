@@ -6,7 +6,7 @@ import (
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// GetBmhRefStatus ...
+// GetBmhRefStatus - Get the instance.Status.BaremetalHosts entry for the passed "bmh" value
 func GetBmhRefStatus(
 	instance *baremetalv1.OpenStackBaremetalSet,
 	bmh string,

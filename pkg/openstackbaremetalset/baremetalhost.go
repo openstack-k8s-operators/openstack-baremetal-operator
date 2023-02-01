@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// BaremetalHostProvision provision baremetal host via Metal3
+// BaremetalHostProvision - Provision a BaremetalHost via Metal3
 func BaremetalHostProvision(
 	ctx context.Context,
 	helper *helper.Helper,
