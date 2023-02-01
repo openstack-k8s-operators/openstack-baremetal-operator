@@ -46,3 +46,23 @@ jobs:
         registry: ${{ env.imageregistry }}
         registry_username: ${{ secrets.QUAY_USERNAME }}
         registry_password: ${{ secrets.QUAY_PASSWORD }}
+
+    - name: Tag -downloader image
+      uses: tinact/docker.image-retag@1.0.2
+      with:
+        image_name: ${{ env.imagenamespace }}/-downloader
+        image_old_tag: ${{ github.sha }}
+        image_new_tag: ${{ github.event.release.tag_name }}
+        registry: ${{ env.imageregistry }}
+        registry_username: ${{ secrets.QUAY_USERNAME }}
+        registry_password: ${{ secrets.QUAY_PASSWORD }}
+
+    - name: Tag -agent image
+      uses: tinact/docker.image-retag@1.0.2
+      with:
+        image_name: ${{ env.imagenamespace }}/-agent
+        image_old_tag: ${{ github.sha }}
+        image_new_tag: ${{ github.event.release.tag_name }}
+        registry: ${{ env.imageregistry }}
+        registry_username: ${{ secrets.QUAY_USERNAME }}
+        registry_password: ${{ secrets.QUAY_PASSWORD }}

@@ -191,3 +191,77 @@ jobs:
         registry:  ${{ env.imageregistry }}/${{ env.imagenamespace }}
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
+
+  build-openstack-baremetal-operator-downloader:
+    name: Build openstack-baremetal-operator downloader image using buildah
+    runs-on: ubuntu-latest
+    needs: [check-secrets]
+    if: needs.check-secrets.outputs.have-secrets == 'true'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get branch name
+      id: branch-name
+      uses: tj-actions/branch-names@v5
+
+    - name: Set latest tag for non master branch
+      if: "${{ steps.branch-name.outputs.current_branch != 'master' }}"
+      run: |
+        echo "latesttag=${{ steps.branch-name.outputs.current_branch }}-latest" >> $GITHUB_ENV
+
+    - name: Buildah Action
+      id: build-openstack-baremetal-operator-downloader
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: openstack-baremetal-operator-downloader
+        tags: ${{ env.latesttag }} ${{ github.sha }}
+        containerfiles: |
+          ./containers/image_downloader/Dockerfile
+        build-args: |
+          REMOTE_SOURCE=/containers/image_downloader
+
+    - name: Push openstack-baremetal-operator-downloader To ${{ env.imageregistry }}
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        image: ${{ steps.build-openstack-baremetal-operator-downloader.outputs.image }}
+        tags: ${{ steps.build-openstack-baremetal-operator-downloader.outputs.tags }}
+        registry: ${{ env.imageregistry }}/${{ env.imagenamespace }}
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
+
+  build-openstack-baremetal-operator-agent:
+    name: Build openstack-baremetal-operator agent image using buildah
+    runs-on: ubuntu-latest
+    needs: [check-secrets]
+    if: needs.check-secrets.outputs.have-secrets == 'true'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get branch name
+      id: branch-name
+      uses: tj-actions/branch-names@v5
+
+    - name: Set latest tag for non master branch
+      if: "${{ steps.branch-name.outputs.current_branch != 'master' }}"
+      run: |
+        echo "latesttag=${{ steps.branch-name.outputs.current_branch }}-latest" >> $GITHUB_ENV
+
+    - name: Buildah Action
+      id: build-openstack-baremetal-operator-agent
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: openstack-baremetal-operator-agent
+        tags: ${{ env.latesttag }} ${{ github.sha }}
+        containerfiles: |
+          ./Dockerfile.agent
+
+    - name: Push openstack-baremetal-operator-agent To ${{ env.imageregistry }}
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        image: ${{ steps.build-openstack-baremetal-operator-agent.outputs.image }}
+        tags: ${{ steps.build-openstack-baremetal-operator-agent.outputs.tags }}
+        registry: ${{ env.imageregistry }}/${{ env.imagenamespace }}
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
