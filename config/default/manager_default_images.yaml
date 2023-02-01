@@ -12,8 +12,8 @@ spec:
       - name: manager
         env:
         - name: DOWNLOADER_IMAGE_URL_DEFAULT
-          value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-downloader:v0.0.1
+          value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-downloader:latest
         - name: AGENT_IMAGE_URL_DEFAULT
-          value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:v0.0.1
+          value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest
         - name: APACHE_IMAGE_URL_DEFAULT
           value: registry.redhat.io/rhel8/httpd-24:latest
