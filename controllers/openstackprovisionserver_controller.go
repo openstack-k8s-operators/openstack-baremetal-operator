@@ -138,7 +138,7 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
 			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerProvIntfReadyInitMessage),
-			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerLocalImageUrlReadyInitMessage),
+			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerLocalImageURLReadyInitMessage),
 		)
 
 		instance.Status.Conditions.Init(&cl)
@@ -337,10 +337,10 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	// Provision IP Discovery Agent sets status' ProvisionIP
 	if instance.Status.ProvisionIP == "" {
 		instance.Status.Conditions.Set(condition.FalseCondition(
-			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition,
+			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition,
 			condition.RequestedReason,
 			condition.SeverityInfo,
-			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyRunningMessage))
+			baremetalv1.OpenStackProvisionServerLocalImageURLReadyRunningMessage))
 		return ctrlResult, nil
 	}
 
@@ -349,10 +349,10 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
-			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition,
+			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition,
 			condition.ErrorReason,
 			condition.SeverityWarning,
-			baremetalv1.OpenStackProvisionServerLocalImageUrlReadyErrorMessage,
+			baremetalv1.OpenStackProvisionServerLocalImageURLReadyErrorMessage,
 			err.Error()))
 
 		return ctrl.Result{}, err
@@ -364,7 +364,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 		instance.Status.LocalImageURL = r.getLocalImageURL(instance)
 		r.Log.Info(fmt.Sprintf("OpenStackProvisionServer LocalImageURL changed: %s", instance.Status.LocalImageURL))
 	}
-	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerLocalImageUrlReadyCondition, baremetalv1.OpenStackProvisionServerLocalImageUrlReadyMessage)
+	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition, baremetalv1.OpenStackProvisionServerLocalImageURLReadyMessage)
 	// check ProvisionIp/LocalImageURL - end
 
 	r.Log.Info(fmt.Sprintf("Reconciled OpenStackProvisionServer '%s' successfully", instance.Name))

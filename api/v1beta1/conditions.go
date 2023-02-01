@@ -30,8 +30,8 @@ const (
 	// OpenStackProvisionServerProvIntfReadyCondition Status=True condition which indicates if the OpenStackProvisionServer was provided or otherwise able to find the provisioning interface
 	OpenStackProvisionServerProvIntfReadyCondition condition.Type = "OpenStackProvisionServerProvIntfReady"
 
-	// OpenStackProvisionServerLocalImageUrlReadyCondition Status=True condition which indicates if the OpenStackProvisionServer's LocalImageUrl has been successfully acquired from the provisioning agent
-	OpenStackProvisionServerLocalImageUrlReadyCondition condition.Type = "OpenStackProvisionServerLocalImageUrlReady"
+	// OpenStackProvisionServerLocalImageURLReadyCondition Status=True condition which indicates if the OpenStackProvisionServer's LocalImageURL has been successfully acquired from the provisioning agent
+	OpenStackProvisionServerLocalImageURLReadyCondition condition.Type = "OpenStackProvisionServerLocalImageURLReady"
 
 	//
 	// OpenStackBaremetalSet conditions
@@ -73,19 +73,19 @@ const (
 	OpenStackProvisionServerProvIntfReadyMessage = "OpenStackProvisionServerProvIntf found"
 
 	//
-	// OpenStackProvisionServerLocalImageUrlReady condition messages
+	// OpenStackProvisionServerLocalImageURLReady condition messages
 	//
-	// OpenStackProvisionServerLocalImageUrlReadyInitMessage
-	OpenStackProvisionServerLocalImageUrlReadyInitMessage = "OpenStackProvisionServerLocalImageUrl not started"
+	// OpenStackProvisionServerLocalImageURLReadyInitMessage
+	OpenStackProvisionServerLocalImageURLReadyInitMessage = "OpenStackProvisionServerLocalImageURL not started"
 
-	// OpenStackProvisionServerLocalImageUrlReadyErrorMessage
-	OpenStackProvisionServerLocalImageUrlReadyErrorMessage = "OpenStackProvisionServerLocalImageUrl error occured %s"
+	// OpenStackProvisionServerLocalImageURLReadyErrorMessage
+	OpenStackProvisionServerLocalImageURLReadyErrorMessage = "OpenStackProvisionServerLocalImageURL error occured %s"
 
-	// OpenStackProvisionServerLocalImageUrlReadyRunningMessage
-	OpenStackProvisionServerLocalImageUrlReadyRunningMessage = "OpenStackProvisionServerLocalImageUrl generation in progress"
+	// OpenStackProvisionServerLocalImageURLReadyRunningMessage
+	OpenStackProvisionServerLocalImageURLReadyRunningMessage = "OpenStackProvisionServerLocalImageURL generation in progress"
 
-	// OpenStackProvisionServerLocalImageUrlReadyMessage
-	OpenStackProvisionServerLocalImageUrlReadyMessage = "OpenStackProvisionServerLocalImageUrl generated"
+	// OpenStackProvisionServerLocalImageURLReadyMessage
+	OpenStackProvisionServerLocalImageURLReadyMessage = "OpenStackProvisionServerLocalImageURL generated"
 
 	//
 	// OpenStackBaremetalSetReady condition messages

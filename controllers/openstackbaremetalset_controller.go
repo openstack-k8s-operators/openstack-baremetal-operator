@@ -368,7 +368,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 			condition.RequestedReason,
 			condition.SeverityInfo,
 			baremetalv1.OpenStackBaremetalSetProvServerReadyRunningMessage))
-		l.Info("OpenStackProvisionServer LocalImageUrl not yet available", "OpenStackProvisionServer", provisionServer.Name)
+		l.Info("OpenStackProvisionServer LocalImageURL not yet available", "OpenStackProvisionServer", provisionServer.Name)
 		return ctrl.Result{RequeueAfter: time.Duration(30) * time.Second}, nil
 	}
 	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackBaremetalSetProvServerReadyCondition, baremetalv1.OpenStackBaremetalSetProvServerReadyMessage)
