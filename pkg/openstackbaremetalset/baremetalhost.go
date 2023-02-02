@@ -146,6 +146,16 @@ func BaremetalHostProvision(
 		)
 
 		//
+		// Ensure the image url is up to date unless already provisioned
+		//
+		if string(foundBaremetalHost.Status.Provisioning.State) != "provisioned" {
+			foundBaremetalHost.Spec.Image = &metal3v1alpha1.Image{
+				URL:      localImageURL,
+				Checksum: fmt.Sprintf("%s.md5sum", localImageURL),
+			}
+		}
+
+		//
 		// Update the BMH spec once when ConsumerRef is nil to only perform one time provision.
 		//
 		if foundBaremetalHost.Spec.ConsumerRef == nil {
