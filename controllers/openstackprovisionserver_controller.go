@@ -19,9 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -301,6 +301,12 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	// normal reconcile tasks
 	//
 
+	oldLocalImageURL := instance.Status.LocalImageURL
+
+	// If the deployment is not ready, we should not have anything set for the localImageURL,
+	// but if it is ready we will set localImageURL properly below
+	instance.Status.LocalImageURL = ""
+
 	// Define a new Deployment object
 	depl := deployment.NewDeployment(
 		openstackprovisionserver.Deployment(instance, inputHash, serviceLabels, provInterfaceName),
@@ -327,6 +333,14 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	instance.Status.ReadyCount = depl.GetDeployment().Status.ReadyReplicas
 	if instance.Status.ReadyCount > 0 {
 		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
+	} else {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.DeploymentReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			condition.DeploymentReadyRunningMessage))
+
+		return ctrl.Result{RequeueAfter: time.Duration(10) * time.Second}, nil
 	}
 	// create Deployment - end
 
@@ -344,26 +358,12 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 		return ctrlResult, nil
 	}
 
-	// Get the current LocalImageURL IP (if any)
-	curURL, err := url.Parse(instance.Status.LocalImageURL)
+	instance.Status.LocalImageURL = r.getLocalImageURL(instance)
 
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			baremetalv1.OpenStackProvisionServerLocalImageURLReadyErrorMessage,
-			err.Error()))
-
-		return ctrl.Result{}, err
-	}
-
-	// If the current LocalImageURL is empty, or its embedded IP does not equal the ProvisionIP, the update the LocalImageURL
-	if instance.Status.LocalImageURL == "" || curURL.Hostname() != instance.Status.ProvisionIP {
-		// Update status with LocalImageURL, given ProvisionIP status value
-		instance.Status.LocalImageURL = r.getLocalImageURL(instance)
+	if oldLocalImageURL != instance.Status.LocalImageURL {
 		r.Log.Info(fmt.Sprintf("OpenStackProvisionServer LocalImageURL changed: %s", instance.Status.LocalImageURL))
 	}
+
 	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition, baremetalv1.OpenStackProvisionServerLocalImageURLReadyMessage)
 	// check ProvisionIp/LocalImageURL - end
 

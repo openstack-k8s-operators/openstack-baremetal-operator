@@ -81,6 +81,14 @@ func Deployment(
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
+			// Need to set strategy to "recreate" so that any deployment changes cause the old pod
+			// to immediately be deleted and then follow with creating the new pod (due to the use
+			// of "HostNetwork: true" in the subsequent Template.Spec -- otherwise concurrent pods
+			// that happen to be scheduled on the same node during a recreate scenario will cause
+			// a port conflict)
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RecreateDeploymentStrategyType,
+			},
 			Replicas: &replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
