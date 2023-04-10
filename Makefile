@@ -323,6 +323,11 @@ gowork: ## Generate go.work file to support our multi module repository
 	go work use .
 	go work use ./api
 
+.PHONY: tidy
+tidy: ## Run go mod tidy on every mod file in the repo
+	go mod tidy
+	cd ./api && go mod tidy
+
 .PHONY: operator-lint
 operator-lint: gowork ## Runs operator-lint
 	GOBIN=$(LOCALBIN) go install github.com/gibizer/operator-lint@v0.1.0
