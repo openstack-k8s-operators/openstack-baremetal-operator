@@ -29,7 +29,9 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # openstack.org/openstack-baremetal-operator-bundle:$VERSION and openstack.org/openstack-baremetal-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= openstack.org/openstack-baremetal-operator
+IMAGE_TAG_BASE ?= quay.io/$(USER)/openstack-baremetal-operator
+DEFAULT_IMG ?= quay.io/openstack-k8s-operators/openstack-baremetal-operator:latest
+IMG ?= $(DEFAULT_IMG)
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -173,11 +175,11 @@ endif
 .PHONY: install
 install: CRDDESC_OVERRIDE=:maxDescLen=0
 install: manifests kustomize ## Install CRDs and RBAC into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/dev | kubectl apply -f -
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs and RBAC from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/dev | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
 deploy: CRDDESC_OVERRIDE=:maxDescLen=0
