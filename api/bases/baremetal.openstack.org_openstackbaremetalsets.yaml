@@ -49,6 +49,14 @@ spec:
           spec:
             description: OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
             properties:
+              automatedCleaningMode:
+                default: metadata
+                description: When set to disabled, automated cleaning will be avoided
+                  during provisioning and deprovisioning.
+                enum:
+                - metadata
+                - disabled
+                type: string
               baremetalHosts:
                 additionalProperties:
                   type: string

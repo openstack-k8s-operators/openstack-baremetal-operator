@@ -21,6 +21,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// AutomatedCleaningMode is the interface to enable/disable automated cleaning
+// +kubebuilder:validation:Enum=metadata;disabled
+type AutomatedCleaningMode string
+
+// Allowed automated cleaning modes
+const (
+	CleaningModeDisabled AutomatedCleaningMode = "disabled"
+	CleaningModeMetadata AutomatedCleaningMode = "metadata"
+)
+
 // OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
 type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:default={}
@@ -29,7 +39,13 @@ type OpenStackBaremetalSetSpec struct {
 	BaremetalHosts map[string]string `json:"baremetalHosts"`
 	// RhelImageURL - Remote URL pointing to desired RHEL qcow2 image
 	RhelImageURL string `json:"rhelImageUrl,omitempty"`
+
+	// When set to disabled, automated cleaning will be avoided
+	// during provisioning and deprovisioning.
+	// +kubebuilder:default=metadata
 	// +kubebuilder:validation:Optional
+	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode,omitempty"`
+
 	// ProvisionServerName - Optional. If supplied will be used as the base Image for the baremetalset instead of baseImageURL.
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
 	// DeploymentSSHSecret - Name of secret holding the stack-admin ssh keys

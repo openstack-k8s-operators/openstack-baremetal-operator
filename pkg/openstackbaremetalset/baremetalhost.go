@@ -145,6 +145,9 @@ func BaremetalHostProvision(
 			labelSelector,
 		)
 
+		// Ensure AutomatedCleaningMode is set as per spec
+		foundBaremetalHost.Spec.AutomatedCleaningMode = metal3v1alpha1.AutomatedCleaningMode(instance.Spec.AutomatedCleaningMode)
+
 		//
 		// Ensure the image url is up to date unless already provisioned
 		//
