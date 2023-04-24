@@ -67,7 +67,7 @@ func (r *OpenStackBaremetalSet) ValidateCreate() error {
 	baremetalHostsList, err := GetBaremetalHosts(
 		context.TODO(),
 		webhookClient,
-		"openshift-machine-api",
+		r.Spec.BmhNamespace,
 		r.Spec.BmhLabelSelector,
 	)
 	if err != nil {
@@ -125,7 +125,7 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) error {
 			baremetalHostsList, err := GetBaremetalHosts(
 				context.TODO(),
 				webhookClient,
-				"openshift-machine-api",
+				r.Spec.BmhNamespace,
 				r.Spec.BmhLabelSelector,
 			)
 			if err != nil {
@@ -136,7 +136,7 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) error {
 			existingBaremetalHosts, err := GetBaremetalHosts(
 				context.TODO(),
 				webhookClient,
-				"openshift-machine-api",
+				r.Spec.BmhNamespace,
 				labels.GetLabels(r, labels.GetGroupLabel(ServiceName), map[string]string{}),
 			)
 			if err != nil {

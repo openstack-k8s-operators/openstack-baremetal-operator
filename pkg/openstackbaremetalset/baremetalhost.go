@@ -70,7 +70,7 @@ func BaremetalHostProvision(
 
 	userDataSt := util.Template{
 		Name:               userDataSecretName,
-		Namespace:          "openshift-machine-api",
+		Namespace:          instance.Spec.BmhNamespace,
 		Type:               util.TemplateTypeConfig,
 		InstanceType:       instance.Kind,
 		AdditionalTemplate: map[string]string{"userData": "/openstackbaremetalset/cloudinit/userdata"},
@@ -109,7 +109,7 @@ func BaremetalHostProvision(
 
 	networkDataSt := util.Template{
 		Name:               networkDataSecretName,
-		Namespace:          "openshift-machine-api",
+		Namespace:          instance.Spec.BmhNamespace,
 		Type:               util.TemplateTypeConfig,
 		InstanceType:       instance.Kind,
 		AdditionalTemplate: map[string]string{"networkData": "/openstackbaremetalset/cloudinit/networkdata"},
@@ -128,7 +128,7 @@ func BaremetalHostProvision(
 	// Provision the BaremetalHost
 	//
 	foundBaremetalHost := &metal3v1alpha1.BareMetalHost{}
-	err = helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: "openshift-machine-api"}, foundBaremetalHost)
+	err = helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
 	if err != nil {
 		return err
 	}
@@ -167,11 +167,11 @@ func BaremetalHostProvision(
 			}
 			foundBaremetalHost.Spec.UserData = &corev1.SecretReference{
 				Name:      userDataSecretName,
-				Namespace: "openshift-machine-api",
+				Namespace: instance.Spec.BmhNamespace,
 			}
 			foundBaremetalHost.Spec.NetworkData = &corev1.SecretReference{
 				Name:      networkDataSecretName,
-				Namespace: "openshift-machine-api",
+				Namespace: instance.Spec.BmhNamespace,
 			}
 		}
 
@@ -207,7 +207,7 @@ func BaremetalHostDeprovision(
 	l := log.FromContext(ctx)
 
 	baremetalHost := &metal3v1alpha1.BareMetalHost{}
-	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmhStatus.BmhRef, Namespace: "openshift-machine-api"}, baremetalHost)
+	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmhStatus.BmhRef, Namespace: instance.Spec.BmhNamespace}, baremetalHost)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func BaremetalHostDeprovision(
 			ctx,
 			helper,
 			secret,
-			"openshift-machine-api",
+			instance.Spec.BmhNamespace,
 		)
 		if err != nil {
 			return err

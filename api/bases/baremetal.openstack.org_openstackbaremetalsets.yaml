@@ -61,6 +61,11 @@ spec:
                 description: BmhLabelSelector allows for a sub-selection of BaremetalHosts
                   based on arbitrary labels
                 type: object
+              bmhNamespace:
+                default: openshift-machine-api
+                description: 'BmhNamespace Namespace to look for BaremetalHosts(default:
+                  openstack)'
+                type: string
               bootstrapDns:
                 description: BootstrapDNS - initial DNS nameserver values to set on
                   the BaremetalHosts when they are provisioned. Note that subsequent

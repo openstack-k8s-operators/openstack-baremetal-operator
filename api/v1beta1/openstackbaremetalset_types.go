@@ -40,6 +40,10 @@ type OpenStackBaremetalSetSpec struct {
 	CtlplaneGateway string `json:"ctlplaneGateway"`
 	// CtlplaneNetmask - Netmask to use for ctlplane network (TODO: acquire this is another manner?)
 	CtlplaneNetmask string `json:"ctlplaneNetmask"`
+	// +kubebuilder:default=openshift-machine-api
+	// +kubebuilder:validation:Optional
+	// BmhNamespace Namespace to look for BaremetalHosts(default: openstack)
+	BmhNamespace string `json:"bmhNamespace,omitempty"`
 	// +kubebuilder:validation:Optional
 	// BmhLabelSelector allows for a sub-selection of BaremetalHosts based on arbitrary labels
 	BmhLabelSelector map[string]string `json:"bmhLabelSelector,omitempty"`
