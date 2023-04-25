@@ -190,7 +190,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileDelete(ctx context.Context, i
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackBaremetalSet '%s' delete", instance.Name))
 
 	// Clean up resources used by the operator
-	// BareMetalHost resources in the openshift-machine-api namespace (don't delete, just deprovision)
+	// BareMetalHost resources in the namespace (don't delete, just deprovision)
 	err := r.baremetalHostCleanup(ctx, helper, instance)
 	if err != nil && !k8s_errors.IsNotFound(err) {
 		// ignore not found errors if the object is already gone
@@ -510,7 +510,7 @@ func (r *OpenStackBaremetalSetReconciler) deleteBmh(
 	labels map[string]string,
 ) error {
 	// Get BaremetalHosts that this instance is currently using
-	existingBaremetalHosts, err := baremetalv1.GetBaremetalHosts(ctx, helper.GetClient(), "openshift-machine-api", labels)
+	existingBaremetalHosts, err := baremetalv1.GetBaremetalHosts(ctx, helper.GetClient(), instance.Spec.BmhNamespace, labels)
 	if err != nil {
 		return err
 	}
@@ -566,11 +566,11 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	envVars *map[string]env.Setter,
 ) error {
 
-	// Get all openshift-machine-api BaremetalHosts (and, optionally, only those that match instance.Spec.BmhLabelSelector if there is one)
+	// Get all BaremetalHosts (and, optionally, only those that match instance.Spec.BmhLabelSelector if there is one)
 	baremetalHostsList, err := baremetalv1.GetBaremetalHosts(
 		ctx,
 		helper.GetClient(),
-		"openshift-machine-api",
+		instance.Spec.BmhNamespace,
 		instance.Spec.BmhLabelSelector,
 	)
 	if err != nil {
@@ -578,7 +578,7 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	}
 
 	// Get all existing BaremetalHosts of this CR
-	existingBaremetalHosts, err := baremetalv1.GetBaremetalHosts(ctx, helper.GetClient(), "openshift-machine-api", bmhLabels)
+	existingBaremetalHosts, err := baremetalv1.GetBaremetalHosts(ctx, helper.GetClient(), instance.Spec.BmhNamespace, bmhLabels)
 	if err != nil {
 		return err
 	}

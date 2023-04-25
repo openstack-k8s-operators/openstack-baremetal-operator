@@ -55,7 +55,7 @@ func VerifyBaremetalStatusBmhRefs(
 	allBaremetalHosts, err := GetBaremetalHosts(
 		ctx,
 		c,
-		"openshift-machine-api",
+		instance.Spec.BmhNamespace,
 		map[string]string{},
 	)
 	if err != nil {

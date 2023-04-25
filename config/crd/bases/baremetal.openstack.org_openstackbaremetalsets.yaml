@@ -49,6 +49,14 @@ spec:
           spec:
             description: OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
             properties:
+              automatedCleaningMode:
+                default: metadata
+                description: When set to disabled, automated cleaning will be avoided
+                  during provisioning and deprovisioning.
+                enum:
+                - metadata
+                - disabled
+                type: string
               baremetalHosts:
                 additionalProperties:
                   type: string
@@ -61,6 +69,11 @@ spec:
                 description: BmhLabelSelector allows for a sub-selection of BaremetalHosts
                   based on arbitrary labels
                 type: object
+              bmhNamespace:
+                default: openshift-machine-api
+                description: 'BmhNamespace Namespace to look for BaremetalHosts(default:
+                  openstack)'
+                type: string
               bootstrapDns:
                 description: BootstrapDNS - initial DNS nameserver values to set on
                   the BaremetalHosts when they are provisioned. Note that subsequent

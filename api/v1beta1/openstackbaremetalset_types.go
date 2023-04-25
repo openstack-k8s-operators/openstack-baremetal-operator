@@ -21,6 +21,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// AutomatedCleaningMode is the interface to enable/disable automated cleaning
+// +kubebuilder:validation:Enum=metadata;disabled
+type AutomatedCleaningMode string
+
+// Allowed automated cleaning modes
+const (
+	CleaningModeDisabled AutomatedCleaningMode = "disabled"
+	CleaningModeMetadata AutomatedCleaningMode = "metadata"
+)
+
 // OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
 type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:default={}
@@ -29,7 +39,13 @@ type OpenStackBaremetalSetSpec struct {
 	BaremetalHosts map[string]string `json:"baremetalHosts"`
 	// RhelImageURL - Remote URL pointing to desired RHEL qcow2 image
 	RhelImageURL string `json:"rhelImageUrl,omitempty"`
+
+	// When set to disabled, automated cleaning will be avoided
+	// during provisioning and deprovisioning.
+	// +kubebuilder:default=metadata
 	// +kubebuilder:validation:Optional
+	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode,omitempty"`
+
 	// ProvisionServerName - Optional. If supplied will be used as the base Image for the baremetalset instead of baseImageURL.
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
 	// DeploymentSSHSecret - Name of secret holding the stack-admin ssh keys
@@ -40,6 +56,10 @@ type OpenStackBaremetalSetSpec struct {
 	CtlplaneGateway string `json:"ctlplaneGateway"`
 	// CtlplaneNetmask - Netmask to use for ctlplane network (TODO: acquire this is another manner?)
 	CtlplaneNetmask string `json:"ctlplaneNetmask"`
+	// +kubebuilder:default=openshift-machine-api
+	// +kubebuilder:validation:Optional
+	// BmhNamespace Namespace to look for BaremetalHosts(default: openstack)
+	BmhNamespace string `json:"bmhNamespace,omitempty"`
 	// +kubebuilder:validation:Optional
 	// BmhLabelSelector allows for a sub-selection of BaremetalHosts based on arbitrary labels
 	BmhLabelSelector map[string]string `json:"bmhLabelSelector,omitempty"`
