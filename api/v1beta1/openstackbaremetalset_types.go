@@ -18,12 +18,26 @@ package v1beta1
 
 import (
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // AutomatedCleaningMode is the interface to enable/disable automated cleaning
 // +kubebuilder:validation:Enum=metadata;disabled
 type AutomatedCleaningMode string
+
+// InstanceSpec Instance specific attributes
+type InstanceSpec struct {
+	// +kubebuilder:validation:Optional
+	// CtlPlaneIP - Control Plane IP
+	CtlPlaneIP string `json:"ctlPlaneIP"`
+	// +kubebuilder:validation:Optional
+	// UserData - Host User Data
+	UserData *corev1.SecretReference `json:"userData,omitempty"`
+	// +kubebuilder:validation:Optional
+	// NetworkData - Host Network Data
+	NetworkData *corev1.SecretReference `json:"networkData,omitempty"`
+}
 
 // Allowed automated cleaning modes
 const (
@@ -35,17 +49,27 @@ const (
 type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:default={}
 	// +kubebuilder:validation:Optional
-	// BaremetalHosts - Map of hostname to control plane IP address for all nodes to provision
-	BaremetalHosts map[string]string `json:"baremetalHosts"`
+	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
+	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts"`
 	// RhelImageURL - Remote URL pointing to desired RHEL qcow2 image
 	RhelImageURL string `json:"rhelImageUrl,omitempty"`
-
+	// +kubebuilder:validation:Optional
+	// UserData holds the reference to the Secret containing the user
+	// data to be passed to the host before it boots. UserData can be
+	// set per host in BaremetalHosts or here. If none of these are
+	// provided it will use a default cloud-config.
+	UserData *corev1.SecretReference `json:"userData,omitmempty"`
+	// +kubebuilder:validation:Optional
+	// NetworkData holds the reference to the Secret containing network
+	// data to be passed to the hosts. NetworkData can be set per host in
+	// BaremetalHosts or here. If none of these are provided it will use
+	// default NetworkData to configure CtlPlaneIP.
+	NetworkData *corev1.SecretReference `json:"networkData,omitmempty"`
 	// When set to disabled, automated cleaning will be avoided
 	// during provisioning and deprovisioning.
 	// +kubebuilder:default=metadata
 	// +kubebuilder:validation:Optional
 	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode,omitempty"`
-
 	// ProvisionServerName - Optional. If supplied will be used as the base Image for the baremetalset instead of baseImageURL.
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
 	// DeploymentSSHSecret - Name of secret holding the stack-admin ssh keys

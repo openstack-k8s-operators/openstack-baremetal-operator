@@ -621,7 +621,7 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 			instance,
 			bmhName,
 			desiredHostName,
-			instance.Spec.BaremetalHosts[desiredHostName], // ctlPlaneIP
+			instance.Spec.BaremetalHosts[desiredHostName].CtlPlaneIP, // ctlPlaneIP
 			provisionServer.Status.LocalImageURL,
 			sshSecret,
 			passwordSecret,

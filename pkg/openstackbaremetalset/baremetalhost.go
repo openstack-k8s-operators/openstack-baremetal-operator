@@ -52,83 +52,102 @@ func BaremetalHostProvision(
 		bmhStatus.IPAddresses["ctlplane"] = ctlPlaneIP
 	}
 
-	// User data cloud-init secret
-	templateParameters := make(map[string]interface{})
-	templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
-	templateParameters["Hostname"] = bmhStatus.Hostname
-	templateParameters["DomainName"] = instance.Spec.DomainName
+	// Instance UserData/NetworkData overrides the default
+	userDataSecret := instance.Spec.BaremetalHosts[hostName].UserData
+	networkDataSecret := instance.Spec.BaremetalHosts[hostName].NetworkData
 
-	// Prepare cloudinit (create secret)
+	if userDataSecret == nil {
+		userDataSecret = instance.Spec.UserData
+	}
+
+	if networkDataSecret == nil {
+		networkDataSecret = instance.Spec.NetworkData
+	}
+
 	sts := []util.Template{}
-	secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})
+	// User data cloud-init secret
+	if userDataSecret == nil {
+		templateParameters := make(map[string]interface{})
+		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
+		templateParameters["Hostname"] = bmhStatus.Hostname
+		templateParameters["DomainName"] = instance.Spec.DomainName
 
-	if passwordSecret != nil && len(passwordSecret.Data["NodeRootPassword"]) > 0 {
-		templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
+		// Prepare cloudinit (create secret)
+		secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})
+		if passwordSecret != nil && len(passwordSecret.Data["NodeRootPassword"]) > 0 {
+			templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
+		}
+
+		userDataSecretName := fmt.Sprintf(CloudInitUserDataSecretName, instance.Name, bmh)
+
+		userDataSt := util.Template{
+			Name:               userDataSecretName,
+			Namespace:          instance.Namespace,
+			Type:               util.TemplateTypeConfig,
+			InstanceType:       instance.Kind,
+			AdditionalTemplate: map[string]string{"userData": "/openstackbaremetalset/cloudinit/userdata"},
+			Labels:             secretLabels,
+			ConfigOptions:      templateParameters,
+		}
+		sts = append(sts, userDataSt)
+		userDataSecret = &corev1.SecretReference{
+			Name:      userDataSecretName,
+			Namespace: instance.Namespace,
+		}
+
 	}
 
-	userDataSecretName := fmt.Sprintf(CloudInitUserDataSecretName, instance.Name, bmh)
+	if networkDataSecret == nil {
+		templateParameters := make(map[string]interface{})
+		templateParameters["CtlplaneIp"] = ctlPlaneIP
+		templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
+		templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
+		templateParameters["CtlplaneNetmask"] = instance.Spec.CtlplaneNetmask
+		if len(instance.Spec.BootstrapDNS) > 0 {
+			templateParameters["CtlplaneDns"] = instance.Spec.BootstrapDNS
+		} else {
+			templateParameters["CtlplaneDns"] = []string{}
+		}
 
-	userDataSt := util.Template{
-		Name:               userDataSecretName,
-		Namespace:          instance.Spec.BmhNamespace,
-		Type:               util.TemplateTypeConfig,
-		InstanceType:       instance.Kind,
-		AdditionalTemplate: map[string]string{"userData": "/openstackbaremetalset/cloudinit/userdata"},
-		Labels:             secretLabels,
-		ConfigOptions:      templateParameters,
+		if len(instance.Spec.DNSSearchDomains) > 0 {
+			templateParameters["CtlplaneDnsSearch"] = instance.Spec.DNSSearchDomains
+		}
+
+		networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, bmh)
+
+		// Flag the network data secret as safe to collect with must-gather
+		secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
+			MustGatherSecret: "yes",
+		})
+
+		networkDataSt := util.Template{
+			Name:               networkDataSecretName,
+			Namespace:          instance.Namespace,
+			Type:               util.TemplateTypeConfig,
+			InstanceType:       instance.Kind,
+			AdditionalTemplate: map[string]string{"networkData": "/openstackbaremetalset/cloudinit/networkdata"},
+			Labels:             secretLabelsWithMustGather,
+			ConfigOptions:      templateParameters,
+		}
+		sts = append(sts, networkDataSt)
+		networkDataSecret = &corev1.SecretReference{
+			Name:      networkDataSecretName,
+			Namespace: instance.Namespace,
+		}
 	}
 
-	sts = append(sts, userDataSt)
-
-	// TODO: Get network information from somewhere else?
-
-	// Network data cloud-init secret
-	templateParameters = make(map[string]interface{})
-	templateParameters["CtlplaneIp"] = ctlPlaneIP
-	templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
-	templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
-	templateParameters["CtlplaneNetmask"] = instance.Spec.CtlplaneNetmask
-	if len(instance.Spec.BootstrapDNS) > 0 {
-		templateParameters["CtlplaneDns"] = instance.Spec.BootstrapDNS
-	} else {
-		templateParameters["CtlplaneDns"] = []string{}
-	}
-
-	if len(instance.Spec.DNSSearchDomains) > 0 {
-		templateParameters["CtlplaneDnsSearch"] = instance.Spec.DNSSearchDomains
-		// } else {
-		// 	templateParameters["CtlplaneDnsSearch"] = osNetCfg.Spec.DNSSearchDomains
-	}
-
-	networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, bmh)
-
-	// Flag the network data secret as safe to collect with must-gather
-	secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
-		MustGatherSecret: "yes",
-	})
-
-	networkDataSt := util.Template{
-		Name:               networkDataSecretName,
-		Namespace:          instance.Spec.BmhNamespace,
-		Type:               util.TemplateTypeConfig,
-		InstanceType:       instance.Kind,
-		AdditionalTemplate: map[string]string{"networkData": "/openstackbaremetalset/cloudinit/networkdata"},
-		Labels:             secretLabelsWithMustGather,
-		ConfigOptions:      templateParameters,
-	}
-
-	sts = append(sts, networkDataSt)
-
-	err := oko_secret.EnsureSecrets(ctx, helper, instance, sts, envVars)
-	if err != nil {
-		return err
+	if len(sts) > 0 {
+		err := oko_secret.EnsureSecrets(ctx, helper, instance, sts, envVars)
+		if err != nil {
+			return err
+		}
 	}
 
 	//
 	// Provision the BaremetalHost
 	//
 	foundBaremetalHost := &metal3v1alpha1.BareMetalHost{}
-	err = helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
+	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
 	if err != nil {
 		return err
 	}
@@ -168,14 +187,8 @@ func BaremetalHostProvision(
 				URL:      localImageURL,
 				Checksum: fmt.Sprintf("%s.md5sum", localImageURL),
 			}
-			foundBaremetalHost.Spec.UserData = &corev1.SecretReference{
-				Name:      userDataSecretName,
-				Namespace: instance.Spec.BmhNamespace,
-			}
-			foundBaremetalHost.Spec.NetworkData = &corev1.SecretReference{
-				Name:      networkDataSecretName,
-				Namespace: instance.Spec.BmhNamespace,
-			}
+			foundBaremetalHost.Spec.UserData = userDataSecret
+			foundBaremetalHost.Spec.NetworkData = networkDataSecret
 		}
 
 		return nil
@@ -192,8 +205,8 @@ func BaremetalHostProvision(
 	//
 	// Update status with BMH provisioning details
 	//
-	bmhStatus.UserDataSecretName = userDataSecretName
-	bmhStatus.NetworkDataSecretName = networkDataSecretName
+	bmhStatus.UserDataSecretName = userDataSecret.Name
+	bmhStatus.NetworkDataSecretName = networkDataSecret.Name
 	bmhStatus.ProvisioningState = baremetalv1.ProvisioningState(foundBaremetalHost.Status.Provisioning.State)
 	instance.Status.BaremetalHosts[hostName] = bmhStatus
 

@@ -59,9 +59,40 @@ spec:
                 type: string
               baremetalHosts:
                 additionalProperties:
-                  type: string
-                description: BaremetalHosts - Map of hostname to control plane IP
-                  address for all nodes to provision
+                  description: InstanceSpec Instance specific attributes
+                  properties:
+                    ctlPlaneIP:
+                      description: CtlPlaneIP - Control Plane IP
+                      type: string
+                    networkData:
+                      description: NetworkData - Host Network Data
+                      properties:
+                        name:
+                          description: name is unique within a namespace to reference
+                            a secret resource.
+                          type: string
+                        namespace:
+                          description: namespace defines the space within which the
+                            secret name must be unique.
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    userData:
+                      description: UserData - Host User Data
+                      properties:
+                        name:
+                          description: name is unique within a namespace to reference
+                            a secret resource.
+                          type: string
+                        namespace:
+                          description: namespace defines the space within which the
+                            secret name must be unique.
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                  type: object
+                description: BaremetalHosts - Map of hostname to Instance Spec for
+                  all nodes to provision
                 type: object
               bmhLabelSelector:
                 additionalProperties:
@@ -194,6 +225,22 @@ spec:
                         type: object
                     type: object
                 type: object
+              networkData:
+                description: NetworkData holds the reference to the Secret containing
+                  network data to be passed to the hosts. NetworkData can be set per
+                  host in BaremetalHosts or here. If none of these are provided it
+                  will use default NetworkData to configure CtlPlaneIP.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               passwordSecret:
                 description: 'PasswordSecret the name of the secret used to optionally
                   set the root pwd by adding NodeRootPassword: <base64 enc pwd> to
@@ -207,6 +254,22 @@ spec:
                 description: RhelImageURL - Remote URL pointing to desired RHEL qcow2
                   image
                 type: string
+              userData:
+                description: UserData holds the reference to the Secret containing
+                  the user data to be passed to the host before it boots. UserData
+                  can be set per host in BaremetalHosts or here. If none of these
+                  are provided it will use a default cloud-config.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
             required:
             - ctlplaneGateway
             - ctlplaneInterface
