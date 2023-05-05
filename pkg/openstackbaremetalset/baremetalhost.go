@@ -111,6 +111,8 @@ func BaremetalHostProvision(
 
 		if len(instance.Spec.DNSSearchDomains) > 0 {
 			templateParameters["CtlplaneDnsSearch"] = instance.Spec.DNSSearchDomains
+		} else {
+			templateParameters["CtlplaneDnsSearch"] = []string{}
 		}
 
 		networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, bmh)
