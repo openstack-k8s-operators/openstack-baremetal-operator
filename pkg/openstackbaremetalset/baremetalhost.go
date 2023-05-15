@@ -71,6 +71,7 @@ func BaremetalHostProvision(
 		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
 		templateParameters["Hostname"] = bmhStatus.Hostname
 		templateParameters["DomainName"] = instance.Spec.DomainName
+		templateParameters["CloudUserName"] = instance.Spec.CloudUserName
 
 		// Prepare cloudinit (create secret)
 		secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})

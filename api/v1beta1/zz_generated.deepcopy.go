@@ -320,6 +320,11 @@ func (in *OpenStackBaremetalSetSpec) DeepCopyInto(out *OpenStackBaremetalSetSpec
 		}
 	}
 	out.HardwareReqs = in.HardwareReqs
+	if in.PasswordSecret != nil {
+		in, out := &in.PasswordSecret, &out.PasswordSecret
+		*out = new(v1.SecretReference)
+		**out = **in
+	}
 	if in.BootstrapDNS != nil {
 		in, out := &in.BootstrapDNS, &out.BootstrapDNS
 		*out = make([]string, len(*in))

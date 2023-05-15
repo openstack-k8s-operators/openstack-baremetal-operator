@@ -273,8 +273,10 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	//
 	var passwordSecret *corev1.Secret
 
-	if instance.Spec.PasswordSecret != "" {
-		passwordSecret, hash, err = oko_secret.GetSecret(ctx, helper, instance.Spec.PasswordSecret, instance.Namespace)
+	if instance.Spec.PasswordSecret != nil {
+		passwordSecret, hash, err = oko_secret.GetSecret(
+			ctx, helper, instance.Spec.PasswordSecret.Name,
+			instance.Spec.PasswordSecret.Namespace)
 		if err != nil {
 			if k8s_errors.IsNotFound(err) {
 				instance.Status.Conditions.Set(condition.FalseCondition(
