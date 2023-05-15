@@ -112,6 +112,10 @@ spec:
                 items:
                   type: string
                 type: array
+              cloudUserName:
+                default: cloud-admin
+                description: CloudUser to be configured for remote access
+                type: string
               ctlplaneGateway:
                 description: 'CtlplaneGateway - IP of gateway for ctrlplane network
                   (TODO: acquire this is another manner?)'
@@ -245,7 +249,17 @@ spec:
                 description: 'PasswordSecret the name of the secret used to optionally
                   set the root pwd by adding NodeRootPassword: <base64 enc pwd> to
                   the secret data'
-                type: string
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               provisionServerName:
                 description: ProvisionServerName - Optional. If supplied will be used
                   as the base Image for the baremetalset instead of baseImageURL.
@@ -271,6 +285,7 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
             required:
+            - cloudUserName
             - ctlplaneGateway
             - ctlplaneInterface
             - ctlplaneNetmask

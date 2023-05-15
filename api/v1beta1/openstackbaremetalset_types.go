@@ -94,7 +94,10 @@ type OpenStackBaremetalSetSpec struct {
 	// PasswordSecret the name of the secret used to optionally set the root pwd by adding
 	// NodeRootPassword: <base64 enc pwd>
 	// to the secret data
-	PasswordSecret string `json:"passwordSecret,omitempty"`
+	PasswordSecret *corev1.SecretReference `json:"passwordSecret,omitempty"`
+	// +kubebuilder:default=cloud-admin
+	// CloudUser to be configured for remote access
+	CloudUserName string `json:"cloudUserName"`
 	// DomainName is the domain name that will be set on the underlying Metal3 BaremetalHosts (TODO: acquire this is another manner?)
 	DomainName string `json:"domainName"`
 	// +kubebuilder:validation:Optional
