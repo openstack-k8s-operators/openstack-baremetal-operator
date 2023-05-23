@@ -47,10 +47,9 @@ const (
 
 // OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
 type OpenStackBaremetalSetSpec struct {
-	// +kubebuilder:default={}
 	// +kubebuilder:validation:Optional
 	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
-	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts"`
+	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts,omitempty"`
 	// RhelImageURL - Remote URL pointing to desired RHEL qcow2 image
 	RhelImageURL string `json:"rhelImageUrl,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -58,13 +57,13 @@ type OpenStackBaremetalSetSpec struct {
 	// data to be passed to the host before it boots. UserData can be
 	// set per host in BaremetalHosts or here. If none of these are
 	// provided it will use a default cloud-config.
-	UserData *corev1.SecretReference `json:"userData,omitmempty"`
+	UserData *corev1.SecretReference `json:"userData,omitempty"`
 	// +kubebuilder:validation:Optional
 	// NetworkData holds the reference to the Secret containing network
 	// data to be passed to the hosts. NetworkData can be set per host in
 	// BaremetalHosts or here. If none of these are provided it will use
 	// default NetworkData to configure CtlPlaneIP.
-	NetworkData *corev1.SecretReference `json:"networkData,omitmempty"`
+	NetworkData *corev1.SecretReference `json:"networkData,omitempty"`
 	// When set to disabled, automated cleaning will be avoided
 	// during provisioning and deprovisioning.
 	// +kubebuilder:default=metadata
