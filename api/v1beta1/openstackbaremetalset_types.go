@@ -71,6 +71,8 @@ type OpenStackBaremetalSetSpec struct {
 	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode,omitempty"`
 	// ProvisionServerName - Optional. If supplied will be used as the base Image for the baremetalset instead of baseImageURL.
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
+	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.
+	ProvisioningInterface string `json:"provisioningInterface,omitempty"`
 	// DeploymentSSHSecret - Name of secret holding the stack-admin ssh keys
 	DeploymentSSHSecret string `json:"deploymentSSHSecret"`
 	// CtlplaneInterface - Interface to use for ctlplane network

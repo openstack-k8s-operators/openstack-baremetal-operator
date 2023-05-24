@@ -264,6 +264,10 @@ spec:
                 description: ProvisionServerName - Optional. If supplied will be used
                   as the base Image for the baremetalset instead of baseImageURL.
                 type: string
+              provisioningInterface:
+                description: ProvisioningInterface - Optional. If not provided along
+                  with ProvisionServerName, it would be discovered from CBO.
+                type: string
               rhelImageUrl:
                 description: RhelImageURL - Remote URL pointing to desired RHEL qcow2
                   image

@@ -303,7 +303,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	//
 
 	serviceLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{
-		common.AppSelector: instance.Name + "-openstackbaremetalset-deployment",
+		common.AppSelector: instance.Name + "-deployment",
 	})
 
 	// Handle service init
@@ -485,6 +485,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		}
 
 		provisionServer.Spec.RhelImageURL = instance.Spec.RhelImageURL
+		provisionServer.Spec.Interface = instance.Spec.ProvisioningInterface
 
 		err = controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())
 		if err != nil {

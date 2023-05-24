@@ -270,7 +270,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, baremetalv1.OpenStackProvisionServerProvIntfReadyMessage)
 
 	serviceLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{
-		common.AppSelector: instance.Name + "-openstackprovisionserver-deployment",
+		common.AppSelector: instance.Name + "-deployment",
 	})
 
 	// Handle service init
