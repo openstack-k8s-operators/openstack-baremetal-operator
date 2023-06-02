@@ -95,7 +95,7 @@ func Deployment(
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: ServiceAccount,
+					ServiceAccountName: instance.RbacResourceName(),
 					HostNetwork:        true,
 					Containers: []corev1.Container{
 						{

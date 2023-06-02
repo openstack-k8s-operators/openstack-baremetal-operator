@@ -25,6 +25,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,6 +46,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
+	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	openstackprovisionserver "github.com/openstack-k8s-operators/openstack-baremetal-operator/pkg/openstackprovisionserver"
@@ -66,8 +68,16 @@ type OpenStackProvisionServerReconciler struct {
 	Scheme  *runtime.Scheme
 }
 
+// service account, role, rolebinding
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update
+// service account permissions that are needed to grant permission to the above
+// +kubebuilder:rbac:groups="security.openshift.io",resourceNames=privileged,resources=securitycontextconstraints,verbs=use
+// +kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch
+
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers/status,verbs=get;list;update;patch
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;create;update;delete;watch;
 // +kubebuilder:rbac:groups=core,resources=configmaps/finalizers,verbs=get;list;create;update;delete;watch;
@@ -77,8 +87,6 @@ type OpenStackProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;update;watch;
 // +kubebuilder:rbac:groups=metal3.io,resources=provisionings,verbs=get;list;watch
 // +kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;update;patch;watch
-// +kubebuilder:rbac:groups=security.openshift.io,namespace=openstack,resources=securitycontextconstraints,resourceNames=privileged,verbs=use
-// +kubebuilder:rbac:groups=security.openshift.io,namespace=openstack,resources=securitycontextconstraints,resourceNames=anyuid,verbs=use
 
 // Reconcile -
 func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
@@ -135,12 +143,44 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 		instance.Status.Conditions = condition.Conditions{}
 		// initialize conditions used later as Status=Unknown
 		cl := condition.CreateList(
-			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
-			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
-			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerProvIntfReadyInitMessage),
-			condition.UnknownCondition(baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition, condition.InitReason, baremetalv1.OpenStackProvisionServerLocalImageURLReadyInitMessage),
-		)
+			condition.UnknownCondition(
+				condition.DeploymentReadyCondition,
+				condition.InitReason,
+				condition.DeploymentReadyInitMessage,
+			),
+			condition.UnknownCondition(
+				condition.ServiceConfigReadyCondition,
+				condition.InitReason,
+				condition.ServiceConfigReadyInitMessage,
+			),
+			condition.UnknownCondition(
+				baremetalv1.OpenStackProvisionServerProvIntfReadyCondition,
+				condition.InitReason,
+				baremetalv1.OpenStackProvisionServerProvIntfReadyInitMessage,
+			),
+			condition.UnknownCondition(
+				baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition,
+				condition.InitReason,
+				baremetalv1.OpenStackProvisionServerLocalImageURLReadyInitMessage,
+			),
 
+			// service account, role, rolebinding conditions
+			condition.UnknownCondition(
+				condition.ServiceAccountReadyCondition,
+				condition.InitReason,
+				condition.ServiceAccountReadyInitMessage,
+			),
+			condition.UnknownCondition(
+				condition.RoleReadyCondition,
+				condition.InitReason,
+				condition.RoleReadyInitMessage,
+			),
+			condition.UnknownCondition(
+				condition.RoleBindingReadyCondition,
+				condition.InitReason,
+				condition.RoleBindingReadyInitMessage,
+			),
+		)
 		instance.Status.Conditions.Init(&cl)
 
 		// Register overall status immediately to have an early feedback e.g. in the cli
@@ -155,6 +195,36 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 		return r.reconcileDelete(ctx, instance, helper)
 	}
 
+	// Service account, role, binding
+	rbacRules := []rbacv1.PolicyRule{
+		{
+			APIGroups:     []string{"security.openshift.io"},
+			ResourceNames: []string{"privileged"},
+			Resources:     []string{"securitycontextconstraints"},
+			Verbs:         []string{"use"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"pods"},
+			Verbs:     []string{"create", "get", "list", "watch", "update", "patch", "delete"},
+		},
+		{
+			APIGroups: []string{"baremetal.openstack.org"},
+			Resources: []string{"openstackprovisionservers"},
+			Verbs:     []string{"get", "list"},
+		},
+		{
+			APIGroups: []string{"baremetal.openstack.org"},
+			Resources: []string{"openstackprovisionservers/status"},
+			Verbs:     []string{"get", "list", "update"},
+		},
+	}
+	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
+	if err != nil {
+		return rbacResult, err
+	} else if (rbacResult != ctrl.Result{}) {
+		return rbacResult, nil
+	}
 	// Handle non-deleted servers
 	return r.reconcileNormal(ctx, instance, helper)
 }

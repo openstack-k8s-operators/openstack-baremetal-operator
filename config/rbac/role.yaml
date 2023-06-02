@@ -6,6 +6,28 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -73,6 +95,7 @@ rules:
   - openstackprovisionservers/status
   verbs:
   - get
+  - list
   - patch
   - update
 - apiGroups:
@@ -174,22 +197,26 @@ rules:
   - get
   - list
   - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  creationTimestamp: null
-  name: manager-role
-  namespace: openstack
-rules:
 - apiGroups:
-  - security.openshift.io
-  resourceNames:
-  - anyuid
+  - rbac.authorization.k8s.io
   resources:
-  - securitycontextconstraints
+  - rolebindings
   verbs:
-  - use
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - security.openshift.io
   resourceNames:

@@ -44,6 +44,10 @@ type OpenStackProvisionServerSpec struct {
 	// Resources - Compute Resources required by this provision server (Limits/Requests).
 	// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// +kubebuilder:validation:Required
+	// ServiceAccount - service account name used internally to provide ProvisionServer the default SA name
+	// +kubebuilder:default="provisionserver"
+	ServiceAccount string `json:"serviceAccount"`
 }
 
 // OpenStackProvisionServerStatus defines the observed state of OpenStackProvisionServer
@@ -99,4 +103,19 @@ type OpenStackProvisionServerDefaults struct {
 
 func init() {
 	SchemeBuilder.Register(&OpenStackProvisionServer{}, &OpenStackProvisionServerList{})
+}
+
+// RbacConditionsSet - set the conditions for the rbac object
+func (instance OpenStackProvisionServer) RbacConditionsSet(c *condition.Condition) {
+	instance.Status.Conditions.Set(c)
+}
+
+// RbacNamespace - return the namespace
+func (instance OpenStackProvisionServer) RbacNamespace() string {
+	return instance.Namespace
+}
+
+// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
+func (instance OpenStackProvisionServer) RbacResourceName() string {
+	return "provisionserver-" + instance.Name
 }
