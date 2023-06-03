@@ -6,7 +6,7 @@ users:
     ssh-authorized-keys: {{ .AuthorizedKeys }}
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     shell: /bin/bash
-{{- if .NodeRootPassword }}
+{{- if (index . "NodeRootPassword") }}
 chpasswd:
   list: |
     root:{{ .NodeRootPassword }}
