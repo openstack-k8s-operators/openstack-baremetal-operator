@@ -307,10 +307,10 @@ gotest: get-ci-tools
 	GOWORK=off $(CI_TOOLS_REPO_DIR)/test-runner/gotest.sh
 	GOWORK=off $(CI_TOOLS_REPO_DIR)/test-runner/gotest.sh ./api
 
-# Run golangci-lint test against code
-golangci: get-ci-tools
-	GOWORK=off $(CI_TOOLS_REPO_DIR)/test-runner/golangci.sh
-	GOWORK=off $(CI_TOOLS_REPO_DIR)/test-runner/golangci.sh ./api
+.PHONY: golangci-lint
+golangci-lint:
+	test -s $(LOCALBIN)/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.51.2
+	$(LOCALBIN)/golangci-lint run --fix
 
 # Run go lint against code
 golint: get-ci-tools

@@ -106,12 +106,18 @@ spec:
                 description: RhelImageURL - URL for RHEL qcow2 image (compressed as
                   gz, or uncompressed)
                 type: string
+              serviceAccount:
+                default: provisionserver
+                description: ServiceAccount - service account name used internally
+                  to provide ProvisionServer the default SA name
+                type: string
             required:
             - agentImageUrl
             - apacheImageUrl
             - downloaderImageUrl
             - port
             - rhelImageUrl
+            - serviceAccount
             type: object
           status:
             description: OpenStackProvisionServerStatus defines the observed state

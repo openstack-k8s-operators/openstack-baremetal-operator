@@ -25,7 +25,4 @@ const (
 
 	// HttpdConfPath -
 	HttpdConfPath = "/usr/local/apache2/conf/httpd.conf"
-
-	// ServiceAccount -
-	ServiceAccount = "openstack-baremetal-operator-openstackprovisionserver"
 )
