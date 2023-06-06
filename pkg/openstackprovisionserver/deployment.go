@@ -38,7 +38,6 @@ func Deployment(
 	labels map[string]string,
 	provInterfaceName string,
 ) *appsv1.Deployment {
-	runAsUser := int64(0)
 
 	livenessProbe := &corev1.Probe{
 		// TODO might need tuning
@@ -103,11 +102,8 @@ func Deployment(
 							Command: []string{
 								"/bin/bash",
 							},
-							Args:  args,
-							Image: instance.Spec.ApacheImageURL,
-							SecurityContext: &corev1.SecurityContext{
-								RunAsUser: &runAsUser,
-							},
+							Args:           args,
+							Image:          instance.Spec.ApacheImageURL,
 							VolumeMounts:   getVolumeMounts(),
 							Resources:      instance.Spec.Resources,
 							ReadinessProbe: readinessProbe,
