@@ -169,9 +169,10 @@ func (r *OpenStackBaremetalSet) validateCr() error {
 }
 
 func (r *OpenStackBaremetalSet) checkBaseImageReqs() error {
-	if r.Spec.RhelImageURL == "" && r.Spec.ProvisionServerName == "" {
-		return fmt.Errorf("either \"rhelImageUrl\" or \"provisionServerName\" must be provided")
-	}
+	// TODO(rabi): Uncomment after dataplane-operator api bump
+	// if r.Spec.OSImage == "" && r.Spec.ProvisionServerName == "" {
+	//	 return fmt.Errorf("either \"osImage\" or \"provisionServerName\" must be provided")
+	// }
 
 	return nil
 }

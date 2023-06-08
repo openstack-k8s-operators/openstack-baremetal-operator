@@ -50,8 +50,8 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
 	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts,omitempty"`
-	// RhelImageURL - Remote URL pointing to desired RHEL qcow2 image
-	RhelImageURL string `json:"rhelImageUrl,omitempty"`
+	// OSImage - OS qcow2 image Name
+	OSImage string `json:"osImage,omitempty"`
 	// +kubebuilder:validation:Optional
 	// UserData holds the reference to the Secret containing the user
 	// data to be passed to the host before it boots. UserData can be

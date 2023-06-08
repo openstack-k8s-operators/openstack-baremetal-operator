@@ -339,7 +339,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	//
 	provisionServer := &baremetalv1.OpenStackProvisionServer{}
 
-	// TODO: webook should validate that either ProvisionServerName or RhelImageUrl is set in the instance spec
+	// TODO: webook should validate that either ProvisionServerName or OSImage is set in the instance spec
 	if instance.Spec.ProvisionServerName == "" {
 		provisionServer, err = r.provisionServerCreateOrUpdate(ctx, helper, instance)
 	} else {
@@ -484,7 +484,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 			return err
 		}
 
-		provisionServer.Spec.RhelImageURL = instance.Spec.RhelImageURL
+		provisionServer.Spec.OSImage = instance.Spec.OSImage
 		provisionServer.Spec.Interface = instance.Spec.ProvisioningInterface
 
 		err = controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())

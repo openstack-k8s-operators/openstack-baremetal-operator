@@ -9,7 +9,7 @@ spec:
     compute-0: 172.22.0.100
     compute-1: 172.22.0.101
   # The image to install on the provisioned nodes
-  rhelImageUrl: http://192.168.111.1/images/rhel-guest-image-8.4-992.x86_64.qcow2
+  osImage: edpm-hardened-uefi.qcow2
   # provisionServerName: openstack  # uncomment if you pre-deploy a separate OsProvServer (use its name for the value)
   # The secret containing the SSH pub key to place on the provisioned nodes
   deploymentSSHSecret: baremetalset-deploy-secret
