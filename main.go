@@ -132,6 +132,7 @@ func main() {
 			OSContainerImageURL: os.Getenv("OS_CONTAINER_IMAGE_URL_DEFAULT"),
 			AgentImageURL:       os.Getenv("AGENT_IMAGE_URL_DEFAULT"),
 			ApacheImageURL:      os.Getenv("APACHE_IMAGE_URL_DEFAULT"),
+			OSImage:             os.Getenv("OS_IMAGE_DEFAULT"),
 		}
 
 		if err = (&baremetalv1beta1.OpenStackBaremetalSet{}).SetupWebhookWithManager(mgr); err != nil {

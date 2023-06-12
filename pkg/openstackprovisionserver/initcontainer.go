@@ -8,8 +8,6 @@ import (
 // InitContainerDetails information
 type InitContainerDetails struct {
 	ContainerImage string
-	OSImage        string
-	TransportURL   string
 	Privileged     bool
 	VolumeMounts   []corev1.VolumeMount
 }

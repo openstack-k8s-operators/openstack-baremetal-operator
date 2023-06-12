@@ -109,6 +109,6 @@ func (r *OpenStackProvisionServer) Default() {
 		r.Spec.ApacheImageURL = openstackProvisionServerDefaults.ApacheImageURL
 	}
 	if r.Spec.OSImage == "" {
-		r.Spec.OSImage = "edpm-hardened-uefi.qcow2"
+		r.Spec.OSImage = openstackProvisionServerDefaults.OSImage
 	}
 }

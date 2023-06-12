@@ -99,6 +99,7 @@ type OpenStackProvisionServerDefaults struct {
 	OSContainerImageURL string
 	AgentImageURL       string
 	ApacheImageURL      string
+	OSImage             string
 }
 
 func init() {
