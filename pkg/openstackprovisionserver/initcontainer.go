@@ -8,7 +8,7 @@ import (
 // InitContainerDetails information
 type InitContainerDetails struct {
 	ContainerImage string
-	RhelImage      string
+	OSImage        string
 	TransportURL   string
 	Privileged     bool
 	VolumeMounts   []corev1.VolumeMount
@@ -18,8 +18,8 @@ type InitContainerDetails struct {
 func InitContainer(init InitContainerDetails) []corev1.Container {
 	envs := []corev1.EnvVar{
 		{
-			Name:  "RHEL_IMAGE_URL",
-			Value: init.RhelImage,
+			Name:  "DEST_DIR",
+			Value: "/usr/local/apache2/htdocs",
 		},
 	}
 	envs = env.MergeEnvs(envs, map[string]env.Setter{})

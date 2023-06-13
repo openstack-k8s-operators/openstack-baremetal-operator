@@ -161,8 +161,8 @@ func Deployment(
 	}
 
 	initContainerDetails := InitContainerDetails{
-		ContainerImage: instance.Spec.DownloaderImageURL,
-		RhelImage:      instance.Spec.RhelImageURL,
+		ContainerImage: instance.Spec.OSContainerImageURL,
+		OSImage:        instance.Spec.OSImage,
 		VolumeMounts:   getInitVolumeMounts(),
 	}
 	deployment.Spec.Template.Spec.InitContainers = InitContainer(initContainerDetails)

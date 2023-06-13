@@ -99,8 +99,8 @@ var _ webhook.Defaulter = &OpenStackProvisionServer{}
 func (r *OpenStackProvisionServer) Default() {
 	openstackprovisionserverlog.Info("default", "name", r.Name)
 
-	if r.Spec.DownloaderImageURL == "" {
-		r.Spec.DownloaderImageURL = openstackProvisionServerDefaults.DownloaderImageURL
+	if r.Spec.OSContainerImageURL == "" {
+		r.Spec.OSContainerImageURL = openstackProvisionServerDefaults.OSContainerImageURL
 	}
 	if r.Spec.AgentImageURL == "" {
 		r.Spec.AgentImageURL = openstackProvisionServerDefaults.AgentImageURL
@@ -108,5 +108,7 @@ func (r *OpenStackProvisionServer) Default() {
 	if r.Spec.ApacheImageURL == "" {
 		r.Spec.ApacheImageURL = openstackProvisionServerDefaults.ApacheImageURL
 	}
-
+	if r.Spec.OSImage == "" {
+		r.Spec.OSImage = "edpm-hardened-uefi.qcow2"
+	}
 }

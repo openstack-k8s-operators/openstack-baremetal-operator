@@ -29,11 +29,11 @@ type OpenStackProvisionServerSpec struct {
 	// +kubebuilder:validation:Optional
 	// Interface - An optional interface to use instead of the cluster's default provisioning interface (if any)
 	Interface string `json:"interface,omitempty"`
-	// RhelImageURL - URL for RHEL qcow2 image (compressed as gz, or uncompressed)
-	RhelImageURL string `json:"rhelImageUrl"`
-	// DownloaderImageURL - Container image URL for init container that downloads the RHEL qcow2 image (rhelImageUrl)
-	DownloaderImageURL string `json:"downloaderImageUrl"`
-	// ApacheImageURL - Container image URL for the main container that serves the downloaded RHEL qcow2 image (rhelImageUrl)
+	// OSImage - OS qcow2 image (compressed as gz, or uncompressed)
+	OSImage string `json:"osImage"`
+	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
+	OSContainerImageURL string `json:"osContainerImageUrl"`
+	// ApacheImageURL - Container image URL for the main container that serves the downloaded OS qcow2 image (osImage)
 	ApacheImageURL string `json:"apacheImageUrl"`
 	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs
 	AgentImageURL string `json:"agentImageUrl"`
@@ -96,9 +96,9 @@ type OpenStackProvisionServerList struct {
 
 // OpenStackProvisionServerDefaults -
 type OpenStackProvisionServerDefaults struct {
-	DownloaderImageURL string
-	AgentImageURL      string
-	ApacheImageURL     string
+	OSContainerImageURL string
+	AgentImageURL       string
+	ApacheImageURL      string
 }
 
 func init() {

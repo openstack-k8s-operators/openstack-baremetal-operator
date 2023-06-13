@@ -11,8 +11,8 @@ spec:
       containers:
       - name: manager
         env:
-        - name: DOWNLOADER_IMAGE_URL_DEFAULT
-          value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-downloader:latest
+        - name: OS_CONTAINER_IMAGE_URL_DEFAULT
+          value: quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified
         - name: AGENT_IMAGE_URL_DEFAULT
           value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest
         - name: APACHE_IMAGE_URL_DEFAULT

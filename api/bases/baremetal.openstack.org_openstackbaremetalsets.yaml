@@ -245,6 +245,9 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              osImage:
+                description: OSImage - OS qcow2 image Name
+                type: string
               passwordSecret:
                 description: 'PasswordSecret the name of the secret used to optionally
                   set the root pwd by adding NodeRootPassword: <base64 enc pwd> to
@@ -267,10 +270,6 @@ spec:
               provisioningInterface:
                 description: ProvisioningInterface - Optional. If not provided along
                   with ProvisionServerName, it would be discovered from CBO.
-                type: string
-              rhelImageUrl:
-                description: RhelImageURL - Remote URL pointing to desired RHEL qcow2
-                  image
                 type: string
               userData:
                 description: UserData holds the reference to the Secret containing

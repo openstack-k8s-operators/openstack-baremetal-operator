@@ -175,8 +175,9 @@ func BaremetalHostProvision(
 		//
 		if string(foundBaremetalHost.Status.Provisioning.State) != "provisioned" {
 			foundBaremetalHost.Spec.Image = &metal3v1alpha1.Image{
-				URL:      localImageURL,
-				Checksum: fmt.Sprintf("%s.md5sum", localImageURL),
+				URL:          localImageURL,
+				Checksum:     fmt.Sprintf("%s.sha256", localImageURL),
+				ChecksumType: metal3v1alpha1.SHA256,
 			}
 		}
 
@@ -187,8 +188,9 @@ func BaremetalHostProvision(
 			foundBaremetalHost.Spec.Online = true
 			foundBaremetalHost.Spec.ConsumerRef = &corev1.ObjectReference{Name: instance.Name, Kind: instance.Kind, Namespace: instance.Namespace}
 			foundBaremetalHost.Spec.Image = &metal3v1alpha1.Image{
-				URL:      localImageURL,
-				Checksum: fmt.Sprintf("%s.md5sum", localImageURL),
+				URL:          localImageURL,
+				Checksum:     fmt.Sprintf("%s.sha256", localImageURL),
+				ChecksumType: metal3v1alpha1.SHA256,
 			}
 			foundBaremetalHost.Spec.UserData = userDataSecret
 			foundBaremetalHost.Spec.NetworkData = networkDataSecret

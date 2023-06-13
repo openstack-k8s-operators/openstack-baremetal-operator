@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -571,12 +570,6 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 }
 
 func (r *OpenStackProvisionServerReconciler) getLocalImageURL(instance *baremetalv1.OpenStackProvisionServer) string {
-	baseFilename := instance.Spec.RhelImageURL[strings.LastIndex(instance.Spec.RhelImageURL, "/")+1 : len(instance.Spec.RhelImageURL)]
-	baseFilenameEnd := baseFilename[len(baseFilename)-3:]
-
-	if baseFilenameEnd == ".gz" || baseFilenameEnd == ".xz" {
-		baseFilename = baseFilename[0 : len(baseFilename)-3]
-	}
-
-	return fmt.Sprintf("http://%s:%d/images/%s/compressed-%s", instance.Status.ProvisionIP, instance.Spec.Port, baseFilename, baseFilename)
+	baseFilename := instance.Spec.OSImage
+	return fmt.Sprintf("http://%s:%d/%s", instance.Status.ProvisionIP, instance.Spec.Port, baseFilename)
 }
