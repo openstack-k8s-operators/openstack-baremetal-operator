@@ -18,8 +18,20 @@ package v1beta1
 
 import (
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// OSContainerImage - default fall-back image for OpenStackProvisionServer int container
+	OSContainerImage = "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified"
+	// AgentImage - default fall-back image for OpenStackProvisionServer agent
+	AgentImage = "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest"
+	// ApacheImage - default fall-back image for Apache
+	ApacheImage = "registry.redhat.io/rhel8/httpd-24:latest"
+	// OSImage - default fall-back image name for qcow2 image found inside OSContainerImage
+	OSImage = "edpm-hardened-uefi.qcow2"
 )
 
 // OpenStackProvisionServerSpec defines the desired state of OpenStackProvisionServer
@@ -119,4 +131,18 @@ func (instance OpenStackProvisionServer) RbacNamespace() string {
 // RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
 func (instance OpenStackProvisionServer) RbacResourceName() string {
 	return "provisionserver-" + instance.Name
+}
+
+// SetupDefaults - initializes any CRD field defaults based on environment variables (the defaulting mechanism itself is implemented via webhooks)
+// TODO: Move this to a common location if OpenStackBaremetalSets ever get added as well
+func SetupDefaults() {
+	// Acquire environmental defaults and initialize OpenStackProvisionServer defaults with them
+	openstackProvisionServerDefaults := OpenStackProvisionServerDefaults{
+		OSContainerImageURL: util.GetEnvVar("OS_CONTAINER_IMAGE_URL_DEFAULT", OSContainerImage),
+		AgentImageURL:       util.GetEnvVar("AGENT_IMAGE_URL_DEFAULT", AgentImage),
+		ApacheImageURL:      util.GetEnvVar("APACHE_IMAGE_URL_DEFAULT", ApacheImage),
+		OSImage:             util.GetEnvVar("OS_IMAGE_DEFAULT", OSImage),
+	}
+
+	SetupOpenStackProvisionServerDefaults(openstackProvisionServerDefaults)
 }
