@@ -210,26 +210,6 @@ jobs:
       run: |
         echo "latesttag=${{ steps.branch-name.outputs.current_branch }}-latest" >> $GITHUB_ENV
 
-    - name: Buildah Action
-      id: build-openstack-baremetal-operator-downloader
-      uses: redhat-actions/buildah-build@v2
-      with:
-        image: openstack-baremetal-operator-downloader
-        tags: ${{ env.latesttag }} ${{ github.sha }}
-        containerfiles: |
-          ./containers/image_downloader/Dockerfile
-        build-args: |
-          REMOTE_SOURCE=/containers/image_downloader
-
-    - name: Push openstack-baremetal-operator-downloader To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@v2
-      with:
-        image: ${{ steps.build-openstack-baremetal-operator-downloader.outputs.image }}
-        tags: ${{ steps.build-openstack-baremetal-operator-downloader.outputs.tags }}
-        registry: ${{ env.imageregistry }}/${{ env.imagenamespace }}
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_PASSWORD }}
-
   build-openstack-baremetal-operator-agent:
     name: Build openstack-baremetal-operator agent image using buildah
     runs-on: ubuntu-latest
