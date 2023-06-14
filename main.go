@@ -124,23 +124,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	baremetalv1beta1.SetupDefaults()
+
 	//
 	// Webhooks
 	//
 	if strings.ToLower(os.Getenv("ENABLE_WEBHOOKS")) != "false" {
-		provisionServerDefaults := baremetalv1beta1.OpenStackProvisionServerDefaults{
-			OSContainerImageURL: os.Getenv("OS_CONTAINER_IMAGE_URL_DEFAULT"),
-			AgentImageURL:       os.Getenv("AGENT_IMAGE_URL_DEFAULT"),
-			ApacheImageURL:      os.Getenv("APACHE_IMAGE_URL_DEFAULT"),
-			OSImage:             os.Getenv("OS_IMAGE_DEFAULT"),
-		}
-
 		if err = (&baremetalv1beta1.OpenStackBaremetalSet{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenStackBaremetalSet")
 			os.Exit(1)
 		}
 
-		if err = (&baremetalv1beta1.OpenStackProvisionServer{}).SetupWebhookWithManager(mgr, provisionServerDefaults); err != nil {
+		if err = (&baremetalv1beta1.OpenStackProvisionServer{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenStackProvisionServer")
 			os.Exit(1)
 		}

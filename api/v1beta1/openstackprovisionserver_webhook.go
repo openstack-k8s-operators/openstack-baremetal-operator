@@ -36,11 +36,14 @@ var openstackProvisionServerDefaults OpenStackProvisionServerDefaults
 // log is for logging in this package.
 var openstackprovisionserverlog = logf.Log.WithName("openstackprovisionserver-resource")
 
-// SetupWebhookWithManager - register this webhook with the controller manager
-func (r *OpenStackProvisionServer) SetupWebhookWithManager(mgr ctrl.Manager, defaults OpenStackProvisionServerDefaults) error {
-
+// SetupOpenStackProvisionServerDefaults - initialize OpenStackProvisionServer spec defaults for use with either internal or external webhooks
+func SetupOpenStackProvisionServerDefaults(defaults OpenStackProvisionServerDefaults) {
 	openstackProvisionServerDefaults = defaults
+	openstackprovisionserverlog.Info("OpenStackProvisionServer defaults initialized", "defaults", defaults)
+}
 
+// SetupWebhookWithManager - register this webhook with the controller manager
+func (r *OpenStackProvisionServer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	if webhookClient == nil {
 		webhookClient = mgr.GetClient()
 	}
