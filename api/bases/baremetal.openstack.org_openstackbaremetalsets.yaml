@@ -103,7 +103,7 @@ spec:
               bmhNamespace:
                 default: openshift-machine-api
                 description: 'BmhNamespace Namespace to look for BaremetalHosts(default:
-                  openstack)'
+                  openshift-machine-api)'
                 type: string
               bootstrapDns:
                 description: BootstrapDNS - initial DNS nameserver values to set on
