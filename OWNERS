@@ -2,7 +2,9 @@
 approvers:
   - ci-approvers
   - openstack-approvers
+  - openstack-baremetal-approvers
 
 reviewers:
   - ci-approvers
   - openstack-approvers
+  - openstack-baremetal-approvers
