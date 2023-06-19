@@ -9,3 +9,7 @@ aliases:
   - dprince
   - olliewalsh
   - stuggi
+  openstack-baremetal-approvers:
+  - rabi
+  - hjensas
+  - steveb
