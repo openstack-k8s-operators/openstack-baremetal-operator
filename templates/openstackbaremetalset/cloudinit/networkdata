@@ -8,7 +8,9 @@ networks:
   id: {{ .CtlplaneInterface }}
   ip_address: {{ .CtlplaneIp }}
   type: ipv4
+{{- if (index . "CtlplaneGateway") }}
   gateway: {{ .CtlplaneGateway }}
+{{- end }}
 {{- if not (eq (len .CtlplaneDns) 0) }}
 services:
 - type: dns-nameserver

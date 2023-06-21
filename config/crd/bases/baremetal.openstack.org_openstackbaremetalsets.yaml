@@ -124,11 +124,12 @@ spec:
                 description: CtlplaneInterface - Interface to use for ctlplane network
                 type: string
               ctlplaneNetmask:
+                default: 255.255.255.0
                 description: 'CtlplaneNetmask - Netmask to use for ctlplane network
                   (TODO: acquire this is another manner?)'
                 type: string
               deploymentSSHSecret:
-                description: DeploymentSSHSecret - Name of secret holding the stack-admin
+                description: DeploymentSSHSecret - Name of secret holding the cloud-admin
                   ssh keys
                 type: string
               dnsSearchDomains:
@@ -289,11 +290,8 @@ spec:
                 x-kubernetes-map-type: atomic
             required:
             - cloudUserName
-            - ctlplaneGateway
             - ctlplaneInterface
-            - ctlplaneNetmask
             - deploymentSSHSecret
-            - domainName
             type: object
           status:
             description: OpenStackBaremetalSetStatus defines the observed state of
