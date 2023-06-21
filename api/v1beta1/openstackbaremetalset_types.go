@@ -50,6 +50,7 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
 	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts,omitempty"`
+	// +kubebuilder:validation:Optional
 	// OSImage - OS qcow2 image Name
 	OSImage string `json:"osImage,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -70,17 +71,22 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode,omitempty"`
 	// ProvisionServerName - Optional. If supplied will be used as the base Image for the baremetalset instead of baseImageURL.
+	// +kubebuilder:validation:Optional
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
 	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.
+	// +kubebuilder:validation:Optional
 	ProvisioningInterface string `json:"provisioningInterface,omitempty"`
-	// DeploymentSSHSecret - Name of secret holding the stack-admin ssh keys
+	// DeploymentSSHSecret - Name of secret holding the cloud-admin ssh keys
 	DeploymentSSHSecret string `json:"deploymentSSHSecret"`
 	// CtlplaneInterface - Interface to use for ctlplane network
 	CtlplaneInterface string `json:"ctlplaneInterface"`
 	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
-	CtlplaneGateway string `json:"ctlplaneGateway"`
+	// +kubebuilder:validation:Optional
+	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="255.255.255.0"
 	// CtlplaneNetmask - Netmask to use for ctlplane network (TODO: acquire this is another manner?)
-	CtlplaneNetmask string `json:"ctlplaneNetmask"`
+	CtlplaneNetmask string `json:"ctlplaneNetmask,omitempty"`
 	// +kubebuilder:default=openshift-machine-api
 	// +kubebuilder:validation:Optional
 	// BmhNamespace Namespace to look for BaremetalHosts(default: openshift-machine-api)
@@ -100,7 +106,8 @@ type OpenStackBaremetalSetSpec struct {
 	// CloudUser to be configured for remote access
 	CloudUserName string `json:"cloudUserName"`
 	// DomainName is the domain name that will be set on the underlying Metal3 BaremetalHosts (TODO: acquire this is another manner?)
-	DomainName string `json:"domainName"`
+	// +kubebuilder:validation:Optional
+	DomainName string `json:"domainName,omitempty"`
 	// +kubebuilder:validation:Optional
 	// BootstrapDNS - initial DNS nameserver values to set on the BaremetalHosts when they are provisioned.
 	// Note that subsequent TripleO deployment will overwrite these values
