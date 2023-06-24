@@ -3,7 +3,7 @@ module github.com/openstack-k8s-operators/openstack-baremetal-operator
 go 1.19
 
 require (
-	github.com/blang/semver v3.5.1+incompatible
+	github.com/blang/semver/v4 v4.0.0
 	github.com/go-logr/logr v1.2.4
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/metal3-io/baremetal-operator/apis v0.2.0
