@@ -499,7 +499,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		return provisionServer, err
 	}
 	if op != controllerutil.OperationResultNone {
-		l.Info("OpenStackProvisionServer %s successfully reconciled - operation: %s", provisionServer.Name, string(op))
+		l.Info("OpenStackProvisionServer successfully reconciled", "OpenStackProvisionServer", provisionServer.Name, "operation", string(op))
 	}
 
 	return provisionServer, nil
