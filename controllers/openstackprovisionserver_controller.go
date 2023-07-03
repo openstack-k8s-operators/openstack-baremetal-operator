@@ -288,9 +288,9 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	configMapVars := make(map[string]env.Setter)
 
 	//
-	// create Configmap required for glance input
+	// create Configmap required for openstackprovisionserver input
 	// - %-scripts configmap holding scripts to e.g. bootstrap the service
-	// - %-config configmap holding minimal glance config required to get the service up, user can add additional files to be added to the service
+	// - %-config configmap holding minimal openstackprovisionserver config required to get the service up, user can add additional files to be added to the service
 	// - parameters which has passwords gets added from the OpenStack secret via the init container
 	//
 	err := r.generateServiceConfigMaps(ctx, helper, instance, &configMapVars)
@@ -448,9 +448,9 @@ func (r *OpenStackProvisionServerReconciler) generateServiceConfigMaps(
 	envVars *map[string]env.Setter,
 ) error {
 	//
-	// create Configmap/Secret required for glance input
+	// create Configmap/Secret required for openstackprovisionserver input
 	// - %-scripts configmap holding scripts to e.g. bootstrap the service
-	// - %-config configmap holding minimal glance config required to get the service up, user can add additional files to be added to the service
+	// - %-config configmap holding minimal openstackprovisionserver config required to get the service up, user can add additional files to be added to the service
 	// - parameters which has passwords gets added from the ospSecret via the init container
 	//
 
