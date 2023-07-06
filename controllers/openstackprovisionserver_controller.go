@@ -234,6 +234,9 @@ func (r *OpenStackProvisionServerReconciler) SetupWithManager(mgr ctrl.Manager) 
 		For(&baremetalv1.OpenStackProvisionServer{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.RoleBinding{}).
 		Complete(r)
 }
 
