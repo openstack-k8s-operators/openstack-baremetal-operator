@@ -78,7 +78,7 @@ func (r *OpenStackBaremetalSet) ValidateCreate() error {
 		return err
 	}
 
-	return r.validateCr()
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -149,30 +149,13 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) error {
 		}
 	}
 
-	return r.validateCr()
+	return nil
 
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenStackBaremetalSet) ValidateDelete() error {
 	openstackbaremetalsetlog.Info("validate delete", "name", r.Name)
-
-	return nil
-}
-
-func (r *OpenStackBaremetalSet) validateCr() error {
-	if err := r.checkBaseImageReqs(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *OpenStackBaremetalSet) checkBaseImageReqs() error {
-	// TODO(rabi): Uncomment after dataplane-operator api bump
-	// if r.Spec.OSImage == "" && r.Spec.ProvisionServerName == "" {
-	//	 return fmt.Errorf("either \"osImage\" or \"provisionServerName\" must be provided")
-	// }
 
 	return nil
 }
