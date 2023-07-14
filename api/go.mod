@@ -7,7 +7,7 @@ require (
 	github.com/metal3-io/baremetal-operator/apis v0.3.1
 	github.com/onsi/ginkgo/v2 v2.9.7
 	github.com/onsi/gomega v1.27.8
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.0.0-20230627132558-cd98c8b86310
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.0.0-20230714104628-12cc1e43cccd
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
 	sigs.k8s.io/controller-runtime v0.14.6
