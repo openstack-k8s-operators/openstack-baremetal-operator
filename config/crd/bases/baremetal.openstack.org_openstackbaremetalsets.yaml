@@ -121,7 +121,8 @@ spec:
                   (TODO: acquire this is another manner?)'
                 type: string
               ctlplaneInterface:
-                description: CtlplaneInterface - Interface to use for ctlplane network
+                description: CtlplaneInterface - Interface on the provisioned nodes
+                  to use for ctlplane network
                 type: string
               ctlplaneNetmask:
                 default: 255.255.255.0
@@ -270,7 +271,8 @@ spec:
                 type: string
               provisioningInterface:
                 description: ProvisioningInterface - Optional. If not provided along
-                  with ProvisionServerName, it would be discovered from CBO.
+                  with ProvisionServerName, it would be discovered from CBO.  This
+                  is the provisioning interface on the OCP masters/workers.
                 type: string
               userData:
                 description: UserData holds the reference to the Secret containing
