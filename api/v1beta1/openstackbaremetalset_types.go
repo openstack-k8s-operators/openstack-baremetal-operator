@@ -73,12 +73,12 @@ type OpenStackBaremetalSetSpec struct {
 	// ProvisionServerName - Optional. If supplied will be used as the base Image for the baremetalset instead of baseImageURL.
 	// +kubebuilder:validation:Optional
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
-	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.
+	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.  This is the provisioning interface on the OCP masters/workers.
 	// +kubebuilder:validation:Optional
 	ProvisioningInterface string `json:"provisioningInterface,omitempty"`
 	// DeploymentSSHSecret - Name of secret holding the cloud-admin ssh keys
 	DeploymentSSHSecret string `json:"deploymentSSHSecret"`
-	// CtlplaneInterface - Interface to use for ctlplane network
+	// CtlplaneInterface - Interface on the provisioned nodes to use for ctlplane network
 	CtlplaneInterface string `json:"ctlplaneInterface"`
 	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
 	// +kubebuilder:validation:Optional
