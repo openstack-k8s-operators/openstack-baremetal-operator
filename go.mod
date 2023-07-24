@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.27.8
 	github.com/openstack-k8s-operators/lib-common/modules/common v0.1.0
 	github.com/openstack-k8s-operators/openstack-baremetal-operator/api v0.0.0-00010101000000-000000000000
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	k8s.io/api v0.26.7
 	k8s.io/apimachinery v0.26.7
 	k8s.io/client-go v0.26.7
@@ -39,7 +39,7 @@ require (
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
