@@ -97,13 +97,28 @@ func VerifyBaremetalSetScaleUp(
 	if newBmhsNeededCount > 0 {
 		// We have new BaremetalHosts requested, so search for BaremetalHosts that don't have consumerRef or online set
 
+		l.Info("Attempting to find BaremetalHosts for scale-up of OsBaremetalSet", "OsBaremetalSet", instance.Name, "quantity", newBmhsNeededCount)
+
 		for _, baremetalHost := range allBmhs.Items {
-			if baremetalHost.Spec.Online || baremetalHost.Spec.ConsumerRef != nil {
-				continue
+			mismatch := false
+
+			if baremetalHost.Spec.Online {
+				l.Info("BaremetalHost cannot be used because it is already online", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
+			}
+
+			if baremetalHost.Spec.ConsumerRef != nil {
+				l.Info("BaremetalHost cannot be used because it already has a consumerRef", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
 			}
 
 			if !verifyBaremetalSetHardwareMatch(l, instance, &baremetalHost) {
-				l.Info("BaremetalHost does not match hardware requirements", "BMH", baremetalHost.ObjectMeta.Name)
+				l.Info("BaremetalHost cannot be used because it does not match hardware requirements", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
+			}
+
+			// If for any reason we can't use this BMH, do not add to the list of available BMHs
+			if mismatch {
 				continue
 			}
 
@@ -121,6 +136,8 @@ func VerifyBaremetalSetScaleUp(
 		}
 
 	}
+
+	l.Info("Found sufficient quantity of BaremetalHosts for scale-up of OsBaremetalSet", "OsBaremetalSet", instance.Name, "BMHs", availableBaremetalHosts)
 
 	return availableBaremetalHosts, nil
 }
