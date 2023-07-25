@@ -108,7 +108,7 @@ spec:
               bootstrapDns:
                 description: BootstrapDNS - initial DNS nameserver values to set on
                   the BaremetalHosts when they are provisioned. Note that subsequent
-                  TripleO deployment will overwrite these values
+                  deployment will overwrite these values
                 items:
                   type: string
                 type: array
@@ -136,7 +136,7 @@ spec:
               dnsSearchDomains:
                 description: DNSSearchDomains - initial DNS nameserver values to set
                   on the BaremetalHosts when they are provisioned. Note that subsequent
-                  TripleO deployment will overwrite these values
+                  deployment will overwrite these values
                 items:
                   type: string
                 type: array

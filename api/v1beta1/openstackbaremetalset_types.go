@@ -110,11 +110,11 @@ type OpenStackBaremetalSetSpec struct {
 	DomainName string `json:"domainName,omitempty"`
 	// +kubebuilder:validation:Optional
 	// BootstrapDNS - initial DNS nameserver values to set on the BaremetalHosts when they are provisioned.
-	// Note that subsequent TripleO deployment will overwrite these values
+	// Note that subsequent deployment will overwrite these values
 	BootstrapDNS []string `json:"bootstrapDns,omitempty"`
 	// +kubebuilder:validation:Optional
 	// DNSSearchDomains - initial DNS nameserver values to set on the BaremetalHosts when they are provisioned.
-	// Note that subsequent TripleO deployment will overwrite these values
+	// Note that subsequent deployment will overwrite these values
 	DNSSearchDomains []string `json:"dnsSearchDomains,omitempty"`
 }
 
