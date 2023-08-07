@@ -27,7 +27,7 @@ func GetExistingProvServerPorts(
 	}
 
 	for _, provServer := range provServerList.Items {
-		found[provServer.Name] = provServer.Spec.Port
+		found[provServer.Name] = provServer.Status.Port
 	}
 
 	return found, nil
@@ -40,7 +40,7 @@ func AssignProvisionServerPort(
 	instance *OpenStackProvisionServer,
 	portStart int32,
 ) error {
-	if instance.Spec.Port != 0 {
+	if instance.Status.Port != 0 {
 		// Do nothing, already assigned
 		return nil
 	}
@@ -52,10 +52,10 @@ func AssignProvisionServerPort(
 
 	// It's possible that this prov server already exists and we are just dealing with
 	// a minimized version of it (only its ObjectMeta is set, etc)
-	instance.Spec.Port = existingPorts[instance.GetName()]
+	instance.Status.Port = existingPorts[instance.GetName()]
 
 	// If we get this far, no port has been previously assigned, so we pick one
-	if instance.Spec.Port == 0 {
+	if instance.Status.Port == 0 {
 		cur := portStart
 
 		for {
@@ -75,7 +75,7 @@ func AssignProvisionServerPort(
 			cur++
 		}
 
-		instance.Spec.Port = cur
+		instance.Status.Port = cur
 	}
 
 	return nil

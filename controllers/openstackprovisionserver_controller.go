@@ -188,6 +188,9 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 	if instance.Status.Hash == nil {
 		instance.Status.Hash = map[string]string{}
 	}
+	if instance.Status.Port != instance.Spec.Port {
+		instance.Status.Port = instance.Spec.Port
+	}
 
 	// Handle service delete
 	if !instance.DeletionTimestamp.IsZero() {
@@ -460,7 +463,7 @@ func (r *OpenStackProvisionServerReconciler) generateServiceConfigMaps(
 	cmLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{})
 
 	templateParameters := make(map[string]interface{})
-	templateParameters["Port"] = strconv.FormatInt(int64(instance.Spec.Port), 10)
+	templateParameters["Port"] = strconv.FormatInt(int64(instance.Status.Port), 10)
 
 	cms := []util.Template{
 		// Apache server config
@@ -574,5 +577,5 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 
 func (r *OpenStackProvisionServerReconciler) getLocalImageURL(instance *baremetalv1.OpenStackProvisionServer) string {
 	baseFilename := instance.Spec.OSImage
-	return fmt.Sprintf("http://%s:%d/%s", instance.Status.ProvisionIP, instance.Spec.Port, baseFilename)
+	return fmt.Sprintf("http://%s:%d/%s", instance.Status.ProvisionIP, instance.Status.Port, baseFilename)
 }

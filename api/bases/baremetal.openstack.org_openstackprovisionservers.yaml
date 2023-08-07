@@ -194,6 +194,10 @@ spec:
               localImageUrl:
                 description: URL of provisioning image on underlying Apache web server
                 type: string
+              port:
+                description: Port - The port on which the Apache server should listen
+                format: int32
+                type: integer
               provisionIp:
                 description: IP of the provisioning interface on the node running
                   the ProvisionServer pod

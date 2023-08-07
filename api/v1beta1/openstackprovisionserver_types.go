@@ -70,6 +70,8 @@ type OpenStackProvisionServerStatus struct {
 	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
 	// Map of hashes to track e.g. job status
 	Hash map[string]string `json:"hash,omitempty"`
+	// Port - The port on which the Apache server should listen
+	Port int32 `json:"port,omitempty"`
 	// IP of the provisioning interface on the node running the ProvisionServer pod
 	ProvisionIP string `json:"provisionIp,omitempty"`
 	// URL of provisioning image on underlying Apache web server
