@@ -3,6 +3,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	metal3v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -73,7 +74,7 @@ func VerifyBaremetalStatusBmhRefs(
 		}
 
 		if !found {
-			err := fmt.Errorf("Existing BaremetalHost \"%s\" not found for OsBaremetalSet %s.  "+
+			err := fmt.Errorf("Existing BaremetalHost \"%s\" not found for OpenStackBaremetalSet %s.  "+
 				"Please check BaremetalHost resources and re-add \"%s\" to continue",
 				bmhStatus.BmhRef, instance.Name, bmhStatus.BmhRef)
 
@@ -97,7 +98,14 @@ func VerifyBaremetalSetScaleUp(
 	if newBmhsNeededCount > 0 {
 		// We have new BaremetalHosts requested, so search for BaremetalHosts that don't have consumerRef or online set
 
-		l.Info("Attempting to find BaremetalHosts for scale-up of OsBaremetalSet", "OsBaremetalSet", instance.Name, "quantity", newBmhsNeededCount)
+		labelStr := ""
+
+		if len(instance.Spec.BmhLabelSelector) > 0 {
+			labelStr = fmt.Sprintf("%v", instance.Spec.BmhLabelSelector)
+			labelStr = strings.Replace(labelStr, "map[", "[", 1)
+		}
+
+		l.Info("Attempting to find BaremetalHosts for scale-up of OpenStackBaremetalSet", "OpenStackBaremetalSet", instance.Name, "namespace", instance.Spec.BmhNamespace, "quantity", newBmhsNeededCount, "labels", labelStr)
 
 		for _, baremetalHost := range allBmhs.Items {
 			mismatch := false
@@ -129,15 +137,22 @@ func VerifyBaremetalSetScaleUp(
 
 		// If we can't satisfy the new requested BaremetalHost count, explicitly state so
 		if newBmhsNeededCount > len(availableBaremetalHosts) {
-			return nil, fmt.Errorf("Unable to find %d requested BaremetalHosts for scale-up (%d in use, %d available)",
+			errLabelStr := ""
+
+			if labelStr != "" {
+				errLabelStr = fmt.Sprintf(" with labels %s", labelStr)
+			}
+
+			return nil, fmt.Errorf("Unable to find %d requested BaremetalHosts%s in namespace %s for scale-up (%d in use, %d available)",
 				len(instance.Spec.BaremetalHosts),
+				errLabelStr,
+				instance.Spec.BmhNamespace,
 				len(existingBmhs.Items),
 				len(availableBaremetalHosts))
 		}
 
+		l.Info("Found sufficient quantity of BaremetalHosts for scale-up of OpenStackBaremetalSet", "OpenStackBaremetalSet", instance.Name, "namespace", instance.Spec.BmhNamespace, "BMHs", availableBaremetalHosts, "labels", labelStr)
 	}
-
-	l.Info("Found sufficient quantity of BaremetalHosts for scale-up of OsBaremetalSet", "OsBaremetalSet", instance.Name, "BMHs", availableBaremetalHosts)
 
 	return availableBaremetalHosts, nil
 }
