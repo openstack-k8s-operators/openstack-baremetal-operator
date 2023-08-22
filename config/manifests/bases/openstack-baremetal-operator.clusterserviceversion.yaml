@@ -46,8 +46,9 @@ spec:
   - openstack
   links:
   - name: Openstack Baremetal Operator
-    url: https://openstack-baremetal-operator.domain
-  maturity: alpha
+    url: https://github.com/openstack-k8s-operators/openstack-baremetal-operator
+  maturity: beta
   provider:
     name: Red Hat
+    url: https://redhat.com/
   version: 0.0.0
