@@ -138,9 +138,9 @@ func (instance OpenStackProvisionServer) RbacResourceName() string {
 func SetupDefaults() {
 	// Acquire environmental defaults and initialize OpenStackProvisionServer defaults with them
 	openstackProvisionServerDefaults := OpenStackProvisionServerDefaults{
-		OSContainerImageURL: util.GetEnvVar("OS_CONTAINER_IMAGE_URL_DEFAULT", OSContainerImage),
-		AgentImageURL:       util.GetEnvVar("AGENT_IMAGE_URL_DEFAULT", AgentImage),
-		ApacheImageURL:      util.GetEnvVar("APACHE_IMAGE_URL_DEFAULT", ApacheImage),
+		OSContainerImageURL: util.GetEnvVar("RELATED_IMAGE_OS_CONTAINER_IMAGE_URL_DEFAULT", OSContainerImage),
+		AgentImageURL:       util.GetEnvVar("RELATED_IMAGE_AGENT_IMAGE_URL_DEFAULT", AgentImage),
+		ApacheImageURL:      util.GetEnvVar("RELATED_IMAGE_APACHE_IMAGE_URL_DEFAULT", ApacheImage),
 		OSImage:             util.GetEnvVar("OS_IMAGE_DEFAULT", OSImage),
 	}
 
