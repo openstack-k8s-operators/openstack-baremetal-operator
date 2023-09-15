@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/go-logr/logr v1.2.4
-	github.com/golang/glog v1.1.1
+	github.com/golang/glog v1.1.2
 	github.com/metal3-io/baremetal-operator/apis v0.3.1
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
