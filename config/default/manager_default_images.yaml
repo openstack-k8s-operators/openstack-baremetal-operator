@@ -11,11 +11,11 @@ spec:
       containers:
       - name: manager
         env:
-        - name: OS_CONTAINER_IMAGE_URL_DEFAULT
+        - name: RELATED_IMAGE_OS_CONTAINER_IMAGE_URL_DEFAULT
           value: quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified
-        - name: AGENT_IMAGE_URL_DEFAULT
+        - name: RELATED_IMAGE_AGENT_IMAGE_URL_DEFAULT
           value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest
-        - name: APACHE_IMAGE_URL_DEFAULT
+        - name: RELATED_IMAGE_APACHE_IMAGE_URL_DEFAULT
           value: registry.redhat.io/rhel8/httpd-24:latest
         - name: OS_IMAGE_DEFAULT
           value: edpm-hardened-uefi.qcow2
