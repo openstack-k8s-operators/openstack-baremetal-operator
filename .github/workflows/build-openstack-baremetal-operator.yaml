@@ -103,7 +103,7 @@ jobs:
     - name: Log in to Red Hat Registry
       uses: redhat-actions/podman-login@v1
       with:
-        registry: ${{ env.imageregistry }}
+        registry: registry.redhat.io
         username: ${{ secrets.REDHATIO_USERNAME }}
         password: ${{ secrets.REDHATIO_PASSWORD }}
 
