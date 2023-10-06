@@ -185,24 +185,6 @@ jobs:
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
 
-  build-openstack-baremetal-operator-downloader:
-    name: Build openstack-baremetal-operator downloader image using buildah
-    runs-on: ubuntu-latest
-    needs: [check-secrets]
-    if: needs.check-secrets.outputs.have-secrets == 'true'
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Get branch name
-      id: branch-name
-      uses: tj-actions/branch-names@v5
-
-    - name: Set latest tag for non main branch
-      if: "${{ steps.branch-name.outputs.current_branch != 'main' }}"
-      run: |
-        echo "latesttag=${{ steps.branch-name.outputs.current_branch }}-latest" >> $GITHUB_ENV
-
   build-openstack-baremetal-operator-agent:
     name: Build openstack-baremetal-operator agent image using buildah
     runs-on: ubuntu-latest
