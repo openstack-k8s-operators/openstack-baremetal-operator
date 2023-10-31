@@ -3,8 +3,6 @@ kind: OpenStackProvisionServer
 metadata:
   name: openstackprovisionserver
 spec:
-  agentImageUrl: quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest
-  apacheImageUrl: registry.redhat.io/rhel8/httpd-24:latest
   interface: enp1s0
   port: 8080
   osImage: edpm-hardened-uefi.qcow2
