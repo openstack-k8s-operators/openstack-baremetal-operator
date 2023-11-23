@@ -39,17 +39,23 @@ func Deployment(
 	provInterfaceName string,
 ) *appsv1.Deployment {
 
-	livenessProbe := &corev1.Probe{
+	startupProbe := &corev1.Probe{
 		// TODO might need tuning
 		TimeoutSeconds:      5,
 		PeriodSeconds:       3,
 		InitialDelaySeconds: 30,
 	}
+	livenessProbe := &corev1.Probe{
+		// TODO might need tuning
+		TimeoutSeconds:      5,
+		PeriodSeconds:       3,
+		InitialDelaySeconds: 3,
+	}
 	readinessProbe := &corev1.Probe{
 		// TODO might need tuning
 		TimeoutSeconds:      5,
 		PeriodSeconds:       5,
-		InitialDelaySeconds: 30,
+		InitialDelaySeconds: 5,
 	}
 
 	args := []string{"-c"}
@@ -60,6 +66,10 @@ func Deployment(
 
 	port := instance.Spec.Port
 
+	startupProbe.HTTPGet = &corev1.HTTPGetAction{
+		Path: "/",
+		Port: intstr.IntOrString{Type: intstr.Int, IntVal: port},
+	}
 	livenessProbe.HTTPGet = &corev1.HTTPGetAction{
 		Path: "/",
 		Port: intstr.IntOrString{Type: intstr.Int, IntVal: port},
@@ -106,6 +116,7 @@ func Deployment(
 							Image:          instance.Spec.ApacheImageURL,
 							VolumeMounts:   getVolumeMounts(),
 							Resources:      instance.Spec.Resources,
+							StartupProbe:   startupProbe,
 							ReadinessProbe: readinessProbe,
 							LivenessProbe:  livenessProbe,
 						},
