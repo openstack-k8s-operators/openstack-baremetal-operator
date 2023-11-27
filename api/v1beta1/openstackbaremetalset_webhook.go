@@ -81,6 +81,16 @@ func (r *OpenStackBaremetalSet) ValidateCreate() error {
 	return nil
 }
 
+// Validate implements spec validation
+func (spec OpenStackBaremetalSetSpec) Validate(oldSpec OpenStackBaremetalSetSpec) error {
+	if len(oldSpec.BaremetalHosts) > 0 &&
+		(!equality.Semantic.DeepEqual(spec.BmhLabelSelector, oldSpec.BmhLabelSelector) ||
+			!equality.Semantic.DeepEqual(spec.HardwareReqs, oldSpec.HardwareReqs)) {
+		return fmt.Errorf("cannot change \"bmhLabelSelector\" nor \"hardwareReqs\" when previous count of \"baremetalHosts\" > 0")
+	}
+	return nil
+}
+
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) error {
 	openstackbaremetalsetlog.Info("validate update", "name", r.Name)
@@ -92,18 +102,16 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) error {
 		return fmt.Errorf("runtime object is not an OpenStackBaremetalSet")
 	}
 
+	if err := r.Spec.Validate(oldInstance.Spec); err != nil {
+		return err
+	}
+
 	//
 	// Force BmhLabelSelector and HardwareReqs to remain the same unless the *old* count of spec.BaremetalHosts was 0.
 	// We do this to maintain consistency across the gathered list of BMHs during reconcile.
 	//
 	oldCount := len(oldInstance.Spec.BaremetalHosts)
 	newCount := len(r.Spec.BaremetalHosts)
-
-	if oldCount > 0 &&
-		(!equality.Semantic.DeepEqual(r.Spec.BmhLabelSelector, oldInstance.Spec.BmhLabelSelector) ||
-			!equality.Semantic.DeepEqual(r.Spec.HardwareReqs, oldInstance.Spec.HardwareReqs)) {
-		return fmt.Errorf("cannot change \"bmhLabelSelector\" nor \"hardwareReqs\" when previous count of \"baremetalHosts\" > 0")
-	}
 
 	if newCount != oldCount {
 		//

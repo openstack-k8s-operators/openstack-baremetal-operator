@@ -74,7 +74,7 @@ func VerifyBaremetalStatusBmhRefs(
 		}
 
 		if !found {
-			err := fmt.Errorf("Existing BaremetalHost \"%s\" not found for OpenStackBaremetalSet %s.  "+
+			err := fmt.Errorf("existing BaremetalHost \"%s\" not found for OpenStackBaremetalSet %s.  "+
 				"Please check BaremetalHost resources and re-add \"%s\" to continue",
 				bmhStatus.BmhRef, instance.Name, bmhStatus.BmhRef)
 
@@ -143,7 +143,7 @@ func VerifyBaremetalSetScaleUp(
 				errLabelStr = fmt.Sprintf(" with labels %s", labelStr)
 			}
 
-			return nil, fmt.Errorf("Unable to find %d requested BaremetalHosts%s in namespace %s for scale-up (%d in use, %d available)",
+			return nil, fmt.Errorf("unable to find %d requested BaremetalHosts%s in namespace %s for scale-up (%d in use, %d available)",
 				len(instance.Spec.BaremetalHosts),
 				errLabelStr,
 				instance.Spec.BmhNamespace,
@@ -166,7 +166,7 @@ func VerifyBaremetalSetScaleDown(
 	bmhsToRemoveCount := len(existingBmhs.Items) - len(instance.Spec.BaremetalHosts)
 
 	if bmhsToRemoveCount > removalAnnotatedBmhCount {
-		return fmt.Errorf("Unable to find sufficient amount of BaremetalHosts annotated for scale-down (%d found, %d requested)",
+		return fmt.Errorf("unable to find sufficient amount of BaremetalHosts annotated for scale-down (%d found, %d requested)",
 			removalAnnotatedBmhCount,
 			bmhsToRemoveCount)
 	}
