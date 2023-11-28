@@ -81,6 +81,46 @@ func Deployment(
 
 	replicas := int32(1)
 
+	containers := []corev1.Container{
+		{
+			Name: "osp-httpd",
+			Command: []string{
+				"/bin/bash",
+			},
+			Args:           args,
+			Image:          instance.Spec.ApacheImageURL,
+			VolumeMounts:   getVolumeMounts(),
+			Resources:      instance.Spec.Resources,
+			StartupProbe:   startupProbe,
+			ReadinessProbe: readinessProbe,
+			LivenessProbe:  livenessProbe,
+		},
+	}
+
+	if provInterfaceName != "" {
+		discoveryContainer := corev1.Container{
+			Name:            "osp-provision-ip-discovery-agent",
+			Command:         []string{"/openstack-baremetal-agent", "provision-ip-discovery"},
+			Image:           instance.Spec.AgentImageURL,
+			ImagePullPolicy: corev1.PullAlways,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "PROV_INTF",
+					Value: provInterfaceName,
+				},
+				{
+					Name:  "PROV_SERVER_NAME",
+					Value: instance.GetName(),
+				},
+				{
+					Name:  "PROV_SERVER_NAMESPACE",
+					Value: instance.GetNamespace(),
+				},
+			},
+		}
+		containers = append(containers, discoveryContainer)
+	}
+
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-openstackprovisionserver", instance.Name),
@@ -106,41 +146,7 @@ func Deployment(
 				Spec: corev1.PodSpec{
 					ServiceAccountName: instance.RbacResourceName(),
 					HostNetwork:        true,
-					Containers: []corev1.Container{
-						{
-							Name: "osp-httpd",
-							Command: []string{
-								"/bin/bash",
-							},
-							Args:           args,
-							Image:          instance.Spec.ApacheImageURL,
-							VolumeMounts:   getVolumeMounts(),
-							Resources:      instance.Spec.Resources,
-							StartupProbe:   startupProbe,
-							ReadinessProbe: readinessProbe,
-							LivenessProbe:  livenessProbe,
-						},
-						{
-							Name:            "osp-provision-ip-discovery-agent",
-							Command:         []string{"/openstack-baremetal-agent", "provision-ip-discovery"},
-							Image:           instance.Spec.AgentImageURL,
-							ImagePullPolicy: corev1.PullAlways,
-							Env: []corev1.EnvVar{
-								{
-									Name:  "PROV_INTF",
-									Value: provInterfaceName,
-								},
-								{
-									Name:  "PROV_SERVER_NAME",
-									Value: instance.GetName(),
-								},
-								{
-									Name:  "PROV_SERVER_NAMESPACE",
-									Value: instance.GetNamespace(),
-								},
-							},
-						},
-					},
+					Containers:         containers,
 				},
 			},
 		},

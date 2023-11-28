@@ -27,6 +27,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8s_labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -339,7 +340,12 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 			err.Error()))
 		return ctrl.Result{}, err
 	}
-	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, baremetalv1.OpenStackProvisionServerProvIntfReadyMessage)
+
+	if provInterfaceName != "" {
+		instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, baremetalv1.OpenStackProvisionServerProvIntfReadyMessage)
+	} else {
+		instance.Status.Conditions.Remove(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition)
+	}
 
 	serviceLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{
 		common.AppSelector: instance.Name + "-deployment",
@@ -416,21 +422,13 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	}
 	// create Deployment - end
 
-	//
-	// Check whether instance.Status.ProvisionIp has been set by the side-car agent container
-	// that is created with the deployment above and generate the LocalImageURL if so
-	//
-	// Provision IP Discovery Agent sets status' ProvisionIP
-	if instance.Status.ProvisionIP == "" {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition,
-			condition.RequestedReason,
-			condition.SeverityInfo,
-			baremetalv1.OpenStackProvisionServerLocalImageURLReadyRunningMessage))
-		return ctrlResult, nil
+	instance.Status.LocalImageURL, err = r.getLocalImageURL(ctx, helper, instance)
+	if err != nil {
+		instance.Status.Conditions.MarkFalse(
+			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition, condition.ErrorReason, condition.SeverityError,
+			baremetalv1.OpenStackBaremetalSetBmhProvisioningReadyErrorMessage, err.Error())
+		return ctrl.Result{}, err
 	}
-
-	instance.Status.LocalImageURL = r.getLocalImageURL(instance)
 
 	if oldLocalImageURL != instance.Status.LocalImageURL {
 		r.Log.Info(fmt.Sprintf("OpenStackProvisionServer LocalImageURL changed: %s", instance.Status.LocalImageURL))
@@ -525,10 +523,6 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterfaceName(
 		if err != nil {
 			return "", err
 		}
-
-		if provInterfaceName == "" {
-			return "", fmt.Errorf("metal3 provisioning interface configuration not found")
-		}
 	}
 
 	return provInterfaceName, nil
@@ -561,8 +555,12 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 	provisioningSpecIntf := provisioning.Object["spec"]
 
 	if provisioningSpec, ok := provisioningSpecIntf.(map[string]interface{}); ok {
-		interfaceIntf := provisioningSpec["provisioningInterface"]
+		bootMode := provisioningSpec["provisioningNetwork"]
+		if bootMode == nil || bootMode != baremetalv1.ProvisioningNetworkManaged {
+			return "", nil
+		}
 
+		interfaceIntf := provisioningSpec["provisioningInterface"]
 		if provInterfaceName, ok := interfaceIntf.(string); ok {
 			r.Log.Info(fmt.Sprintf("Found provisioning interface %s in Metal3 config", provInterfaceName))
 			return provInterfaceName, nil
@@ -572,7 +570,22 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 	return "", nil
 }
 
-func (r *OpenStackProvisionServerReconciler) getLocalImageURL(instance *baremetalv1.OpenStackProvisionServer) string {
+func (r *OpenStackProvisionServerReconciler) getLocalImageURL(
+	ctx context.Context, helper *helper.Helper, instance *baremetalv1.OpenStackProvisionServer) (string, error) {
 	baseFilename := instance.Spec.OSImage
-	return fmt.Sprintf("http://%s:%d/%s", instance.Status.ProvisionIP, instance.Spec.Port, baseFilename)
+	host := instance.Status.ProvisionIP
+	if host == "" {
+		serviceLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{
+			common.AppSelector: instance.Name + "-deployment"})
+		podSelectorString := k8s_labels.Set(serviceLabels).String()
+		// Get the pod for provisionserver
+		provisionPods, err := helper.GetKClient().CoreV1().Pods(
+			instance.Namespace).List(ctx, metav1.ListOptions{LabelSelector: podSelectorString})
+		if err != nil {
+			return "", err
+		}
+		//We're using hostNetwork for the provisionserver pod
+		host = provisionPods.Items[0].Status.HostIP
+	}
+	return fmt.Sprintf("http://%s:%d/%s", host, instance.Spec.Port, baseFilename), nil
 }

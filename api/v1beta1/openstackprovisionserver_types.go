@@ -23,6 +23,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ProvisioningNetwork is the boot mode of the system
+// +kubebuilder:validation:Enum=Managed;Unmanaged;Disabled
+type ProvisioningNetwork string
+
+// ProvisioningNetwork modes
+const (
+	ProvisioningNetworkManaged   ProvisioningNetwork = "Managed"
+	ProvisioningNetworkUnmanaged ProvisioningNetwork = "Unmanaged"
+	ProvisioningNetworkDisabled  ProvisioningNetwork = "Disabled"
+)
+
 const (
 	// OSContainerImage - default fall-back image for OpenStackProvisionServer int container
 	OSContainerImage = "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified"
