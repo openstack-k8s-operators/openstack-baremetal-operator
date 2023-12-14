@@ -41,15 +41,14 @@ func Deployment(
 
 	startupProbe := &corev1.Probe{
 		// TODO might need tuning
-		TimeoutSeconds:      5,
-		PeriodSeconds:       3,
-		InitialDelaySeconds: 30,
+		TimeoutSeconds:   5,
+		PeriodSeconds:    10,
+		FailureThreshold: 12,
 	}
 	livenessProbe := &corev1.Probe{
 		// TODO might need tuning
-		TimeoutSeconds:      5,
-		PeriodSeconds:       3,
-		InitialDelaySeconds: 3,
+		TimeoutSeconds: 5,
+		PeriodSeconds:  3,
 	}
 	readinessProbe := &corev1.Probe{
 		// TODO might need tuning
