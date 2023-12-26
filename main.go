@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	metal3v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 
 	baremetalv1beta1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/openstack-baremetal-operator/controllers"
@@ -49,7 +49,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(metal3v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(metal3v1.AddToScheme(scheme))
 	utilruntime.Must(baremetalv1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }

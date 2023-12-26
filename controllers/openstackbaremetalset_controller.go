@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
-	metal3v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
@@ -182,7 +182,7 @@ func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) err
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&baremetalv1.OpenStackBaremetalSet{}).
 		Owns(&baremetalv1.OpenStackBaremetalSet{}).
-		Watches(&source.Kind{Type: &metal3v1alpha1.BareMetalHost{}}, openshiftMachineAPIBareMetalHostsFn).
+		Watches(&source.Kind{Type: &metal3v1.BareMetalHost{}}, openshiftMachineAPIBareMetalHostsFn).
 		Complete(r)
 }
 
@@ -440,7 +440,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 
 	// Now calculate overall provisioning status for all requested BaremetalHosts
 	for _, bmhStatus := range instance.Status.BaremetalHosts {
-		if bmhStatus.ProvisioningState != baremetalv1.ProvisioningState(metal3v1alpha1.StateProvisioned) {
+		if bmhStatus.ProvisioningState != baremetalv1.ProvisioningState(metal3v1.StateProvisioned) {
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				baremetalv1.OpenStackBaremetalSetBmhProvisioningReadyCondition,
 				condition.RequestedReason,
