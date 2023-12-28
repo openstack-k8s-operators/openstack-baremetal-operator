@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	metal3v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,9 +22,9 @@ func GetBaremetalHosts(
 	c goClient.Client,
 	namespace string,
 	labelSelector map[string]string,
-) (*metal3v1alpha1.BareMetalHostList, error) {
+) (*metal3v1.BareMetalHostList, error) {
 
-	bmhHostsList := &metal3v1alpha1.BareMetalHostList{}
+	bmhHostsList := &metal3v1.BareMetalHostList{}
 
 	listOpts := []client.ListOption{
 		client.InNamespace(namespace),
@@ -89,8 +89,8 @@ func VerifyBaremetalStatusBmhRefs(
 func VerifyBaremetalSetScaleUp(
 	l logr.Logger,
 	instance *OpenStackBaremetalSet,
-	allBmhs *metal3v1alpha1.BareMetalHostList,
-	existingBmhs *metal3v1alpha1.BareMetalHostList) ([]string, error) {
+	allBmhs *metal3v1.BareMetalHostList,
+	existingBmhs *metal3v1.BareMetalHostList) ([]string, error) {
 	// How many new BaremetalHost allocations do we need (if any)?
 	newBmhsNeededCount := len(instance.Spec.BaremetalHosts) - len(existingBmhs.Items)
 	availableBaremetalHosts := []string{}
@@ -122,6 +122,11 @@ func VerifyBaremetalSetScaleUp(
 
 			if !verifyBaremetalSetHardwareMatch(l, instance, &baremetalHost) {
 				l.Info("BaremetalHost cannot be used because it does not match hardware requirements", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
+			}
+
+			if baremetalHost.Status.Provisioning.State != metal3v1.StateAvailable {
+				l.Info("BaremetalHost ProvisioningState is not 'Available'")
 				mismatch = true
 			}
 
@@ -160,7 +165,7 @@ func VerifyBaremetalSetScaleUp(
 // VerifyBaremetalSetScaleDown - TODO: not needed at the current moment
 func VerifyBaremetalSetScaleDown(
 	instance *OpenStackBaremetalSet,
-	existingBmhs *metal3v1alpha1.BareMetalHostList,
+	existingBmhs *metal3v1.BareMetalHostList,
 	removalAnnotatedBmhCount int) error {
 	// How many new BaremetalHost de-allocations do we need (if any)?
 	bmhsToRemoveCount := len(existingBmhs.Items) - len(instance.Spec.BaremetalHosts)
@@ -177,7 +182,7 @@ func VerifyBaremetalSetScaleDown(
 func verifyBaremetalSetHardwareMatch(
 	l logr.Logger,
 	instance *OpenStackBaremetalSet,
-	bmh *metal3v1alpha1.BareMetalHost,
+	bmh *metal3v1.BareMetalHost,
 ) bool {
 	// If no requested hardware requirements, we're all set
 	if instance.Spec.HardwareReqs == (HardwareReqs{}) {
@@ -258,7 +263,7 @@ func verifyBaremetalSetHardwareMatch(
 
 	diskReqs := instance.Spec.HardwareReqs.DiskReqs
 
-	var foundDisk *metal3v1alpha1.Storage
+	var foundDisk *metal3v1.Storage
 
 	if diskReqs.GbReq.Gb != 0 {
 		diskGbBms := float64(diskReqs.GbReq.Gb)

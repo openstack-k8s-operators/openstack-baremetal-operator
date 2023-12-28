@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	metal3v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
@@ -149,7 +149,7 @@ func BaremetalHostProvision(
 	//
 	// Provision the BaremetalHost
 	//
-	foundBaremetalHost := &metal3v1alpha1.BareMetalHost{}
+	foundBaremetalHost := &metal3v1.BareMetalHost{}
 	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
 	if err != nil {
 		return err
@@ -168,16 +168,16 @@ func BaremetalHostProvision(
 		)
 
 		// Ensure AutomatedCleaningMode is set as per spec
-		foundBaremetalHost.Spec.AutomatedCleaningMode = metal3v1alpha1.AutomatedCleaningMode(instance.Spec.AutomatedCleaningMode)
+		foundBaremetalHost.Spec.AutomatedCleaningMode = metal3v1.AutomatedCleaningMode(instance.Spec.AutomatedCleaningMode)
 
 		//
 		// Ensure the image url is up to date unless already provisioned
 		//
-		if string(foundBaremetalHost.Status.Provisioning.State) != "provisioned" {
-			foundBaremetalHost.Spec.Image = &metal3v1alpha1.Image{
+		if foundBaremetalHost.Status.Provisioning.State != metal3v1.StateProvisioned {
+			foundBaremetalHost.Spec.Image = &metal3v1.Image{
 				URL:          localImageURL,
 				Checksum:     fmt.Sprintf("%s.sha256", localImageURL),
-				ChecksumType: metal3v1alpha1.SHA256,
+				ChecksumType: metal3v1.SHA256,
 			}
 		}
 
@@ -187,10 +187,10 @@ func BaremetalHostProvision(
 		if foundBaremetalHost.Spec.ConsumerRef == nil {
 			foundBaremetalHost.Spec.Online = true
 			foundBaremetalHost.Spec.ConsumerRef = &corev1.ObjectReference{Name: instance.Name, Kind: instance.Kind, Namespace: instance.Namespace}
-			foundBaremetalHost.Spec.Image = &metal3v1alpha1.Image{
+			foundBaremetalHost.Spec.Image = &metal3v1.Image{
 				URL:          localImageURL,
 				Checksum:     fmt.Sprintf("%s.sha256", localImageURL),
-				ChecksumType: metal3v1alpha1.SHA256,
+				ChecksumType: metal3v1.SHA256,
 			}
 			foundBaremetalHost.Spec.UserData = userDataSecret
 			foundBaremetalHost.Spec.NetworkData = networkDataSecret
@@ -227,7 +227,7 @@ func BaremetalHostDeprovision(
 ) error {
 	l := log.FromContext(ctx)
 
-	baremetalHost := &metal3v1alpha1.BareMetalHost{}
+	baremetalHost := &metal3v1.BareMetalHost{}
 	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmhStatus.BmhRef, Namespace: instance.Spec.BmhNamespace}, baremetalHost)
 	if err != nil {
 		return err
