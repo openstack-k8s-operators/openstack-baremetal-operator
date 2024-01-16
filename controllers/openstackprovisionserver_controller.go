@@ -549,6 +549,11 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 	provisioning, err := provisioningsClient.Get(ctx, "provisioning-configuration", metav1.GetOptions{})
 
 	if err != nil {
+		if k8s_errors.IsNotFound(err) {
+			// Non CBO CI scenario, assuming ironic deployed and virtual-media to be used for provisioning.
+			r.Log.Info("Provisioning Resource not found, continuing to see if BMHs can be provisioned with virtual-media...")
+			return "", nil
+		}
 		return "", err
 	}
 
