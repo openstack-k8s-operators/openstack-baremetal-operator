@@ -551,7 +551,7 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			// Non CBO CI scenario, assuming ironic deployed and virtual-media to be used for provisioning.
-			r.Log.Info("Provisioning Resource not found, continuing to see if BMHs can be provisioned with virtual-media...")
+			r.Log.Info("Provisioning resource not found, continuing to see if BMHs can be provisioned with virtual-media...")
 			return "", nil
 		}
 		return "", err
