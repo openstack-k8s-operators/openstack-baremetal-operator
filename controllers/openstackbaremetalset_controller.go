@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -159,7 +158,7 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	groupLabel := labels.GetGroupLabel(baremetalv1.ServiceName)
 
-	openshiftMachineAPIBareMetalHostsFn := handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+	openshiftMachineAPIBareMetalHostsFn := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 		result := []reconcile.Request{}
 		label := o.GetLabels()
 		// verify object has ownerUIDLabelSelector
@@ -182,7 +181,7 @@ func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) err
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&baremetalv1.OpenStackBaremetalSet{}).
 		Owns(&baremetalv1.OpenStackBaremetalSet{}).
-		Watches(&source.Kind{Type: &metal3v1.BareMetalHost{}}, openshiftMachineAPIBareMetalHostsFn).
+		Watches(&metal3v1.BareMetalHost{}, openshiftMachineAPIBareMetalHostsFn).
 		Complete(r)
 }
 
@@ -497,7 +496,6 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 
 		return nil
 	})
-
 	if err != nil {
 		return provisionServer, err
 	}
@@ -571,7 +569,6 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	bmhLabels map[string]string,
 	envVars *map[string]env.Setter,
 ) error {
-
 	// Get all BaremetalHosts (and, optionally, only those that match instance.Spec.BmhLabelSelector if there is one)
 	baremetalHostsList, err := baremetalv1.GetBaremetalHosts(
 		ctx,
@@ -591,7 +588,6 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 
 	// Verify that we have enough hosts with the right hardware reqs available for scaling-up
 	availableBaremetalHosts, err := baremetalv1.VerifyBaremetalSetScaleUp(log.FromContext(ctx), instance, baremetalHostsList, existingBaremetalHosts)
-
 	if err != nil {
 		return err
 	}
@@ -633,7 +629,6 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 			passwordSecret,
 			envVars,
 		)
-
 		if err != nil {
 			return err
 		}
