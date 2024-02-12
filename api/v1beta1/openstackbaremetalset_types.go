@@ -54,6 +54,15 @@ type OpenStackBaremetalSetSpec struct {
 	// OSImage - OS qcow2 image Name
 	OSImage string `json:"osImage,omitempty"`
 	// +kubebuilder:validation:Optional
+	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
+	OSContainerImageURL string `json:"osContainerImageUrl,omitempty"`
+	// +kubebuilder:validation:Optional
+	// ApacheImageURL - Container image URL for the main container that serves the downloaded OS qcow2 image (osImage)
+	ApacheImageURL string `json:"apacheImageUrl,omitempty"`
+	// +kubebuilder:validation:Optional
+	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs
+	AgentImageURL string `json:"agentImageUrl,omitempty"`
+	// +kubebuilder:validation:Optional
 	// UserData holds the reference to the Secret containing the user
 	// data to be passed to the host before it boots. UserData can be
 	// set per host in BaremetalHosts or here. If none of these are

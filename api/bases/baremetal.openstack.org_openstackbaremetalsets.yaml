@@ -49,6 +49,14 @@ spec:
           spec:
             description: OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
             properties:
+              agentImageUrl:
+                description: AgentImageURL - Container image URL for the sidecar container
+                  that discovers provisioning network IPs
+                type: string
+              apacheImageUrl:
+                description: ApacheImageURL - Container image URL for the main container
+                  that serves the downloaded OS qcow2 image (osImage)
+                type: string
               automatedCleaningMode:
                 default: metadata
                 description: When set to disabled, automated cleaning will be avoided
@@ -247,6 +255,10 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              osContainerImageUrl:
+                description: OSContainerImageURL - Container image URL for init with
+                  the OS qcow2 image (osImage)
+                type: string
               osImage:
                 description: OSImage - OS qcow2 image Name
                 type: string
