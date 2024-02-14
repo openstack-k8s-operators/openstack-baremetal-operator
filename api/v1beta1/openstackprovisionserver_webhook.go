@@ -29,6 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var openstackProvisionServerDefaults OpenStackProvisionServerDefaults
@@ -58,17 +59,17 @@ func (r *OpenStackProvisionServer) SetupWebhookWithManager(mgr ctrl.Manager) err
 var _ webhook.Validator = &OpenStackProvisionServer{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackProvisionServer) ValidateCreate() error {
+func (r *OpenStackProvisionServer) ValidateCreate() (admission.Warnings, error) {
 	openstackprovisionserverlog.Info("validate create", "name", r.Name)
 
-	return r.validateCr()
+	return nil, r.validateCr()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackProvisionServer) ValidateUpdate(old runtime.Object) error {
+func (r *OpenStackProvisionServer) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	openstackprovisionserverlog.Info("validate update", "name", r.Name)
 
-	return r.validateCr()
+	return nil, r.validateCr()
 }
 
 func (r *OpenStackProvisionServer) validateCr() error {
@@ -88,10 +89,10 @@ func (r *OpenStackProvisionServer) validateCr() error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackProvisionServer) ValidateDelete() error {
+func (r *OpenStackProvisionServer) ValidateDelete() (admission.Warnings, error) {
 	openstackprovisionserverlog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
 //+kubebuilder:webhook:path=/mutate-baremetal-openstack-org-v1beta1-openstackprovisionserver,mutating=true,failurePolicy=fail,sideEffects=None,groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=create;update,versions=v1beta1,name=mopenstackprovisionserver.kb.io,admissionReviewVersions=v1
