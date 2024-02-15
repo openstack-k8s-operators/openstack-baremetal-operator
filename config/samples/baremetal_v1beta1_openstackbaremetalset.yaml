@@ -6,8 +6,8 @@ spec:
   # Define how many BaremetalHosts are desired to be provisioned and assign
   # a control plane IP to them
   baremetalHosts:
-    compute-0: 172.22.0.100
-    compute-1: 172.22.0.101
+    compute-0: 172.22.0.100/24
+    compute-1: 172.22.0.101/24
   # The image to install on the provisioned nodes
   osImage: edpm-hardened-uefi.qcow2
   # provisionServerName: openstack  # uncomment if you pre-deploy a separate OsProvServer (use its name for the value)
@@ -17,7 +17,6 @@ spec:
   # The interface on the nodes that will be assigned an IP from the mgmtCidr
   ctlplaneInterface: enp1s0
   ctlplaneGateway: 172.22.0.3
-  ctlplaneNetmask: 255.255.255.0
   # An optional secret holding a data entry called "NodeRootPassword"
   # This will be set as the root password on all provisioned BaremetalHosts
   passwordSecret: baremetalset-password-secret
