@@ -70,7 +70,7 @@ spec:
                   description: InstanceSpec Instance specific attributes
                   properties:
                     ctlPlaneIP:
-                      description: CtlPlaneIP - Control Plane IP
+                      description: CtlPlaneIP - Control Plane IP in CIDR notation
                       type: string
                     networkData:
                       description: NetworkData - Host Network Data

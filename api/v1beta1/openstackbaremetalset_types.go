@@ -29,7 +29,7 @@ type AutomatedCleaningMode string
 // InstanceSpec Instance specific attributes
 type InstanceSpec struct {
 	// +kubebuilder:validation:Optional
-	// CtlPlaneIP - Control Plane IP
+	// CtlPlaneIP - Control Plane IP in CIDR notation
 	CtlPlaneIP string `json:"ctlPlaneIP"`
 	// +kubebuilder:validation:Optional
 	// UserData - Host User Data
