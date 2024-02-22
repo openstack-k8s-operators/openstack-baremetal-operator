@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/golang/glog v1.2.0
 	github.com/metal3-io/baremetal-operator/apis v0.5.0
-	github.com/onsi/ginkgo/v2 v2.14.0
+	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.30.0
 	github.com/openstack-k8s-operators/lib-common/modules/common v0.3.1-0.20240214144842-5dcac51e5b36
 	github.com/openstack-k8s-operators/openstack-baremetal-operator/api v0.0.0-00010101000000-000000000000
