@@ -37,7 +37,6 @@ import (
 
 	"github.com/go-logr/logr"
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
-	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
@@ -203,10 +202,9 @@ func (r *OpenStackBaremetalSetReconciler) reconcileDelete(ctx context.Context, i
 }
 
 func (r *OpenStackBaremetalSetReconciler) reconcileInit(
-	ctx context.Context,
+	_ context.Context,
 	instance *baremetalv1.OpenStackBaremetalSet,
-	helper *helper.Helper,
-	serviceLabels map[string]string,
+	_ *helper.Helper,
 ) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackBaremetalSet '%s' init", instance.Name))
 
@@ -214,7 +212,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileInit(
 	return ctrl.Result{}, nil
 }
 
-func (r *OpenStackBaremetalSetReconciler) reconcileUpdate(ctx context.Context, instance *baremetalv1.OpenStackBaremetalSet, helper *helper.Helper) (ctrl.Result, error) {
+func (r *OpenStackBaremetalSetReconciler) reconcileUpdate(_ context.Context, instance *baremetalv1.OpenStackBaremetalSet, _ *helper.Helper) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackBaremetalSet '%s' update", instance.Name))
 
 	// TODO: should have minor update tasks if required
@@ -224,7 +222,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileUpdate(ctx context.Context, i
 	return ctrl.Result{}, nil
 }
 
-func (r *OpenStackBaremetalSetReconciler) reconcileUpgrade(ctx context.Context, instance *baremetalv1.OpenStackBaremetalSet, helper *helper.Helper) (ctrl.Result, error) {
+func (r *OpenStackBaremetalSetReconciler) reconcileUpgrade(_ context.Context, instance *baremetalv1.OpenStackBaremetalSet, _ *helper.Helper) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackBaremetalSet '%s' upgrade", instance.Name))
 
 	// TODO: should have major version upgrade tasks
@@ -301,12 +299,8 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	// TODO check when/if Init, Update, or Upgrade should/could be skipped
 	//
 
-	serviceLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{
-		common.AppSelector: instance.Name + "-deployment",
-	})
-
 	// Handle service init
-	ctrlResult, err := r.reconcileInit(ctx, instance, helper, serviceLabels)
+	ctrlResult, err := r.reconcileInit(ctx, instance, helper)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {

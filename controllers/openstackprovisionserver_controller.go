@@ -241,7 +241,7 @@ func (r *OpenStackProvisionServerReconciler) SetupWithManager(mgr ctrl.Manager) 
 		Complete(r)
 }
 
-func (r *OpenStackProvisionServerReconciler) reconcileDelete(ctx context.Context, instance *baremetalv1.OpenStackProvisionServer, helper *helper.Helper) (ctrl.Result, error) {
+func (r *OpenStackProvisionServerReconciler) reconcileDelete(_ context.Context, instance *baremetalv1.OpenStackProvisionServer, helper *helper.Helper) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackProvisionServer '%s' delete", instance.Name))
 
 	controllerutil.RemoveFinalizer(instance, helper.GetFinalizer())
@@ -251,10 +251,9 @@ func (r *OpenStackProvisionServerReconciler) reconcileDelete(ctx context.Context
 }
 
 func (r *OpenStackProvisionServerReconciler) reconcileInit(
-	ctx context.Context,
+	_ context.Context,
 	instance *baremetalv1.OpenStackProvisionServer,
-	helper *helper.Helper,
-	serviceLabels map[string]string,
+	_ *helper.Helper,
 ) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackProvisionServer '%s' init", instance.Name))
 
@@ -262,7 +261,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileInit(
 	return ctrl.Result{}, nil
 }
 
-func (r *OpenStackProvisionServerReconciler) reconcileUpdate(ctx context.Context, instance *baremetalv1.OpenStackProvisionServer, helper *helper.Helper) (ctrl.Result, error) {
+func (r *OpenStackProvisionServerReconciler) reconcileUpdate(_ context.Context, instance *baremetalv1.OpenStackProvisionServer, _ *helper.Helper) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackProvisionServer '%s' update", instance.Name))
 
 	// TODO: should have minor update tasks if required
@@ -272,7 +271,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileUpdate(ctx context.Context
 	return ctrl.Result{}, nil
 }
 
-func (r *OpenStackProvisionServerReconciler) reconcileUpgrade(ctx context.Context, instance *baremetalv1.OpenStackProvisionServer, helper *helper.Helper) (ctrl.Result, error) {
+func (r *OpenStackProvisionServerReconciler) reconcileUpgrade(_ context.Context, instance *baremetalv1.OpenStackProvisionServer, _ *helper.Helper) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Reconciling OpenStackProvisionServer '%s' upgrade", instance.Name))
 
 	// TODO: should have major version upgrade tasks
@@ -311,7 +310,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	// create hash over all the different input resources to identify if any those changed
 	// and a restart/recreate is required.
 	//
-	inputHash, hashChanged, err := r.createHashOfInputHashes(ctx, instance, configMapVars)
+	inputHash, hashChanged, err := r.createHashOfInputHashes(instance, configMapVars)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.ServiceConfigReadyCondition,
@@ -352,7 +351,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	})
 
 	// Handle service init
-	ctrlResult, err := r.reconcileInit(ctx, instance, helper, serviceLabels)
+	ctrlResult, err := r.reconcileInit(ctx, instance, helper)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {
@@ -486,7 +485,6 @@ func (r *OpenStackProvisionServerReconciler) generateServiceConfigMaps(
 //
 // returns the hash, whether the hash changed (as a bool) and any error
 func (r *OpenStackProvisionServerReconciler) createHashOfInputHashes(
-	ctx context.Context,
 	instance *baremetalv1.OpenStackProvisionServer,
 	envVars map[string]env.Setter,
 ) (string, bool, error) {
@@ -518,7 +516,7 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterfaceName(
 	} else {
 		r.Log.Info("Provisioning interface name not yet discovered, checking Metal3...")
 
-		provInterfaceName, err = r.getProvisioningInterface(ctx, instance)
+		provInterfaceName, err = r.getProvisioningInterface(ctx)
 
 		if err != nil {
 			return "", err
@@ -530,7 +528,6 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterfaceName(
 
 func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 	ctx context.Context,
-	instance *baremetalv1.OpenStackProvisionServer,
 ) (string, error) {
 	cfg, err := config.GetConfig()
 
