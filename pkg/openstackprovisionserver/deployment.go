@@ -93,6 +93,12 @@ func Deployment(
 			StartupProbe:   startupProbe,
 			ReadinessProbe: readinessProbe,
 			LivenessProbe:  livenessProbe,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "CONFIG_HASH",
+					Value: configHash,
+				},
+			},
 		},
 	}
 
