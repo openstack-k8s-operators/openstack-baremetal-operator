@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"regexp"
 	"strings"
 
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -70,8 +71,13 @@ func BaremetalHostProvision(
 	if userDataSecret == nil {
 		templateParameters := make(map[string]interface{})
 		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
-		templateParameters["Hostname"] = bmhStatus.Hostname
-		templateParameters["DomainName"] = instance.Spec.DomainName
+		templateParameters["HostName"] = bmhStatus.Hostname
+		//If Hostname is fqdn, use it
+		if !hostNameIsFQDN(bmhStatus.Hostname) && instance.Spec.DomainName != "" {
+			templateParameters["FQDN"] = strings.Join([]string{bmhStatus.Hostname, instance.Spec.DomainName}, ".")
+		} else {
+			templateParameters["FQDN"] = bmhStatus.Hostname
+		}
 		templateParameters["CloudUserName"] = instance.Spec.CloudUserName
 
 		// Prepare cloudinit (create secret)
@@ -314,4 +320,14 @@ func BaremetalHostDeprovision(
 	delete(instance.Status.BaremetalHosts, bmhStatus.Hostname)
 
 	return nil
+}
+
+// NodeHostNameIsFQDN Helper to check if a hostname is fqdn
+func hostNameIsFQDN(hostname string) bool {
+	// Regular expression to match a valid FQDN
+	// This regex assumes that the hostname and domain name segments only contain letters, digits, hyphens, and periods.
+	regex := `^([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$`
+
+	match, _ := regexp.MatchString(regex, hostname)
+	return match
 }
