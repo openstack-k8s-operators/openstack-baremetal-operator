@@ -87,9 +87,9 @@ type OpenStackProvisionServerStatus struct {
 	LocalImageURL string `json:"localImageUrl,omitempty"`
 }
 
-// IsReady - returns true if service is ready to serve requests
+// IsReady - returns true if OpenStackProvisionServer is reconciled successfully
 func (instance *OpenStackProvisionServer) IsReady() bool {
-	return instance.Status.ReadyCount > 0 && instance.Status.LocalImageURL != ""
+	return instance.Status.Conditions.IsTrue(condition.ReadyCondition)
 }
 
 // +kubebuilder:object:root=true

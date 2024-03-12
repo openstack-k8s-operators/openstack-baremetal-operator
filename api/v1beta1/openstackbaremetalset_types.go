@@ -270,9 +270,9 @@ type DiskSSDReq struct {
 // will need some of those functions to exist in this module/package to avoid import cycle errors
 //
 
-// IsReady - returns true if all requested BMHs are provisioned
+// IsReady - returns true if OpenStackBaremetalSet is reconciled successfully
 func (instance *OpenStackBaremetalSet) IsReady() bool {
-	return instance.Status.Conditions.IsTrue(OpenStackBaremetalSetBmhProvisioningReadyCondition)
+	return instance.Status.Conditions.IsTrue(condition.ReadyCondition)
 }
 
 //
