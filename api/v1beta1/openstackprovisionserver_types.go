@@ -67,10 +67,6 @@ type OpenStackProvisionServerSpec struct {
 	// Resources - Compute Resources required by this provision server (Limits/Requests).
 	// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	// +kubebuilder:validation:Required
-	// ServiceAccount - service account name used internally to provide ProvisionServer the default SA name
-	// +kubebuilder:default="provisionserver"
-	ServiceAccount string `json:"serviceAccount"`
 }
 
 // OpenStackProvisionServerStatus defines the observed state of OpenStackProvisionServer
