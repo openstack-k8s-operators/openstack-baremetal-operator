@@ -127,18 +127,12 @@ spec:
                       More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
                 type: object
-              serviceAccount:
-                default: provisionserver
-                description: ServiceAccount - service account name used internally
-                  to provide ProvisionServer the default SA name
-                type: string
             required:
             - agentImageUrl
             - apacheImageUrl
             - osContainerImageUrl
             - osImage
             - port
-            - serviceAccount
             type: object
           status:
             description: OpenStackProvisionServerStatus defines the observed state
