@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	k8snet "k8s.io/utils/net"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -605,6 +607,10 @@ func (r *OpenStackProvisionServerReconciler) getLocalImageURL(
 		}
 		//We're using hostNetwork for the provisionserver pod
 		host = provisionPods.Items[0].Status.HostIP
+	}
+
+	if k8snet.IsIPv6(net.ParseIP(host)) {
+		host = fmt.Sprintf("[%s]", host)
 	}
 	return fmt.Sprintf("http://%s:%d/%s", host, instance.Spec.Port, baseFilename), nil
 }
