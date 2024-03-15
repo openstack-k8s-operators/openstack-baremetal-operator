@@ -7,11 +7,11 @@ networks:
   id: {{ .CtlplaneInterface }}
   type: {{ .CtlplaneIpVersion }}
   ip_address: {{ .CtlplaneIp }}
-  netmask: {{ .CtlplaneNetmask }}
+  netmask: "{{ .CtlplaneNetmask }}"
 {{- if (index . "CtlplaneGateway") }}
   routes:
-  - network: {{ if eq .CtlplaneIpVersion "ipv6" }}::{{ else }}0.0.0.0{{ end }}
-    netmask: {{ if eq .CtlplaneIpVersion "ipv6" }}::{{ else }}0.0.0.0{{ end }}
+  - network: {{ if eq .CtlplaneIpVersion "ipv6" }}"::"{{ else }}0.0.0.0{{ end }}
+    netmask: {{ if eq .CtlplaneIpVersion "ipv6" }}"::"{{ else }}0.0.0.0{{ end }}
     gateway: {{ .CtlplaneGateway }}
 {{- end }}
 {{- if not (eq (len .CtlplaneDns) 0) }}
