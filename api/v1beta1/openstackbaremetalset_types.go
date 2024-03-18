@@ -37,6 +37,9 @@ type InstanceSpec struct {
 	// +kubebuilder:validation:Optional
 	// NetworkData - Host Network Data
 	NetworkData *corev1.SecretReference `json:"networkData,omitempty"`
+	// +kubebuilder:validation:Optional
+	// PreprovisioningNetworkDataName - NetwoData Secret name for Preprovisining in the local namespace
+	PreprovisioningNetworkDataName string `json:"preprovisioningNetworkDataName,omitempty"`
 }
 
 // Allowed automated cleaning modes

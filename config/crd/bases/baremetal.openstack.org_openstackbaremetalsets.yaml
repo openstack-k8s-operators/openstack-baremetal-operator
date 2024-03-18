@@ -85,6 +85,10 @@ spec:
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
+                    preprovisioningNetworkDataName:
+                      description: PreprovisioningNetworkDataName - NetwoData Secret
+                        name for Preprovisining in the local namespace
+                      type: string
                     userData:
                       description: UserData - Host User Data
                       properties:
