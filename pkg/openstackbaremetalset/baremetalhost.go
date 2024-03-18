@@ -205,6 +205,9 @@ func BaremetalHostProvision(
 		// Ensure AutomatedCleaningMode is set as per spec
 		foundBaremetalHost.Spec.AutomatedCleaningMode = metal3v1.AutomatedCleaningMode(instance.Spec.AutomatedCleaningMode)
 
+		// Ensure PreprovisioningNetworkDataName is set as per spec
+		foundBaremetalHost.Spec.PreprovisioningNetworkDataName = instance.Spec.BaremetalHosts[hostName].PreprovisioningNetworkDataName
+
 		//
 		// Ensure the image url is up to date unless already provisioned
 		//
