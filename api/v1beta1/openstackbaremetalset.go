@@ -90,10 +90,10 @@ func VerifyBaremetalSetScaleUp(
 	l logr.Logger,
 	instance *OpenStackBaremetalSet,
 	allBmhs *metal3v1.BareMetalHostList,
-	existingBmhs *metal3v1.BareMetalHostList) ([]string, error) {
+	existingBmhs *metal3v1.BareMetalHostList) ([]metal3v1.BareMetalHost, error) {
 	// How many new BaremetalHost allocations do we need (if any)?
 	newBmhsNeededCount := len(instance.Spec.BaremetalHosts) - len(existingBmhs.Items)
-	availableBaremetalHosts := []string{}
+	availableBaremetalHosts := []metal3v1.BareMetalHost{}
 
 	if newBmhsNeededCount > 0 {
 		// We have new BaremetalHosts requested, so search for BaremetalHosts that don't have consumerRef or online set
@@ -137,7 +137,7 @@ func VerifyBaremetalSetScaleUp(
 
 			l.Info("Available BaremetalHost", "BMH", baremetalHost.ObjectMeta.Name)
 
-			availableBaremetalHosts = append(availableBaremetalHosts, baremetalHost.ObjectMeta.Name)
+			availableBaremetalHosts = append(availableBaremetalHosts, baremetalHost)
 		}
 
 		// If we can't satisfy the new requested BaremetalHost count, explicitly state so
