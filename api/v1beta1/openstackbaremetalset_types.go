@@ -29,6 +29,9 @@ type AutomatedCleaningMode string
 // InstanceSpec Instance specific attributes
 type InstanceSpec struct {
 	// +kubebuilder:validation:Optional
+	// BmhLabelSelector allows for the selection of a particular BaremetalHost based on arbitrary labels
+	BmhLabelSelector map[string]string `json:"bmhLabelSelector,omitempty"`
+	// +kubebuilder:validation:Optional
 	// CtlPlaneIP - Control Plane IP in CIDR notation
 	CtlPlaneIP string `json:"ctlPlaneIP"`
 	// +kubebuilder:validation:Optional

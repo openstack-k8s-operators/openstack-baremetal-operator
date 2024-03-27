@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"sort"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,6 +41,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	oko_secret "github.com/openstack-k8s-operators/lib-common/modules/common/secret"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/openstack-baremetal-operator/pkg/openstackbaremetalset"
 	openstackprovisionserver "github.com/openstack-k8s-operators/openstack-baremetal-operator/pkg/openstackprovisionserver"
@@ -575,6 +575,19 @@ func (r *OpenStackBaremetalSetReconciler) deleteBmh(
 	return nil
 }
 
+func (r *OpenStackBaremetalSetReconciler) buildExistingHostBMHMap(instance *baremetalv1.OpenStackBaremetalSet,
+	existingBMHs *metal3v1.BareMetalHostList) map[string]metal3v1.BareMetalHost {
+	existingHostBMHMap := make(map[string]metal3v1.BareMetalHost)
+	instanceBmhOwnershipLabelKey := fmt.Sprintf("%s%s", instance.Name, openstackbaremetalset.HostnameLabelSelectorSuffix)
+	for _, bmh := range existingBMHs.Items {
+		hostName, ok := bmh.Labels[instanceBmhOwnershipLabelKey]
+		if ok {
+			existingHostBMHMap[hostName] = bmh
+		}
+	}
+	return existingHostBMHMap
+}
+
 // Provision BaremetalHost resources based on replica count
 func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	ctx context.Context,
@@ -586,6 +599,7 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	bmhLabels map[string]string,
 	envVars *map[string]env.Setter,
 ) error {
+
 	// Get all BaremetalHosts (and, optionally, only those that match instance.Spec.BmhLabelSelector if there is one)
 	baremetalHostsList, err := baremetalv1.GetBaremetalHosts(
 		ctx,
@@ -604,41 +618,20 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	}
 
 	// Verify that we have enough hosts with the right hardware reqs available for scaling-up
-	availableBaremetalHosts, err := baremetalv1.VerifyBaremetalSetScaleUp(log.FromContext(ctx), instance, baremetalHostsList, existingBaremetalHosts)
+	selectedHostBMHMap, err := baremetalv1.VerifyBaremetalSetScaleUp(log.FromContext(ctx), instance, baremetalHostsList, existingBaremetalHosts)
 	if err != nil {
 		return err
 	}
 
-	// Sort the list of available BaremetalHosts
-	sort.Strings(availableBaremetalHosts)
+	existingHostBMHMap := r.buildExistingHostBMHMap(instance, existingBaremetalHosts)
+	selectedHostBMHMap = util.MergeMaps(selectedHostBMHMap, existingHostBMHMap)
 
-	instanceBmhOwnershipLabelKey := fmt.Sprintf("%s%s", instance.Name, openstackbaremetalset.HostnameLabelSelectorSuffix)
-	desiredHostnamesToBmhNames := map[string]string{}
-
-	// How many new BaremetalHost allocations do we need (if any) and which ones already exist (if any)?
-	for desiredHostName := range instance.Spec.BaremetalHosts {
-		// Do the existingBaremetalHosts already contain this desired host?
-		for _, existingBmh := range existingBaremetalHosts.Items {
-			if existingBmh.Labels[instanceBmhOwnershipLabelKey] == desiredHostName {
-				desiredHostnamesToBmhNames[desiredHostName] = existingBmh.Name
-				break
-			}
-		}
-
-		// If there isn't already a BMH for this desired host name, assign the host name
-		// to one of the available BMHs
-		if desiredHostnamesToBmhNames[desiredHostName] == "" {
-			desiredHostnamesToBmhNames[desiredHostName] = availableBaremetalHosts[0]
-			availableBaremetalHosts = availableBaremetalHosts[1:]
-		}
-	}
-
-	for desiredHostName, bmhName := range desiredHostnamesToBmhNames {
+	for desiredHostName, bmh := range selectedHostBMHMap {
 		err := openstackbaremetalset.BaremetalHostProvision(
 			ctx,
 			helper,
 			instance,
-			bmhName,
+			bmh.Name,
 			desiredHostName,
 			instance.Spec.BaremetalHosts[desiredHostName].CtlPlaneIP, // ctlPlaneIP
 			provisionServer,

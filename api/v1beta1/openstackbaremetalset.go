@@ -37,10 +37,10 @@ func GetBaremetalHosts(
 
 	err := c.List(ctx, bmhHostsList, listOpts...)
 	if err != nil {
-		return bmhHostsList, err
+		return nil, err
 	}
-
 	return bmhHostsList, nil
+
 }
 
 // VerifyBaremetalStatusBmhRefs - Verify that BMHs haven't been improperly deleted
@@ -90,33 +90,32 @@ func VerifyBaremetalSetScaleUp(
 	l logr.Logger,
 	instance *OpenStackBaremetalSet,
 	allBmhs *metal3v1.BareMetalHostList,
-	existingBmhs *metal3v1.BareMetalHostList) ([]string, error) {
+	existingBmhs *metal3v1.BareMetalHostList) (map[string]metal3v1.BareMetalHost, error) {
 	// How many new BaremetalHost allocations do we need (if any)?
 	newBmhsNeededCount := len(instance.Spec.BaremetalHosts) - len(existingBmhs.Items)
-	availableBaremetalHosts := []string{}
+	selectedBaremetalHosts := map[string]metal3v1.BareMetalHost{}
+
+	labelStr := ""
 
 	if newBmhsNeededCount > 0 {
-		// We have new BaremetalHosts requested, so search for BaremetalHosts that don't have consumerRef or online set
-
-		labelStr := ""
-
 		if len(instance.Spec.BmhLabelSelector) > 0 {
 			labelStr = fmt.Sprintf("%v", instance.Spec.BmhLabelSelector)
 			labelStr = strings.Replace(labelStr, "map[", "[", 1)
 		}
 
-		l.Info("Attempting to find BaremetalHosts for scale-up of OpenStackBaremetalSet", "OpenStackBaremetalSet", instance.Name, "namespace", instance.Spec.BmhNamespace, "quantity", newBmhsNeededCount, "labels", labelStr)
+		l.Info("Attempting to find BaremetalHosts for scale-up of OpenStackBaremetalSet", "OpenStackBaremetalSet",
+			instance.Name, "namespace", instance.Spec.BmhNamespace, "quantity", newBmhsNeededCount, "labels", labelStr)
 
+		selectedCount := 0
 		for _, baremetalHost := range allBmhs.Items {
-			mismatch := false
 
-			if baremetalHost.Spec.Online {
-				l.Info("BaremetalHost cannot be used because it is already online", "BMH", baremetalHost.ObjectMeta.Name)
-				mismatch = true
+			if selectedCount == newBmhsNeededCount {
+				break
 			}
-
-			if baremetalHost.Spec.ConsumerRef != nil {
-				l.Info("BaremetalHost cannot be used because it already has a consumerRef", "BMH", baremetalHost.ObjectMeta.Name)
+			mismatch := false
+			hostName, matched := verifyBaremetalSetInstanceLabelMatch(l, instance, &baremetalHost)
+			if !matched {
+				l.Info("BaremetalHost cannot be used as it does not match node labels for", "BMH", baremetalHost.ObjectMeta.Name)
 				mismatch = true
 			}
 
@@ -130,6 +129,16 @@ func VerifyBaremetalSetScaleUp(
 				mismatch = true
 			}
 
+			if baremetalHost.Spec.Online {
+				l.Info("BaremetalHost cannot be used because it is already online", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
+			}
+
+			if baremetalHost.Spec.ConsumerRef != nil {
+				l.Info("BaremetalHost cannot be used because it already has a consumerRef", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
+			}
+
 			// If for any reason we can't use this BMH, do not add to the list of available BMHs
 			if mismatch {
 				continue
@@ -137,29 +146,31 @@ func VerifyBaremetalSetScaleUp(
 
 			l.Info("Available BaremetalHost", "BMH", baremetalHost.ObjectMeta.Name)
 
-			availableBaremetalHosts = append(availableBaremetalHosts, baremetalHost.ObjectMeta.Name)
+			selectedBaremetalHosts[hostName] = baremetalHost
+			selectedCount++
+		}
+	}
+	// If we can't satisfy the new requested BaremetalHost count, explicitly state so
+	if newBmhsNeededCount > len(selectedBaremetalHosts) {
+		errLabelStr := ""
+
+		if labelStr != "" {
+			errLabelStr = fmt.Sprintf(" with labels %s", labelStr)
 		}
 
-		// If we can't satisfy the new requested BaremetalHost count, explicitly state so
-		if newBmhsNeededCount > len(availableBaremetalHosts) {
-			errLabelStr := ""
-
-			if labelStr != "" {
-				errLabelStr = fmt.Sprintf(" with labels %s", labelStr)
-			}
-
-			return nil, fmt.Errorf("unable to find %d requested BaremetalHosts%s in namespace %s for scale-up (%d in use, %d available)",
-				len(instance.Spec.BaremetalHosts),
-				errLabelStr,
-				instance.Spec.BmhNamespace,
-				len(existingBmhs.Items),
-				len(availableBaremetalHosts))
-		}
-
-		l.Info("Found sufficient quantity of BaremetalHosts for scale-up of OpenStackBaremetalSet", "OpenStackBaremetalSet", instance.Name, "namespace", instance.Spec.BmhNamespace, "BMHs", availableBaremetalHosts, "labels", labelStr)
+		return nil, fmt.Errorf("unable to find %d requested BaremetalHosts%s in namespace %s for scale-up (%d in use, %d available)",
+			len(instance.Spec.BaremetalHosts),
+			errLabelStr,
+			instance.Spec.BmhNamespace,
+			len(existingBmhs.Items),
+			len(selectedBaremetalHosts))
 	}
 
-	return availableBaremetalHosts, nil
+	l.Info("Found sufficient quantity of BaremetalHosts for scale-up of OpenStackBaremetalSet",
+		"OpenStackBaremetalSet", instance.Name, "namespace", instance.Spec.BmhNamespace, "BMHs",
+		selectedBaremetalHosts, "labels", labelStr)
+
+	return selectedBaremetalHosts, nil
 }
 
 // VerifyBaremetalSetScaleDown - TODO: not needed at the current moment
@@ -177,6 +188,36 @@ func VerifyBaremetalSetScaleDown(
 	}
 
 	return nil
+}
+
+func verifyBaremetalSetInstanceLabelMatch(
+	l logr.Logger,
+	instance *OpenStackBaremetalSet,
+	bmh *metal3v1.BareMetalHost) (string, bool) {
+
+	bmhLabels := bmh.GetLabels()
+	for hostName, instanceSpec := range instance.Spec.BaremetalHosts {
+		if IsMapSubset(bmhLabels, instanceSpec.BmhLabelSelector) {
+			return hostName, true
+		}
+	}
+	l.Info("BaremetalHost does not match any of the node labels as requested", "BMH", bmh.ObjectMeta.Name)
+	return "", false
+}
+
+func IsMapSubset[K, V comparable](m map[K]V, sub map[K]V) bool {
+	if sub == nil {
+		return true
+	}
+	if len(sub) > len(m) {
+		return false
+	}
+	for k, vsub := range sub {
+		if vm, found := m[k]; !found || vm != vsub {
+			return false
+		}
+	}
+	return true
 }
 
 func verifyBaremetalSetHardwareMatch(
