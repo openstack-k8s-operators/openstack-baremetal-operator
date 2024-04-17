@@ -128,7 +128,7 @@ vet: gowork ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt vet envtest ginkgo ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) --coverprofile cover.out --cover --covermode=atomic --coverpkg=../../pkg/...,../../controllers,../../api/v1beta1 --trace ./...
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) --trace --cover --coverpkg=../../pkg/...,../../controllers,../../api/v1beta1 --coverprofile cover.out --covermode=atomic ${PROC_CMD} $(GINKGO_ARGS) ./tests/...
 
 ##@ Build
 
@@ -337,9 +337,7 @@ govet: get-ci-tools
 	GOWORK=off $(CI_TOOLS_REPO_DIR)/test-runner/govet.sh ./api
 
 # Run go test against code
-gotest: get-ci-tools
-	GOWORK=off $(CI_TOOLS_REPO_DIR)/test-runner/gotest.sh
-	GOWORK=off $(CI_TOOLS_REPO_DIR)/test-runner/gotest.sh ./api
+gotest: test
 
 .PHONY: golangci-lint
 golangci-lint:
