@@ -16,6 +16,6 @@ spec:
         - name: RELATED_IMAGE_AGENT_IMAGE_URL_DEFAULT
           value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest
         - name: RELATED_IMAGE_APACHE_IMAGE_URL_DEFAULT
-          value: registry.redhat.io/rhel8/httpd-24:latest
+          value: registry.redhat.io/ubi9/httpd-24:latest
         - name: OS_IMAGE_DEFAULT
           value: edpm-hardened-uefi.qcow2
