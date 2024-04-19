@@ -40,7 +40,7 @@ const (
 	// AgentImage - default fall-back image for OpenStackProvisionServer agent
 	AgentImage = "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest"
 	// ApacheImage - default fall-back image for Apache
-	ApacheImage = "registry.redhat.io/rhel8/httpd-24:latest"
+	ApacheImage = "registry.redhat.io/ubi9/httpd-24:latest"
 	// OSImage - default fall-back image name for qcow2 image found inside OSContainerImage
 	OSImage = "edpm-hardened-uefi.qcow2"
 )
