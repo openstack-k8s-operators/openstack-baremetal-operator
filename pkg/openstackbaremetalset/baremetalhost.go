@@ -217,7 +217,7 @@ func BaremetalHostProvision(
 		if foundBaremetalHost.Status.Provisioning.State != metal3v1.StateProvisioned {
 			foundBaremetalHost.Spec.Image = &metal3v1.Image{
 				URL:          localImageURL,
-				Checksum:     fmt.Sprintf("%s.sha256", localImageURL),
+				Checksum:     fmt.Sprintf("%s.sha256sum", localImageURL),
 				ChecksumType: metal3v1.SHA256,
 			}
 		}
