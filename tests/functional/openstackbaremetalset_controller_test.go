@@ -61,6 +61,8 @@ var _ = Describe("BaremetalSet Test", func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, DefaultBaremetalSetSpec(bmhName, false)))
 		})
 		It("should have the Spec fields initialized", func() {
+			checksumSuffix := "sha256"
+
 			baremetalSetInstance := GetBaremetalSet(baremetalSetName)
 			spec := baremetalv1.OpenStackBaremetalSetSpec{
 				BaremetalHosts: map[string]baremetalv1.InstanceSpec{
@@ -72,6 +74,7 @@ var _ = Describe("BaremetalSet Test", func() {
 					},
 				},
 				OSImage:               "",
+				OSImageChecksumSuffix: &checksumSuffix,
 				OSContainerImageURL:   "",
 				ApacheImageURL:        "",
 				AgentImageURL:         "",

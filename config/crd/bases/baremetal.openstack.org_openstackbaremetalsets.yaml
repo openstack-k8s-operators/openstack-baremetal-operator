@@ -266,6 +266,11 @@ spec:
               osImage:
                 description: OSImage - OS qcow2 image Name
                 type: string
+              osImageChecksumSuffix:
+                default: sha256
+                description: OSImageChecksumSuffix - The file extension suffix on
+                  the OSImage checksum
+                type: string
               passwordSecret:
                 description: 'PasswordSecret the name of the secret used to optionally
                   set the root pwd by adding NodeRootPassword: <base64 enc pwd> to

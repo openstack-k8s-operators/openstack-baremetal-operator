@@ -302,6 +302,11 @@ func (in *OpenStackBaremetalSetSpec) DeepCopyInto(out *OpenStackBaremetalSetSpec
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
+	if in.OSImageChecksumSuffix != nil {
+		in, out := &in.OSImageChecksumSuffix, &out.OSImageChecksumSuffix
+		*out = new(string)
+		**out = **in
+	}
 	if in.UserData != nil {
 		in, out := &in.UserData, &out.UserData
 		*out = new(v1.SecretReference)

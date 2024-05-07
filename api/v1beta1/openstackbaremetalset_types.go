@@ -56,6 +56,10 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	// OSImage - OS qcow2 image Name
 	OSImage string `json:"osImage,omitempty"`
+	// +kubebuilder:default=sha256
+	// +kubebuilder:validation:Optional
+	// OSImageChecksumSuffix - The file extension suffix on the OSImage checksum
+	OSImageChecksumSuffix *string `json:"osImageChecksumSuffix,omitempty"`
 	// +kubebuilder:validation:Optional
 	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
 	OSContainerImageURL string `json:"osContainerImageUrl,omitempty"`
