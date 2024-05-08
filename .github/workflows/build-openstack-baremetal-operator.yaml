@@ -23,6 +23,7 @@ jobs:
 
   call-build-workflow:
     uses: openstack-k8s-operators/openstack-k8s-operators-ci/.github/workflows/reusable-build-operator.yaml@main
+    needs: [build-openstack-baremetal-operator-agent]
     with:
       operator_name: openstack-baremetal
       go_version: 1.20.x
