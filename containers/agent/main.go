@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -17,6 +18,12 @@ var (
 		Short: "Run OpenStack Agent",
 		Long:  "Runs the OpenStack Baremetal Operator Agent",
 	}
+
+	openstackProvisionServerGVR = schema.GroupVersionResource{
+		Group:    "baremetal.openstack.org",
+		Version:  "v1beta1",
+		Resource: "openstackprovisionservers",
+	}
 )
 
 func init() {
@@ -25,6 +32,6 @@ func init() {
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		glog.Exitf("Error executing mcd: %v", err)
+		glog.Exitf("Error executing cmd: %v", err)
 	}
 }

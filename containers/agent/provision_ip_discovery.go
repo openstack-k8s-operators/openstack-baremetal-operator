@@ -11,42 +11,35 @@ import (
 	"github.com/spf13/cobra"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
-	startCmd = &cobra.Command{
+	provisionIPStartCmd = &cobra.Command{
 		Use:   "provision-ip-discovery",
 		Short: "Start Provision IP Discovery Agent",
 		Long:  "",
-		Run:   runStartCmd,
+		Run:   runProvisionIPStartCmd,
 	}
 
-	startOpts struct {
+	provisionIPStartOpts struct {
 		kubeconfig          string
 		provIntf            string
 		provServerName      string
 		provServerNamespace string
 	}
-
-	openstackProvisionServerGVR = schema.GroupVersionResource{
-		Group:    "baremetal.openstack.org",
-		Version:  "v1beta1",
-		Resource: "openstackprovisionservers",
-	}
 )
 
 func init() {
-	rootCmd.AddCommand(startCmd)
-	startCmd.PersistentFlags().StringVar(&startOpts.provIntf, "prov-intf", "", "Provisioning interface name on the associated host")
-	startCmd.PersistentFlags().StringVar(&startOpts.provServerName, "prov-server-name", "", "Provisioning server resource name")
-	startCmd.PersistentFlags().StringVar(&startOpts.provServerNamespace, "prov-server-namespace", "", "Provisioning server resource namespace")
+	rootCmd.AddCommand(provisionIPStartCmd)
+	provisionIPStartCmd.PersistentFlags().StringVar(&provisionIPStartOpts.provIntf, "prov-intf", "", "Provisioning interface name on the associated host")
+	provisionIPStartCmd.PersistentFlags().StringVar(&provisionIPStartOpts.provServerName, "prov-server-name", "", "Provisioning server resource name")
+	provisionIPStartCmd.PersistentFlags().StringVar(&provisionIPStartOpts.provServerNamespace, "prov-server-namespace", "", "Provisioning server resource namespace")
 }
 
-func runStartCmd(_ *cobra.Command, _ []string) {
+func runProvisionIPStartCmd(_ *cobra.Command, _ []string) {
 	var err error
 	err = flag.Set("logtostderr", "true")
 	if err != nil {
@@ -57,28 +50,28 @@ func runStartCmd(_ *cobra.Command, _ []string) {
 
 	glog.V(0).Info("Starting ProvisionIpDiscoveryAgent")
 
-	if startOpts.provIntf == "" {
+	if provisionIPStartOpts.provIntf == "" {
 		name, ok := os.LookupEnv("PROV_INTF")
 		if !ok || name == "" {
 			glog.Fatalf("prov-intf is required")
 		}
-		startOpts.provIntf = name
+		provisionIPStartOpts.provIntf = name
 	}
 
-	if startOpts.provServerName == "" {
+	if provisionIPStartOpts.provServerName == "" {
 		name, ok := os.LookupEnv("PROV_SERVER_NAME")
 		if !ok || name == "" {
 			glog.Fatalf("prov-server-name is required")
 		}
-		startOpts.provServerName = name
+		provisionIPStartOpts.provServerName = name
 	}
 
-	if startOpts.provServerNamespace == "" {
+	if provisionIPStartOpts.provServerNamespace == "" {
 		name, ok := os.LookupEnv("PROV_SERVER_NAMESPACE")
 		if !ok || name == "" {
 			glog.Fatalf("prov-server-namespace is required")
 		}
-		startOpts.provServerNamespace = name
+		provisionIPStartOpts.provServerNamespace = name
 	}
 
 	var config *rest.Config
@@ -100,18 +93,9 @@ func runStartCmd(_ *cobra.Command, _ []string) {
 
 	ip := ""
 
+	// Get provision interface IP and update the status, and then sleep 5 seconds
+	// and check again over and over (because the IP address could change)
 	for {
-		unstructured, err := provServerClient.Namespace(startOpts.provServerNamespace).Get(context.Background(), startOpts.provServerName, metav1.GetOptions{})
-
-		if k8s_errors.IsNotFound(err) {
-			// Deleted somehow, so just break
-			break
-		}
-
-		if err != nil {
-			panic(err.Error())
-		}
-
 		ifaces, err := net.Interfaces()
 
 		if err != nil {
@@ -121,7 +105,7 @@ func runStartCmd(_ *cobra.Command, _ []string) {
 		curIP := ""
 
 		for _, iface := range ifaces {
-			if iface.Name == startOpts.provIntf {
+			if iface.Name == provisionIPStartOpts.provIntf {
 				addrs, err := iface.Addrs()
 
 				if err != nil {
@@ -132,7 +116,7 @@ func runStartCmd(_ *cobra.Command, _ []string) {
 					ipObj, _, err := net.ParseCIDR(addr.String())
 
 					if err != nil || ipObj == nil {
-						glog.V(0).Infof("WARNING: Cannot parse IP address for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", startOpts.provServerName, startOpts.provServerName, startOpts.provIntf)
+						glog.V(0).Infof("WARNING: Cannot parse IP address for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerName, provisionIPStartOpts.provIntf)
 						if err != nil {
 							glog.V(0).Infof("ERROR: %s", err.Error())
 						}
@@ -143,27 +127,43 @@ func runStartCmd(_ *cobra.Command, _ []string) {
 						curIP = ipObj.String()
 						break
 					}
-					glog.V(0).Infof("INFO: Ignoring IPv6 address (%s) for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", addr, startOpts.provServerName, startOpts.provServerName, startOpts.provIntf)
+					glog.V(0).Infof("INFO: Ignoring IPv6 address (%s) for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", addr, provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerName, provisionIPStartOpts.provIntf)
 				}
 				break
 			}
 		}
 
 		if curIP == "" {
-			glog.V(0).Infof("WARNING: Unable to find provisioning IP for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", startOpts.provServerName, startOpts.provServerName, startOpts.provIntf)
+			glog.V(0).Infof("ERROR: Unable to find provisioning IP for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerName, provisionIPStartOpts.provIntf)
 		} else if ip != curIP {
+			unstructured, err := provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).Get(context.Background(), provisionIPStartOpts.provServerName, metav1.GetOptions{}, "/status")
 
-			unstructured.Object["status"] = map[string]interface{}{
-				"provisionIp": curIP,
+			if k8s_errors.IsNotFound(err) {
+				// Deleted somehow, so just break
+				break
 			}
 
-			_, err = provServerClient.Namespace(startOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
+			if err != nil {
+				panic(err.Error())
+			}
+
+			if unstructured.Object["status"] == nil {
+				unstructured.Object["status"] = map[string]interface{}{}
+			}
+
+			status := unstructured.Object["status"].(map[string]interface{})
+
+			status["provisionIp"] = curIP
+
+			unstructured.Object["status"] = status
+
+			_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
 
 			if err != nil {
-				glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) \"provisionIp\" status: %s\n", startOpts.provServerName, startOpts.provServerNamespace, err)
+				glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) \"provisionIp\" status: %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, err)
 			} else {
 				ip = curIP
-				glog.V(0).Infof("Updated OpenStackProvisionServer %s (namespace %s) with status \"provisionIp\": %s\n", startOpts.provServerName, startOpts.provServerNamespace, ip)
+				glog.V(0).Infof("Updated OpenStackProvisionServer %s (namespace %s) with status \"provisionIp\": %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, ip)
 
 			}
 		}

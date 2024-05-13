@@ -20,7 +20,7 @@ import (
 )
 
 // getVolumes - general provisioning service volumes
-func getVolumes(name string) []corev1.Volume {
+func getInitVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: "image-data",
@@ -28,17 +28,22 @@ func getVolumes(name string) []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
-		{
-			Name: "httpd-config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: fmt.Sprintf("%s-httpd-config", name),
-					},
+	}
+}
+
+// getVolumes - general provisioning service volumes
+func getVolumes(name string) []corev1.Volume {
+	return append(getInitVolumes(), corev1.Volume{
+		Name: "httpd-config",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: fmt.Sprintf("%s-httpd-config", name),
 				},
 			},
 		},
-	}
+	},
+	)
 }
 
 // getInitVolumeMounts - general init task VolumeMounts
