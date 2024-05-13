@@ -74,10 +74,20 @@ spec:
               osImage:
                 description: OSImage - OS qcow2 image (compressed as gz, or uncompressed)
                 type: string
+              osImageDir:
+                default: /usr/local/apache2/htdocs
+                description: OSImageDir - Directory on the container which holds the
+                  OS qcow2 image and checksum
+                type: string
               port:
                 description: Port - The port on which the Apache server should listen
                 format: int32
                 type: integer
+              preserveJobs:
+                default: false
+                description: PreserveJobs - do not delete jobs after they finished
+                  e.g. to check logs
+                type: boolean
               resources:
                 description: Resources - Compute Resources required by this provision
                   server (Limits/Requests). https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -132,6 +142,7 @@ spec:
             - apacheImageUrl
             - osContainerImageUrl
             - osImage
+            - osImageDir
             - port
             type: object
           status:
@@ -186,8 +197,23 @@ spec:
                   type: string
                 description: Map of hashes to track e.g. job status
                 type: object
+              localImageChecksumUrl:
+                description: URL of provisioning image checksum on underlying Apache
+                  web server
+                type: string
               localImageUrl:
                 description: URL of provisioning image on underlying Apache web server
+                type: string
+              osImageChecksumFilename:
+                description: Filename of OSImage checksum
+                type: string
+              osImageChecksumType:
+                description: OSImage checksum type
+                enum:
+                - md5
+                - sha256
+                - sha512
+                - auto
                 type: string
               provisionIp:
                 description: IP of the provisioning interface on the node running

@@ -172,11 +172,14 @@ var _ = Describe("BaremetalSet Test", func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, DefaultBaremetalSetSpec(bmhName, true)))
 		})
 		It("Prov Server should have the Spec fields initialized", func() {
+			osImageDir := "/usr/local/apache2/htdocs"
+
 			provServer := GetProvisionServer(baremetalSetName)
 			spec := baremetalv1.OpenStackProvisionServerSpec{
 				Port:                6190,
 				Interface:           "eth1",
 				OSImage:             "edpm-hardened-uefi.qcow2",
+				OSImageDir:          &osImageDir,
 				OSContainerImageURL: "quay.io/podified-antelope-centos9/edpm-hardened-uefi@latest",
 				ApacheImageURL:      "registry.redhat.io/rhel8/httpd-24@latest",
 				AgentImageURL:       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent@latest",

@@ -16,11 +16,12 @@ package openstackprovisionserver
 import (
 	"fmt"
 
+	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // getVolumes - general provisioning service volumes
-func getVolumes(name string) []corev1.Volume {
+func getInitVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: "image-data",
@@ -28,35 +29,40 @@ func getVolumes(name string) []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
-		{
-			Name: "httpd-config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: fmt.Sprintf("%s-httpd-config", name),
-					},
-				},
-			},
-		},
 	}
 }
 
+// getVolumes - general provisioning service volumes
+func getVolumes(name string) []corev1.Volume {
+	return append(getInitVolumes(), corev1.Volume{
+		Name: "httpd-config",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: fmt.Sprintf("%s-httpd-config", name),
+				},
+			},
+		},
+	},
+	)
+}
+
 // getInitVolumeMounts - general init task VolumeMounts
-func getInitVolumeMounts() []corev1.VolumeMount {
+func getInitVolumeMounts(instance *baremetalv1.OpenStackProvisionServer) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      "image-data",
-			MountPath: "/usr/local/apache2/htdocs",
+			MountPath: *instance.Spec.OSImageDir,
 		},
 	}
 }
 
 // getVolumeMounts - general VolumeMounts
-func getVolumeMounts() []corev1.VolumeMount {
+func getVolumeMounts(instance *baremetalv1.OpenStackProvisionServer) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      "image-data",
-			MountPath: "/usr/local/apache2/htdocs",
+			MountPath: *instance.Spec.OSImageDir,
 		},
 		{
 			Name:      "httpd-config",

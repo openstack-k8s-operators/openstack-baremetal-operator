@@ -28,7 +28,7 @@ func BaremetalHostProvision(
 	bmh string,
 	hostName string,
 	ctlPlaneIP string,
-	localImageURL string,
+	provServer *baremetalv1.OpenStackProvisionServer,
 	sshSecret *corev1.Secret,
 	passwordSecret *corev1.Secret,
 	envVars *map[string]env.Setter,
@@ -217,9 +217,9 @@ func BaremetalHostProvision(
 		//
 		if foundBaremetalHost.Status.Provisioning.State != metal3v1.StateProvisioned {
 			foundBaremetalHost.Spec.Image = &metal3v1.Image{
-				URL:          localImageURL,
-				Checksum:     fmt.Sprintf("%s.sha256", localImageURL),
-				ChecksumType: metal3v1.SHA256,
+				URL:          provServer.Status.LocalImageURL,
+				Checksum:     provServer.Status.LocalImageChecksumURL,
+				ChecksumType: provServer.Status.OSImageChecksumType,
 			}
 		}
 
@@ -230,9 +230,9 @@ func BaremetalHostProvision(
 			foundBaremetalHost.Spec.Online = true
 			foundBaremetalHost.Spec.ConsumerRef = &corev1.ObjectReference{Name: instance.Name, Kind: instance.Kind, Namespace: instance.Namespace}
 			foundBaremetalHost.Spec.Image = &metal3v1.Image{
-				URL:          localImageURL,
-				Checksum:     fmt.Sprintf("%s.sha256", localImageURL),
-				ChecksumType: metal3v1.SHA256,
+				URL:          provServer.Status.LocalImageURL,
+				Checksum:     provServer.Status.LocalImageChecksumURL,
+				ChecksumType: provServer.Status.OSImageChecksumType,
 			}
 			foundBaremetalHost.Spec.UserData = userDataSecret
 			foundBaremetalHost.Spec.NetworkData = networkDataSecret
