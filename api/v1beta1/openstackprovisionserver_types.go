@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	corev1 "k8s.io/api/core/v1"
@@ -27,11 +28,13 @@ import (
 // +kubebuilder:validation:Enum=Managed;Unmanaged;Disabled
 type ProvisioningNetwork string
 
-// ProvisioningNetwork modes
 const (
+	// ProvisioningNetwork modes
 	ProvisioningNetworkManaged   ProvisioningNetwork = "Managed"
 	ProvisioningNetworkUnmanaged ProvisioningNetwork = "Unmanaged"
 	ProvisioningNetworkDisabled  ProvisioningNetwork = "Disabled"
+	// Checksum job hash
+	ChecksumHash = "checksum"
 )
 
 const (
@@ -54,6 +57,10 @@ type OpenStackProvisionServerSpec struct {
 	Interface string `json:"interface,omitempty"`
 	// OSImage - OS qcow2 image (compressed as gz, or uncompressed)
 	OSImage string `json:"osImage"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=/usr/local/apache2/htdocs
+	// OSImageDir - Directory on the container which holds the OS qcow2 image and checksum
+	OSImageDir *string `json:"osImageDir"`
 	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
 	OSContainerImageURL string `json:"osContainerImageUrl"`
 	// ApacheImageURL - Container image URL for the main container that serves the downloaded OS qcow2 image (osImage)
@@ -67,6 +74,10 @@ type OpenStackProvisionServerSpec struct {
 	// Resources - Compute Resources required by this provision server (Limits/Requests).
 	// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// PreserveJobs - do not delete jobs after they finished e.g. to check logs
+	PreserveJobs bool `json:"preserveJobs"`
 }
 
 // OpenStackProvisionServerStatus defines the observed state of OpenStackProvisionServer
@@ -81,6 +92,12 @@ type OpenStackProvisionServerStatus struct {
 	ProvisionIP string `json:"provisionIp,omitempty"`
 	// URL of provisioning image on underlying Apache web server
 	LocalImageURL string `json:"localImageUrl,omitempty"`
+	// Filename of OSImage checksum
+	OSImageChecksumFilename string `json:"osImageChecksumFilename,omitempty"`
+	// OSImage checksum type
+	OSImageChecksumType metal3v1.ChecksumType `json:"osImageChecksumType,omitempty"`
+	// URL of provisioning image checksum on underlying Apache web server
+	LocalImageChecksumURL string `json:"localImageChecksumUrl,omitempty"`
 }
 
 // IsReady - returns true if OpenStackProvisionServer is reconciled successfully
