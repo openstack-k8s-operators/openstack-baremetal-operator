@@ -33,6 +33,9 @@ const (
 	// OpenStackProvisionServerLocalImageURLReadyCondition Status=True condition which indicates if the OpenStackProvisionServer's LocalImageURL has been successfully acquired from the provisioning agent
 	OpenStackProvisionServerLocalImageURLReadyCondition condition.Type = "OpenStackProvisionServerLocalImageURLReady"
 
+	// OpenStackProvisionServerChecksumReadyCondition Status=True condition which indicates if the OpenStackProvisionServer's OSImage Checksum has been successfully acquired from the provisioning agent
+	OpenStackProvisionServerChecksumReadyCondition condition.Type = "OpenStackProvisionServerChecksumReady"
+
 	//
 	// OpenStackBaremetalSet conditions
 	//
@@ -86,6 +89,21 @@ const (
 
 	// OpenStackProvisionServerLocalImageURLReadyMessage
 	OpenStackProvisionServerLocalImageURLReadyMessage = "OpenStackProvisionServerLocalImageURL generated"
+
+	//
+	// OpenStackProvisionServerChecksumReady condition messages
+	//
+	// OpenStackProvisionServerChecksumReadyInitMessage
+	OpenStackProvisionServerChecksumReadyInitMessage = "OpenStackProvisionServerChecksum not started"
+
+	// OpenStackProvisionServerChecksumReadyErrorMessage
+	OpenStackProvisionServerChecksumReadyErrorMessage = "OpenStackProvisionServerChecksum error occured %s"
+
+	// OpenStackProvisionServerChecksumReadyRunningMessage
+	OpenStackProvisionServerChecksumReadyRunningMessage = "OpenStackProvisionServerChecksum acquisition in progress"
+
+	// OpenStackProvisionServerChecksumReadyMessage
+	OpenStackProvisionServerChecksumReadyMessage = "OpenStackProvisionServerChecksum acquired"
 
 	//
 	// OpenStackBaremetalSetReady condition messages
