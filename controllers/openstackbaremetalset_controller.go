@@ -573,6 +573,8 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	bmhLabels map[string]string,
 	envVars *map[string]env.Setter,
 ) error {
+	l := log.FromContext(ctx)
+
 	// Get all BaremetalHosts (and, optionally, only those that match instance.Spec.BmhLabelSelector if there is one)
 	baremetalHostsList, err := baremetalv1.GetBaremetalHosts(
 		ctx,
@@ -597,13 +599,15 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	}
 
 	// Sort the list of available BaremetalHosts
-	sort.Strings(availableBaremetalHosts)
+	sort.Slice(availableBaremetalHosts[:], func(i, j int) bool {
+		return availableBaremetalHosts[i].Name < availableBaremetalHosts[j].Name
+	})
 
 	instanceBmhOwnershipLabelKey := fmt.Sprintf("%s%s", instance.Name, openstackbaremetalset.HostnameLabelSelectorSuffix)
 	desiredHostnamesToBmhNames := map[string]string{}
 
 	// How many new BaremetalHost allocations do we need (if any) and which ones already exist (if any)?
-	for desiredHostName := range instance.Spec.BaremetalHosts {
+	for desiredHostName, spec := range instance.Spec.BaremetalHosts {
 		// Do the existingBaremetalHosts already contain this desired host?
 		for _, existingBmh := range existingBaremetalHosts.Items {
 			if existingBmh.Labels[instanceBmhOwnershipLabelKey] == desiredHostName {
@@ -612,11 +616,44 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 			}
 		}
 
-		// If there isn't already a BMH for this desired host name, assign the host name
-		// to one of the available BMHs
 		if desiredHostnamesToBmhNames[desiredHostName] == "" {
-			desiredHostnamesToBmhNames[desiredHostName] = availableBaremetalHosts[0]
-			availableBaremetalHosts = availableBaremetalHosts[1:]
+			// If there isn't already a BMH for this desired host name and a specific BMH
+			// label was not requested, assign the host name to one of the available BMHs
+			if len(spec.BmhLabelSelector) == 0 {
+				desiredHostnamesToBmhNames[desiredHostName] = availableBaremetalHosts[0].Name
+				availableBaremetalHosts = availableBaremetalHosts[1:]
+			} else {
+				// A specific BMH is being requested by labels, so we need to see if it
+				// exists on any available BMH and, if so, assign the first BMH that
+				// matches to this desired host name
+				found := false
+
+				for index, availableBaremetalHost := range availableBaremetalHosts {
+					// TODO: Is there a k8s library to handle this label comparison?
+					var foundCount int
+
+					for key, value := range spec.BmhLabelSelector {
+						for key2, value2 := range availableBaremetalHost.ObjectMeta.Labels {
+							if key == key2 && value == value2 {
+								foundCount++
+								break
+							}
+						}
+					}
+
+					if foundCount == len(spec.BmhLabelSelector) {
+						found = true
+						desiredHostnamesToBmhNames[desiredHostName] = availableBaremetalHosts[index].Name
+						availableBaremetalHosts = append(availableBaremetalHosts[:index], availableBaremetalHosts[index+1:]...)
+						l.Info("Found matching BMH for compute hostname with labels", "BMH", availableBaremetalHost.Name, "hostname", desiredHostName, "labels", spec.BmhLabelSelector)
+						break
+					}
+				}
+
+				if !found {
+					return fmt.Errorf("could not find BMH for compute hostname %s that matches labels %v", desiredHostName, spec.BmhLabelSelector)
+				}
+			}
 		}
 	}
 
