@@ -7,7 +7,7 @@ require (
 	github.com/metal3-io/baremetal-operator/apis v0.5.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.3.1-0.20240624132705-6c8da3c0bbfd
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.3.1-0.20240709171418-83ff4f73c986
 	k8s.io/api v0.28.11
 	k8s.io/apimachinery v0.28.11
 	sigs.k8s.io/controller-runtime v0.16.6
@@ -71,3 +71,7 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+// mschuppert: map to latest commit from release-4.13 tag
+// must consistent within modules and service operators
+replace github.com/openshift/api => github.com/openshift/api v0.0.0-20230414143018-3367bc7e6ac7 //allow-merging

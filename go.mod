@@ -10,7 +10,7 @@ require (
 	github.com/metal3-io/baremetal-operator/apis v0.5.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.3.1-0.20240624132705-6c8da3c0bbfd
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.3.1-0.20240709171418-83ff4f73c986
 	github.com/openstack-k8s-operators/openstack-baremetal-operator/api v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.8.1
 	k8s.io/api v0.28.11
@@ -87,3 +87,7 @@ replace github.com/openstack-k8s-operators/openstack-baremetal-operator/api => .
 // needed to to cert-manager v1.11.4 see https://github.com/cert-manager/cert-manager/blob/v1.11.4/go.mod#L263C1-L264C104
 // remove this once we bump to cert-manager v1.12.x
 replace github.com/Venafi/vcert/v4 => github.com/jetstack/vcert/v4 v4.9.6-0.20230519122548-219f317ae107 //allow-merging
+
+// mschuppert: map to latest commit from release-4.13 tag
+// must consistent within modules and service operators
+replace github.com/openshift/api => github.com/openshift/api v0.0.0-20230414143018-3367bc7e6ac7 //allow-merging
