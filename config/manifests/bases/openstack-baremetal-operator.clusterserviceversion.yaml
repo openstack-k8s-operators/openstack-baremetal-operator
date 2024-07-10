@@ -32,9 +32,6 @@ spec:
       version: v1beta1
   description: An operator for handling baremetal provisioning concerns for OpenStack
   displayName: OpenStack Baremetal Operator
-  icon:
-  - base64data: ""
-    mediatype: ""
   install:
     spec:
       deployments: null
