@@ -10,7 +10,7 @@ require (
 	github.com/metal3-io/baremetal-operator/apis v0.5.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.4.1-0.20240727081739-431d0dcd4c77
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.4.1-0.20240730142703-7fd3da600c9d
 	github.com/openstack-k8s-operators/openstack-baremetal-operator/api v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.8.1
 	k8s.io/api v0.28.12
