@@ -250,12 +250,13 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	sshSecret, hash, err := oko_secret.GetSecret(ctx, helper, instance.Spec.DeploymentSSHSecret, instance.Namespace)
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
+			l.Info("Deployment SSH secret not found", "Deployment SSH secret", instance.Spec.DeploymentSSHSecret)
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				condition.InputReadyCondition,
 				condition.RequestedReason,
 				condition.SeverityInfo,
 				condition.InputReadyWaitingMessage))
-			return ctrl.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("Deployment SSH secret %s not found", instance.Spec.DeploymentSSHSecret)
+			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		}
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.InputReadyCondition,
@@ -280,12 +281,13 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 			instance.Spec.PasswordSecret.Namespace)
 		if err != nil {
 			if k8s_errors.IsNotFound(err) {
+				l.Info("Root password secret not found", "Root password secret", instance.Spec.PasswordSecret)
 				instance.Status.Conditions.Set(condition.FalseCondition(
 					condition.InputReadyCondition,
 					condition.RequestedReason,
 					condition.SeverityInfo,
 					condition.InputReadyWaitingMessage))
-				return ctrl.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("Root password secret %s not found", instance.Spec.PasswordSecret)
+				return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 			}
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				condition.InputReadyCondition,
@@ -345,12 +347,13 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
+			l.Info("OpenStackProvisionServer not found", "OpenStackProvisionServer", instance.Spec.ProvisionServerName)
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				baremetalv1.OpenStackBaremetalSetProvServerReadyCondition,
 				condition.RequestedReason,
 				condition.SeverityInfo,
 				baremetalv1.OpenStackBaremetalSetProvServerReadyWaitingMessage))
-			return ctrl.Result{RequeueAfter: time.Duration(10) * time.Second}, fmt.Errorf("OpenStackProvisionServer %s not found", instance.Spec.ProvisionServerName)
+			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		}
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			baremetalv1.OpenStackBaremetalSetProvServerReadyCondition,
@@ -368,7 +371,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 			condition.SeverityInfo,
 			baremetalv1.OpenStackBaremetalSetProvServerReadyRunningMessage))
 		l.Info("OpenStackProvisionServer LocalImageURL not yet available", "OpenStackProvisionServer", provisionServer.Name)
-		return ctrl.Result{RequeueAfter: time.Duration(30) * time.Second}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 	}
 	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackBaremetalSetProvServerReadyCondition, baremetalv1.OpenStackBaremetalSetProvServerReadyMessage)
 	// handle provision server - end
