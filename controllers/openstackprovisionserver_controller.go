@@ -427,7 +427,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 			condition.SeverityInfo,
 			condition.DeploymentReadyRunningMessage))
 
-		return ctrl.Result{RequeueAfter: time.Duration(10) * time.Second}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	// create Deployment - end
 
@@ -452,7 +452,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 			condition.SeverityInfo,
 			baremetalv1.OpenStackProvisionServerLocalImageURLReadyRunningMessage))
 
-		return ctrl.Result{RequeueAfter: time.Duration(10) * time.Second}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	// check ProvisionIp/LocalImageURL - end
 
