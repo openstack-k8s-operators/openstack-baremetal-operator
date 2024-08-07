@@ -70,7 +70,15 @@ func BaremetalHostProvision(
 	// User data cloud-init secret
 	if userDataSecret == nil {
 		templateParameters := make(map[string]interface{})
-		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
+
+		// Import from https://github.com/openstack-k8s-operators/osp-director-operator/pull/1043
+		// Split the keys into a list of separate strings, as cloud-init wants a list
+		// (a single-key string also works, but if there multiple keys in that string
+		// then passing the keys as a string results in *none* of them working, so it
+		// is better to create a list always)
+		splitKeys := strings.Split(strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n"), "\n")
+		templateParameters["AuthorizedKeys"] = splitKeys
+
 		templateParameters["HostName"] = bmhStatus.Hostname
 		//If Hostname is fqdn, use it
 		if !hostNameIsFQDN(bmhStatus.Hostname) && instance.Spec.DomainName != "" {
