@@ -105,7 +105,21 @@ func BaremetalHostProvision(
 
 	}
 
-	if networkDataSecret == nil {
+	//
+	// Provision the BaremetalHost
+	//
+	foundBaremetalHost := &metal3v1.BareMetalHost{}
+	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
+	if err != nil {
+		return err
+	}
+
+	preProvNetworkData := foundBaremetalHost.Spec.PreprovisioningNetworkDataName
+	if preProvNetworkData == "" {
+		preProvNetworkData = instance.Spec.BaremetalHosts[hostName].PreprovisioningNetworkDataName
+	}
+
+	if networkDataSecret == nil && preProvNetworkData == "" {
 
 		// Check IP version and set template variables accordingly
 		ipAddr, ipNet, err := net.ParseCIDR(ctlPlaneIP)
@@ -181,15 +195,6 @@ func BaremetalHostProvision(
 		}
 	}
 
-	//
-	// Provision the BaremetalHost
-	//
-	foundBaremetalHost := &metal3v1.BareMetalHost{}
-	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
-	if err != nil {
-		return err
-	}
-
 	op, err := controllerutil.CreateOrPatch(ctx, helper.GetClient(), foundBaremetalHost, func() error {
 		// Set our ownership labels so we can watch this resource and also indicate that this BMH
 		// belongs to the particular OSBMS.Spec.BaremetalHosts entry we have passed to this function.
@@ -205,11 +210,7 @@ func BaremetalHostProvision(
 		// Ensure AutomatedCleaningMode is set as per spec
 		foundBaremetalHost.Spec.AutomatedCleaningMode = metal3v1.AutomatedCleaningMode(instance.Spec.AutomatedCleaningMode)
 
-		// Ensure PreprovisioningNetworkDataName is set as per spec
-		preprovNetworkData := instance.Spec.BaremetalHosts[hostName].PreprovisioningNetworkDataName
-		if preprovNetworkData != "" {
-			foundBaremetalHost.Spec.PreprovisioningNetworkDataName = preprovNetworkData
-		}
+		foundBaremetalHost.Spec.PreprovisioningNetworkDataName = preProvNetworkData
 
 		//
 		// Ensure the image url is up to date unless already provisioned
