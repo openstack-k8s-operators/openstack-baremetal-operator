@@ -373,6 +373,17 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 		l.Info("OpenStackProvisionServer LocalImageURL not yet available", "OpenStackProvisionServer", provisionServer.Name)
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 	}
+
+	if provisionServer.Status.LocalImageChecksumURL == "" {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			baremetalv1.OpenStackBaremetalSetProvServerReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			baremetalv1.OpenStackBaremetalSetProvServerReadyRunningMessage))
+		l.Info("OpenStackProvisionServer LocalImageChecksumURL not yet available", "OpenStackProvisionServer", provisionServer.Name)
+		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+	}
+
 	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackBaremetalSetProvServerReadyCondition, baremetalv1.OpenStackBaremetalSetProvServerReadyMessage)
 	// handle provision server - end
 
@@ -631,7 +642,7 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 			bmhName,
 			desiredHostName,
 			instance.Spec.BaremetalHosts[desiredHostName].CtlPlaneIP, // ctlPlaneIP
-			provisionServer.Status.LocalImageURL,
+			provisionServer,
 			sshSecret,
 			passwordSecret,
 			envVars,
