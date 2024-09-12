@@ -308,6 +308,11 @@ func (in *OpenStackBaremetalSetSpec) DeepCopyInto(out *OpenStackBaremetalSetSpec
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
+	if in.CtlplaneVlan != nil {
+		in, out := &in.CtlplaneVlan, &out.CtlplaneVlan
+		*out = new(int)
+		**out = **in
+	}
 	if in.BootstrapDNS != nil {
 		in, out := &in.BootstrapDNS, &out.BootstrapDNS
 		*out = make([]string, len(*in))
