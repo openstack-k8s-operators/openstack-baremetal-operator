@@ -143,6 +143,9 @@ spec:
                 description: 'CtlplaneNetmask - Netmask to use for ctlplane network
                   (TODO: acquire this is another manner?)'
                 type: string
+              ctlplaneVlan:
+                description: CtlplaneVlan - Vlan for ctlplane network
+                type: integer
               deploymentSSHSecret:
                 description: DeploymentSSHSecret - Name of secret holding the cloud-admin
                   ssh keys
