@@ -91,6 +91,9 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:default="255.255.255.0"
 	// CtlplaneNetmask - Netmask to use for ctlplane network (TODO: acquire this is another manner?)
 	CtlplaneNetmask string `json:"ctlplaneNetmask,omitempty"`
+	// +kubebuilder:validation:Optional
+	// CtlplaneVlan - Vlan for ctlplane network
+	CtlplaneVlan *int `json:"ctlplaneVlan,omitempty"`
 	// +kubebuilder:default=openshift-machine-api
 	// +kubebuilder:validation:Optional
 	// BmhNamespace Namespace to look for BaremetalHosts(default: openshift-machine-api)

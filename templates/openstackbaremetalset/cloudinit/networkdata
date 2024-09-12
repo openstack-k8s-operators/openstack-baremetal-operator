@@ -2,9 +2,22 @@ links:
 - name: {{ .CtlplaneInterface }}
   id: {{ .CtlplaneInterface }}
   type: vif
+{{- if (index . "CtlplaneVlan") }}
+- name: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
+  id: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
+  type: vlan
+  vlan_id: {{ .CtlplaneVlan }}
+  vlan_link: {{ .CtlplaneInterface }}
+  vlan_mac_address: null
+{{- end }}
 networks:
+{{- if (index . "CtlplaneVlan") }}
+- link: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
+  id: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
+{{- else }}
 - link: {{ .CtlplaneInterface }}
   id: {{ .CtlplaneInterface }}
+{{- end }}
   type: {{ .CtlplaneIpVersion }}
   ip_address: {{ .CtlplaneIp }}
   netmask: "{{ .CtlplaneNetmask }}"
