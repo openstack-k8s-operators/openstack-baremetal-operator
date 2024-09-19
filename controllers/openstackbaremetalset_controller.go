@@ -183,7 +183,7 @@ func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) err
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&baremetalv1.OpenStackBaremetalSet{}).
-		Owns(&baremetalv1.OpenStackBaremetalSet{}).
+		Owns(&baremetalv1.OpenStackProvisionServer{}).
 		Watches(&metal3v1.BareMetalHost{}, openshiftMachineAPIBareMetalHostsFn).
 		Complete(r)
 }
@@ -500,7 +500,6 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		if err != nil {
 			return err
 		}
-
 		provisionServer.Spec.OSImage = instance.Spec.OSImage
 		provisionServer.Spec.OSContainerImageURL = instance.Spec.OSContainerImageURL
 		provisionServer.Spec.ApacheImageURL = instance.Spec.ApacheImageURL
