@@ -161,7 +161,7 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	groupLabel := labels.GetGroupLabel(baremetalv1.ServiceName)
 
-	openshiftMachineAPIBareMetalHostsFn := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+	openshiftMachineAPIBareMetalHostsFn := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
 		result := []reconcile.Request{}
 		label := o.GetLabels()
 		// verify object has ownerUIDLabelSelector
