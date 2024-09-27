@@ -253,7 +253,11 @@ func BaremetalHostProvision(
 	// Update status with BMH provisioning details
 	//
 	bmhStatus.UserDataSecretName = userDataSecret.Name
-	bmhStatus.NetworkDataSecretName = networkDataSecret.Name
+	if networkDataSecret != nil {
+		bmhStatus.NetworkDataSecretName = networkDataSecret.Name
+	} else {
+		bmhStatus.NetworkDataSecretName = preProvNetworkData
+	}
 	bmhStatus.ProvisioningState = baremetalv1.ProvisioningState(foundBaremetalHost.Status.Provisioning.State)
 	instance.Status.BaremetalHosts[hostName] = bmhStatus
 
