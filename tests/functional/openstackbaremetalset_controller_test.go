@@ -69,6 +69,7 @@ var _ = Describe("BaremetalSet Test", func() {
 						UserData:                       nil,
 						NetworkData:                    nil,
 						PreprovisioningNetworkDataName: "",
+						BmhLabelSelector:               nil,
 					},
 				},
 				OSImage:               "",
@@ -85,7 +86,7 @@ var _ = Describe("BaremetalSet Test", func() {
 				CtlplaneGateway:       "",
 				CtlplaneNetmask:       "255.255.255.0",
 				BmhNamespace:          baremetalSetName.Namespace,
-				BmhLabelSelector:      nil,
+				BmhLabelSelector:      map[string]string{"app": "openstack"},
 				HardwareReqs: baremetalv1.HardwareReqs{
 					CPUReqs: baremetalv1.CPUReqs{
 						Arch:     "",
