@@ -51,57 +51,6 @@ func BaremetalHostProvision(
 		}
 		bmhStatus.IPAddresses["ctlplane"] = ctlPlaneIP
 	}
-	// Instance UserData/NetworkData overrides the default
-	userDataSecret := instance.Spec.BaremetalHosts[hostName].UserData
-	networkDataSecret := instance.Spec.BaremetalHosts[hostName].NetworkData
-
-	if userDataSecret == nil {
-		userDataSecret = instance.Spec.UserData
-	}
-
-	if networkDataSecret == nil {
-		networkDataSecret = instance.Spec.NetworkData
-	}
-
-	sts := []util.Template{}
-	// User data cloud-init secret
-	if userDataSecret == nil {
-		templateParameters := make(map[string]interface{})
-		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
-		templateParameters["HostName"] = hostName
-		//If Hostname is fqdn, use it
-		if !hostNameIsFQDN(hostName) && instance.Spec.DomainName != "" {
-			templateParameters["FQDN"] = strings.Join([]string{hostName, instance.Spec.DomainName}, ".")
-		} else {
-			templateParameters["FQDN"] = hostName
-		}
-		templateParameters["CloudUserName"] = instance.Spec.CloudUserName
-
-		// Prepare cloudinit (create secret)
-		secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})
-		if passwordSecret != nil && len(passwordSecret.Data["NodeRootPassword"]) > 0 {
-			templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
-		}
-
-		userDataSecretName := fmt.Sprintf(CloudInitUserDataSecretName, instance.Name, hostName)
-
-		userDataSt := util.Template{
-			Name:               userDataSecretName,
-			Namespace:          instance.Namespace,
-			Type:               util.TemplateTypeConfig,
-			InstanceType:       instance.Kind,
-			AdditionalTemplate: map[string]string{"userData": "/openstackbaremetalset/cloudinit/userdata"},
-			Labels:             secretLabels,
-			ConfigOptions:      templateParameters,
-		}
-		sts = append(sts, userDataSt)
-		userDataSecret = &corev1.SecretReference{
-			Name:      userDataSecretName,
-			Namespace: instance.Namespace,
-		}
-
-	}
-
 	//
 	// Provision the BaremetalHost
 	//
@@ -116,72 +65,125 @@ func BaremetalHostProvision(
 		preProvNetworkData = instance.Spec.BaremetalHosts[hostName].PreprovisioningNetworkDataName
 	}
 
-	if networkDataSecret == nil && preProvNetworkData == "" {
+	sts := []util.Template{}
 
-		// Check IP version and set template variables accordingly
-		ipAddr, ipNet, err := net.ParseCIDR(ctlPlaneIP)
-		if err != nil {
-			// TODO: Remove this conversion once all usage sets ctlPlaneIP in CIDR format.
-			ipAddr = net.ParseIP(ctlPlaneIP)
-			if ipAddr == nil {
-				return err
-			}
+	// Instance UserData/NetworkData overrides the default
+	userDataSecret := instance.Spec.BaremetalHosts[hostName].UserData
+	networkDataSecret := instance.Spec.BaremetalHosts[hostName].NetworkData
 
-			var ipPrefix int
-			if ipAddr.To4() != nil {
-				ipPrefix, _ = net.IPMask(net.ParseIP(instance.Spec.CtlplaneNetmask).To4()).Size()
+	if userDataSecret == nil {
+		// User data cloud-init secret
+		if instance.Spec.UserData != nil {
+			userDataSecret = instance.Spec.UserData
+		} else {
+			templateParameters := make(map[string]interface{})
+			templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
+			templateParameters["HostName"] = hostName
+			//If Hostname is fqdn, use it
+			if !hostNameIsFQDN(hostName) && instance.Spec.DomainName != "" {
+				templateParameters["FQDN"] = strings.Join([]string{hostName, instance.Spec.DomainName}, ".")
 			} else {
-				ipPrefix, _ = net.IPMask(net.ParseIP(instance.Spec.CtlplaneNetmask).To16()).Size()
+				templateParameters["FQDN"] = hostName
 			}
-			_, ipNet, err = net.ParseCIDR(fmt.Sprintf("%s/%d", ipAddr, ipPrefix))
+			templateParameters["CloudUserName"] = instance.Spec.CloudUserName
+
+			// Prepare cloudinit (create secret)
+			secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})
+			if passwordSecret != nil && len(passwordSecret.Data["NodeRootPassword"]) > 0 {
+				templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
+			}
+
+			userDataSecretName := fmt.Sprintf(CloudInitUserDataSecretName, instance.Name, hostName)
+
+			userDataSt := util.Template{
+				Name:               userDataSecretName,
+				Namespace:          instance.Namespace,
+				Type:               util.TemplateTypeConfig,
+				InstanceType:       instance.Kind,
+				AdditionalTemplate: map[string]string{"userData": "/openstackbaremetalset/cloudinit/userdata"},
+				Labels:             secretLabels,
+				ConfigOptions:      templateParameters,
+			}
+			sts = append(sts, userDataSt)
+			userDataSecret = &corev1.SecretReference{
+				Name:      userDataSecretName,
+				Namespace: instance.Namespace,
+			}
+		}
+	}
+
+	if networkDataSecret == nil {
+		if instance.Spec.NetworkData != nil {
+			networkDataSecret = instance.Spec.NetworkData
+		} else if preProvNetworkData == "" {
+
+			// Check IP version and set template variables accordingly
+			ipAddr, ipNet, err := net.ParseCIDR(ctlPlaneIP)
 			if err != nil {
-				return err
+				// TODO: Remove this conversion once all usage sets ctlPlaneIP in CIDR format.
+				ipAddr = net.ParseIP(ctlPlaneIP)
+				if ipAddr == nil {
+					return err
+				}
+
+				var ipPrefix int
+				if ipAddr.To4() != nil {
+					ipPrefix, _ = net.IPMask(net.ParseIP(instance.Spec.CtlplaneNetmask).To4()).Size()
+				} else {
+					ipPrefix, _ = net.IPMask(net.ParseIP(instance.Spec.CtlplaneNetmask).To16()).Size()
+				}
+				_, ipNet, err = net.ParseCIDR(fmt.Sprintf("%s/%d", ipAddr, ipPrefix))
+				if err != nil {
+					return err
+				}
 			}
-		}
 
-		CtlplaneIPVersion := "ipv6"
-		if ipAddr.To4() != nil {
-			CtlplaneIPVersion = "ipv4"
-		}
+			CtlplaneIPVersion := "ipv6"
+			if ipAddr.To4() != nil {
+				CtlplaneIPVersion = "ipv4"
+			}
 
-		templateParameters := make(map[string]interface{})
-		templateParameters["CtlplaneIpVersion"] = CtlplaneIPVersion
-		templateParameters["CtlplaneIp"] = ipAddr
-		templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
-		templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
-		templateParameters["CtlplaneNetmask"] = net.IP(ipNet.Mask)
-		if len(instance.Spec.BootstrapDNS) > 0 {
-			templateParameters["CtlplaneDns"] = instance.Spec.BootstrapDNS
+			templateParameters := make(map[string]interface{})
+			templateParameters["CtlplaneIpVersion"] = CtlplaneIPVersion
+			templateParameters["CtlplaneIp"] = ipAddr
+			templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
+			templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
+			templateParameters["CtlplaneNetmask"] = net.IP(ipNet.Mask)
+			if len(instance.Spec.BootstrapDNS) > 0 {
+				templateParameters["CtlplaneDns"] = instance.Spec.BootstrapDNS
+			} else {
+				templateParameters["CtlplaneDns"] = []string{}
+			}
+
+			if len(instance.Spec.DNSSearchDomains) > 0 {
+				templateParameters["CtlplaneDnsSearch"] = instance.Spec.DNSSearchDomains
+			} else {
+				templateParameters["CtlplaneDnsSearch"] = []string{}
+			}
+
+			networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, hostName)
+
+			// Flag the network data secret as safe to collect with must-gather
+			secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
+				MustGatherSecret: "yes",
+			})
+
+			networkDataSt := util.Template{
+				Name:               networkDataSecretName,
+				Namespace:          instance.Namespace,
+				Type:               util.TemplateTypeConfig,
+				InstanceType:       instance.Kind,
+				AdditionalTemplate: map[string]string{"networkData": "/openstackbaremetalset/cloudinit/networkdata"},
+				Labels:             secretLabelsWithMustGather,
+				ConfigOptions:      templateParameters,
+			}
+			sts = append(sts, networkDataSt)
+			networkDataSecret = &corev1.SecretReference{
+				Name:      networkDataSecretName,
+				Namespace: instance.Namespace,
+			}
 		} else {
-			templateParameters["CtlplaneDns"] = []string{}
-		}
-
-		if len(instance.Spec.DNSSearchDomains) > 0 {
-			templateParameters["CtlplaneDnsSearch"] = instance.Spec.DNSSearchDomains
-		} else {
-			templateParameters["CtlplaneDnsSearch"] = []string{}
-		}
-
-		networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, hostName)
-
-		// Flag the network data secret as safe to collect with must-gather
-		secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
-			MustGatherSecret: "yes",
-		})
-
-		networkDataSt := util.Template{
-			Name:               networkDataSecretName,
-			Namespace:          instance.Namespace,
-			Type:               util.TemplateTypeConfig,
-			InstanceType:       instance.Kind,
-			AdditionalTemplate: map[string]string{"networkData": "/openstackbaremetalset/cloudinit/networkdata"},
-			Labels:             secretLabelsWithMustGather,
-			ConfigOptions:      templateParameters,
-		}
-		sts = append(sts, networkDataSt)
-		networkDataSecret = &corev1.SecretReference{
-			Name:      networkDataSecretName,
-			Namespace: instance.Namespace,
+			l.Info("can not generate networkData secret when preProvNetworkData is already defined")
 		}
 	}
 
