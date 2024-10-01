@@ -69,6 +69,12 @@ spec:
                 additionalProperties:
                   description: InstanceSpec Instance specific attributes
                   properties:
+                    bmhLabelSelector:
+                      additionalProperties:
+                        type: string
+                      description: BmhLabelSelector allows for the selection of a
+                        particular BaremetalHost based on arbitrary labels
+                      type: object
                     ctlPlaneIP:
                       description: CtlPlaneIP - Control Plane IP in CIDR notation
                       type: string

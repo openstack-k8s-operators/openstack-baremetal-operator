@@ -34,11 +34,9 @@ func BaremetalHostProvision(
 	envVars *map[string]env.Setter,
 ) error {
 	l := log.FromContext(ctx)
-
 	//
-	// Get the associated BaremetalHost status entry for this hostname
+	// Update status with BMH provisioning details
 	//
-	// TODO: To be reworked when IPAM integrated
 	var ok bool
 	var bmhStatus baremetalv1.HostStatus
 
@@ -53,7 +51,6 @@ func BaremetalHostProvision(
 		}
 		bmhStatus.IPAddresses["ctlplane"] = ctlPlaneIP
 	}
-
 	// Instance UserData/NetworkData overrides the default
 	userDataSecret := instance.Spec.BaremetalHosts[hostName].UserData
 	networkDataSecret := instance.Spec.BaremetalHosts[hostName].NetworkData
@@ -71,12 +68,12 @@ func BaremetalHostProvision(
 	if userDataSecret == nil {
 		templateParameters := make(map[string]interface{})
 		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
-		templateParameters["HostName"] = bmhStatus.Hostname
+		templateParameters["HostName"] = hostName
 		//If Hostname is fqdn, use it
-		if !hostNameIsFQDN(bmhStatus.Hostname) && instance.Spec.DomainName != "" {
-			templateParameters["FQDN"] = strings.Join([]string{bmhStatus.Hostname, instance.Spec.DomainName}, ".")
+		if !hostNameIsFQDN(hostName) && instance.Spec.DomainName != "" {
+			templateParameters["FQDN"] = strings.Join([]string{hostName, instance.Spec.DomainName}, ".")
 		} else {
-			templateParameters["FQDN"] = bmhStatus.Hostname
+			templateParameters["FQDN"] = hostName
 		}
 		templateParameters["CloudUserName"] = instance.Spec.CloudUserName
 
@@ -86,7 +83,7 @@ func BaremetalHostProvision(
 			templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
 		}
 
-		userDataSecretName := fmt.Sprintf(CloudInitUserDataSecretName, instance.Name, bmh)
+		userDataSecretName := fmt.Sprintf(CloudInitUserDataSecretName, instance.Name, hostName)
 
 		userDataSt := util.Template{
 			Name:               userDataSecretName,
@@ -165,7 +162,7 @@ func BaremetalHostProvision(
 			templateParameters["CtlplaneDnsSearch"] = []string{}
 		}
 
-		networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, bmh)
+		networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, hostName)
 
 		// Flag the network data secret as safe to collect with must-gather
 		secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
@@ -200,7 +197,7 @@ func BaremetalHostProvision(
 		// belongs to the particular OSBMS.Spec.BaremetalHosts entry we have passed to this function.
 		// Set ownership labels that can be found by the respective controller kind
 		labelSelector := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
-			fmt.Sprintf("%s%s", instance.Name, HostnameLabelSelectorSuffix): bmhStatus.Hostname,
+			fmt.Sprintf("%s%s", instance.Name, HostnameLabelSelectorSuffix): hostName,
 		})
 		foundBaremetalHost.Labels = util.MergeStringMaps(
 			foundBaremetalHost.GetLabels(),
