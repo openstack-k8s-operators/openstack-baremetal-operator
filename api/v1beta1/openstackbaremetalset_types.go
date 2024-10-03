@@ -41,8 +41,6 @@ type InstanceSpec struct {
 	// NetworkData - Host Network Data
 	NetworkData *corev1.SecretReference `json:"networkData,omitempty"`
 	// +kubebuilder:validation:Optional
-	// PreprovisioningNetworkDataName - NetwoData Secret name for Preprovisining in the local namespace
-	PreprovisioningNetworkDataName string `json:"preprovisioningNetworkDataName,omitempty"`
 }
 
 // Allowed automated cleaning modes
@@ -68,18 +66,6 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs
 	AgentImageURL string `json:"agentImageUrl,omitempty"`
-	// +kubebuilder:validation:Optional
-	// UserData holds the reference to the Secret containing the user
-	// data to be passed to the host before it boots. UserData can be
-	// set per host in BaremetalHosts or here. If none of these are
-	// provided it will use a default cloud-config.
-	UserData *corev1.SecretReference `json:"userData,omitempty"`
-	// +kubebuilder:validation:Optional
-	// NetworkData holds the reference to the Secret containing network
-	// data to be passed to the hosts. NetworkData can be set per host in
-	// BaremetalHosts or here. If none of these are provided it will use
-	// default NetworkData to configure CtlPlaneIP.
-	NetworkData *corev1.SecretReference `json:"networkData,omitempty"`
 	// When set to disabled, automated cleaning will be avoided
 	// during provisioning and deprovisioning.
 	// +kubebuilder:default=metadata

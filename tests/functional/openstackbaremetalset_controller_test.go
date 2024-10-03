@@ -65,19 +65,16 @@ var _ = Describe("BaremetalSet Test", func() {
 			spec := baremetalv1.OpenStackBaremetalSetSpec{
 				BaremetalHosts: map[string]baremetalv1.InstanceSpec{
 					"compute-0": {
-						CtlPlaneIP:                     "10.0.0.1",
-						UserData:                       nil,
-						NetworkData:                    nil,
-						PreprovisioningNetworkDataName: "",
-						BmhLabelSelector:               nil,
+						CtlPlaneIP:       "10.0.0.1",
+						UserData:         nil,
+						NetworkData:      nil,
+						BmhLabelSelector: nil,
 					},
 				},
 				OSImage:               "",
 				OSContainerImageURL:   "",
 				ApacheImageURL:        "",
 				AgentImageURL:         "",
-				UserData:              nil,
-				NetworkData:           nil,
 				AutomatedCleaningMode: "metadata",
 				ProvisionServerName:   "",
 				ProvisioningInterface: "",
