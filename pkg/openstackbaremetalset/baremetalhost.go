@@ -53,18 +53,9 @@ func BaremetalHostProvision(
 		}
 		bmhStatus.IPAddresses["ctlplane"] = ctlPlaneIP
 	}
-
-	// Instance UserData/NetworkData overrides the default
+	// Instance UserData/NetworkData
 	userDataSecret := instance.Spec.BaremetalHosts[hostName].UserData
 	networkDataSecret := instance.Spec.BaremetalHosts[hostName].NetworkData
-
-	if userDataSecret == nil {
-		userDataSecret = instance.Spec.UserData
-	}
-
-	if networkDataSecret == nil {
-		networkDataSecret = instance.Spec.NetworkData
-	}
 
 	sts := []util.Template{}
 	// User data cloud-init secret
@@ -105,21 +96,7 @@ func BaremetalHostProvision(
 
 	}
 
-	//
-	// Provision the BaremetalHost
-	//
-	foundBaremetalHost := &metal3v1.BareMetalHost{}
-	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
-	if err != nil {
-		return err
-	}
-
-	preProvNetworkData := foundBaremetalHost.Spec.PreprovisioningNetworkDataName
-	if preProvNetworkData == "" {
-		preProvNetworkData = instance.Spec.BaremetalHosts[hostName].PreprovisioningNetworkDataName
-	}
-
-	if networkDataSecret == nil && preProvNetworkData == "" {
+	if networkDataSecret == nil {
 
 		// Check IP version and set template variables accordingly
 		ipAddr, ipNet, err := net.ParseCIDR(ctlPlaneIP)
@@ -195,6 +172,14 @@ func BaremetalHostProvision(
 		}
 	}
 
+	//
+	// Provision the BaremetalHost
+	//
+	foundBaremetalHost := &metal3v1.BareMetalHost{}
+	err := helper.GetClient().Get(ctx, types.NamespacedName{Name: bmh, Namespace: instance.Spec.BmhNamespace}, foundBaremetalHost)
+	if err != nil {
+		return err
+	}
 	op, err := controllerutil.CreateOrPatch(ctx, helper.GetClient(), foundBaremetalHost, func() error {
 		// Set our ownership labels so we can watch this resource and also indicate that this BMH
 		// belongs to the particular OSBMS.Spec.BaremetalHosts entry we have passed to this function.
@@ -209,8 +194,6 @@ func BaremetalHostProvision(
 
 		// Ensure AutomatedCleaningMode is set as per spec
 		foundBaremetalHost.Spec.AutomatedCleaningMode = metal3v1.AutomatedCleaningMode(instance.Spec.AutomatedCleaningMode)
-
-		foundBaremetalHost.Spec.PreprovisioningNetworkDataName = preProvNetworkData
 
 		//
 		// Ensure the image url is up to date unless already provisioned
@@ -253,11 +236,7 @@ func BaremetalHostProvision(
 	// Update status with BMH provisioning details
 	//
 	bmhStatus.UserDataSecretName = userDataSecret.Name
-	if networkDataSecret != nil {
-		bmhStatus.NetworkDataSecretName = networkDataSecret.Name
-	} else {
-		bmhStatus.NetworkDataSecretName = preProvNetworkData
-	}
+	bmhStatus.NetworkDataSecretName = networkDataSecret.Name
 	bmhStatus.ProvisioningState = baremetalv1.ProvisioningState(foundBaremetalHost.Status.Provisioning.State)
 	instance.Status.BaremetalHosts[hostName] = bmhStatus
 
