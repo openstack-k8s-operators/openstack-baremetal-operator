@@ -132,6 +132,54 @@ func TwoNodeBaremetalSetSpecWithWrongNodeLabel(namespace string) map[string]inte
 	return spec
 }
 
+func MultiNodeBaremetalSetSpecWithSameNodeLabel(namespace string) map[string]interface{} {
+	spec := map[string]interface{}{
+		"baremetalHosts": map[string]interface{}{
+			"compute-0": map[string]interface{}{
+				"ctlPlaneIP":       "10.0.0.1",
+				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
+			},
+			"compute-1": map[string]interface{}{
+				"ctlPlaneIP":       "10.0.0.2",
+				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
+			},
+			"compute-2": map[string]interface{}{
+				"ctlPlaneIP":       "10.0.0.3",
+				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
+			},
+		},
+		"bmhLabelSelector":    map[string]string{"app": "openstack"},
+		"deploymentSSHSecret": "mysecret",
+		"ctlplaneInterface":   "eth0",
+		"bmhNamespace":        namespace,
+	}
+	return spec
+}
+
+func MultiNodeBaremetalSetSpecWithOverlappingNodeLabels(namespace string) map[string]interface{} {
+	spec := map[string]interface{}{
+		"baremetalHosts": map[string]interface{}{
+			"compute-0": map[string]interface{}{
+				"ctlPlaneIP":       "10.0.0.1",
+				"bmhLabelSelector": map[string]string{"nodeType": "compute", "dummyLabel": "dummy"},
+			},
+			"compute-1": map[string]interface{}{
+				"ctlPlaneIP":       "10.0.0.2",
+				"bmhLabelSelector": map[string]string{"nodeType": "compute", "nodeName": "compute-1"},
+			},
+			"compute-2": map[string]interface{}{
+				"ctlPlaneIP":       "10.0.0.3",
+				"bmhLabelSelector": map[string]string{"nodeType": "compute", "dummyLabel": "dummy"},
+			},
+		},
+		"bmhLabelSelector":    map[string]string{"app": "openstack"},
+		"deploymentSSHSecret": "mysecret",
+		"ctlplaneInterface":   "eth0",
+		"bmhNamespace":        namespace,
+	}
+	return spec
+}
+
 // Default BMH Template with preset values
 func DefaultBMHTemplate(name types.NamespacedName) map[string]interface{} {
 	return map[string]interface{}{
@@ -160,8 +208,8 @@ func DefaultBMHTemplate(name types.NamespacedName) map[string]interface{} {
 }
 
 // Default BMH Template with preset values
-func BMHTemplateWithNodeLabel(name types.NamespacedName, nodeLabel map[string]string) map[string]interface{} {
-	labels := util.MergeMaps(map[string]string{"app": "openstack"}, nodeLabel)
+func BMHTemplateWithNodeLabels(name types.NamespacedName, nodeLabels map[string]string) map[string]interface{} {
+	labels := util.MergeMaps(map[string]string{"app": "openstack"}, nodeLabels)
 	return map[string]interface{}{
 		"apiVersion": "metal3.io/v1alpha1",
 		"kind":       "BareMetalHost",
@@ -203,8 +251,8 @@ func CreateBaremetalHost(name types.NamespacedName) *unstructured.Unstructured {
 
 // Create BaremetalHost with NodeLabel
 func CreateBaremetalHostWithNodeLabel(name types.NamespacedName,
-	nodeLabel map[string]string) *unstructured.Unstructured {
-	instance := BMHTemplateWithNodeLabel(name, nodeLabel)
+	nodeLabels map[string]string) *unstructured.Unstructured {
+	instance := BMHTemplateWithNodeLabels(name, nodeLabels)
 	return th.CreateUnstructured(instance)
 }
 
