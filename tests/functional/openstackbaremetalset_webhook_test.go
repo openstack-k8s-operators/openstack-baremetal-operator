@@ -19,6 +19,7 @@ var _ = Describe("OpenStackBaremetalSet Webhook", func() {
 	var baremetalSetName types.NamespacedName
 	var bmhName types.NamespacedName
 	var bmhName1 types.NamespacedName
+	var bmhName2 types.NamespacedName
 
 	BeforeEach(func() {
 		baremetalSetName = types.NamespacedName{
@@ -33,6 +34,11 @@ var _ = Describe("OpenStackBaremetalSet Webhook", func() {
 			Name:      "compute-1",
 			Namespace: namespace,
 		}
+		bmhName2 = types.NamespacedName{
+			Name:      "compute-3",
+			Namespace: namespace,
+		}
+
 	})
 	When("When creating BaremetalSet", func() {
 		BeforeEach(func() {
@@ -102,7 +108,7 @@ var _ = Describe("OpenStackBaremetalSet Webhook", func() {
 		})
 	})
 
-	When("When creating BaremetalSet with nodeSelector", func() {
+	When("When creating BaremetalSet with a node selector", func() {
 		BeforeEach(func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalHostWithNodeLabel(
 				bmhName, map[string]string{"nodeName": "compute-0"}))
@@ -144,4 +150,49 @@ var _ = Describe("OpenStackBaremetalSet Webhook", func() {
 			)
 		})
 	})
+
+	When("When creating BaremetalSet with node selectors", func() {
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHostWithNodeLabel(
+				bmhName, map[string]string{"nodeType": "compute", "dummyLabel": "dummy", "nodeName": "compute-1"}))
+			bmh := GetBaremetalHost(bmhName)
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHostWithNodeLabel(
+				bmhName1, map[string]string{"nodeType": "compute", "nodeName": "compute-0", "dummyLabel": "dummy"}))
+			bmh1 := GetBaremetalHost(bmhName1)
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHostWithNodeLabel(
+				bmhName2, map[string]string{"nodeType": "compute", "dummyLabel": "dummy"}))
+			bmh2 := GetBaremetalHost(bmhName2)
+
+			Eventually(func(g Gomega) {
+				// OpenStackBaremetalSet has the same name as OpenStackDataPlaneNodeSet
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				bmh1.Status.Provisioning.State = metal3v1.StateAvailable
+				bmh2.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh1)).To(Succeed())
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh2)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+		})
+
+		It("It should pass if node labels are same", func() {
+			spec := MultiNodeBaremetalSetSpecWithSameNodeLabel(baremetalSetName.Namespace)
+			object := DefaultBaremetalSetTemplate(baremetalSetName, spec)
+			unstructuredObj := &unstructured.Unstructured{Object: object}
+			_, err := controllerutil.CreateOrPatch(
+				th.Ctx, th.K8sClient, unstructuredObj, func() error { return nil })
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+
+		It("It should pass if overlapping node labels match", func() {
+			spec := MultiNodeBaremetalSetSpecWithOverlappingNodeLabels(baremetalSetName.Namespace)
+			object := DefaultBaremetalSetTemplate(baremetalSetName, spec)
+			unstructuredObj := &unstructured.Unstructured{Object: object}
+			_, err := controllerutil.CreateOrPatch(
+				th.Ctx, th.K8sClient, unstructuredObj, func() error { return nil })
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+
+	})
+
 })
