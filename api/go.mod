@@ -1,10 +1,12 @@
 module github.com/openstack-k8s-operators/openstack-baremetal-operator/api
 
-go 1.21
+go 1.22
+
+toolchain go1.22.8
 
 require (
 	github.com/go-logr/logr v1.4.2
-	github.com/metal3-io/baremetal-operator/apis v0.6.2
+	github.com/metal3-io/baremetal-operator/apis v0.8.0
 	github.com/onsi/ginkgo/v2 v2.20.1
 	github.com/onsi/gomega v1.34.1
 	github.com/openstack-k8s-operators/lib-common/modules/common v0.4.1-0.20240925091112-d0fa8e528283
