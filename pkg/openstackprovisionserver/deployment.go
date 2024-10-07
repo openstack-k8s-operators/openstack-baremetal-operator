@@ -88,7 +88,7 @@ func Deployment(
 			},
 			Args:           args,
 			Image:          instance.Spec.ApacheImageURL,
-			VolumeMounts:   getVolumeMounts(),
+			VolumeMounts:   getVolumeMounts(instance),
 			Resources:      instance.Spec.Resources,
 			StartupProbe:   startupProbe,
 			ReadinessProbe: readinessProbe,
@@ -183,8 +183,9 @@ func Deployment(
 	}
 
 	initContainerDetails := InitContainerDetails{
+		OsImageDir:     *instance.Spec.OSImageDir,
 		ContainerImage: instance.Spec.OSContainerImageURL,
-		VolumeMounts:   getInitVolumeMounts(),
+		VolumeMounts:   getInitVolumeMounts(instance),
 	}
 	deployment.Spec.Template.Spec.InitContainers = InitContainer(initContainerDetails)
 

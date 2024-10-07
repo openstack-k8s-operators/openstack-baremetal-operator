@@ -8,6 +8,7 @@ import (
 // InitContainerDetails information
 type InitContainerDetails struct {
 	ContainerImage string
+	OsImageDir     string
 	Privileged     bool
 	VolumeMounts   []corev1.VolumeMount
 }
@@ -17,7 +18,7 @@ func InitContainer(init InitContainerDetails) []corev1.Container {
 	envs := []corev1.EnvVar{
 		{
 			Name:  "DEST_DIR",
-			Value: "/usr/local/apache2/htdocs",
+			Value: init.OsImageDir,
 		},
 	}
 	envs = env.MergeEnvs(envs, map[string]env.Setter{})

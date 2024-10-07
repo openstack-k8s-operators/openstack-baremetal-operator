@@ -47,6 +47,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/deployment"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
@@ -87,6 +88,7 @@ type OpenStackProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=volumes,verbs=get;list;create;update;delete;watch;patch
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;update;watch;patch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;update;watch;patch
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete;
 // +kubebuilder:rbac:groups=metal3.io,resources=provisionings,verbs=get;list;watch
 // +kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;update;patch;watch
 
@@ -170,6 +172,11 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition,
 			condition.InitReason,
 			baremetalv1.OpenStackProvisionServerLocalImageURLReadyInitMessage,
+		),
+		condition.UnknownCondition(
+			baremetalv1.OpenStackProvisionServerChecksumReadyCondition,
+			condition.InitReason,
+			baremetalv1.OpenStackProvisionServerChecksumReadyInitMessage,
 		),
 
 		// service account, role, rolebinding conditions
@@ -431,11 +438,14 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 	}
 	// create Deployment - end
 
-	instance.Status.LocalImageURL, err = r.getLocalImageURL(ctx, helper, instance)
+	instance.Status.LocalImageURL, err = r.getLocalImageURL(ctx, helper, instance, instance.Spec.OSImage)
 	if err != nil {
 		instance.Status.Conditions.MarkFalse(
-			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition, condition.ErrorReason, condition.SeverityError,
-			baremetalv1.OpenStackBaremetalSetBmhProvisioningReadyErrorMessage, err.Error())
+			baremetalv1.OpenStackProvisionServerLocalImageURLReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			baremetalv1.OpenStackProvisionServerLocalImageURLReadyErrorMessage,
+			err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -455,6 +465,65 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 		return ctrl.Result{RequeueAfter: time.Duration(10) * time.Second}, nil
 	}
 	// check ProvisionIp/LocalImageURL - end
+
+	checksumHash := instance.Status.Hash[baremetalv1.ChecksumHash]
+	jobDef := openstackprovisionserver.ChecksumJob(instance, serviceLabels, map[string]string{})
+	checksumJob := job.NewJob(
+		jobDef,
+		baremetalv1.ChecksumHash,
+		instance.Spec.PreserveJobs,
+		5*time.Second,
+		checksumHash,
+	)
+	ctrlResult, err = checksumJob.DoJob(
+		ctx,
+		helper,
+	)
+	if (ctrlResult != ctrl.Result{}) {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			baremetalv1.OpenStackProvisionServerChecksumReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			baremetalv1.OpenStackProvisionServerChecksumReadyRunningMessage))
+		return ctrlResult, nil
+	}
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			baremetalv1.OpenStackProvisionServerChecksumReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			baremetalv1.OpenStackProvisionServerChecksumReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	if checksumJob.HasChanged() {
+		instance.Status.Hash[baremetalv1.ChecksumHash] = checksumJob.GetHash()
+		r.Log.Info(fmt.Sprintf("Job %s hash added - %s", jobDef.Name, instance.Status.Hash[baremetalv1.ChecksumHash]))
+	}
+
+	instance.Status.LocalImageChecksumURL, err = r.getLocalImageURL(ctx, helper, instance, instance.Status.OSImageChecksumFilename)
+	if err != nil {
+		instance.Status.Conditions.MarkFalse(
+			baremetalv1.OpenStackProvisionServerChecksumReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			baremetalv1.OpenStackProvisionServerChecksumReadyErrorMessage,
+			err.Error())
+		return ctrl.Result{}, err
+	}
+
+	if instance.Status.LocalImageChecksumURL != "" {
+		instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerChecksumReadyCondition, baremetalv1.OpenStackProvisionServerChecksumReadyMessage)
+	} else {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			baremetalv1.OpenStackProvisionServerChecksumReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			baremetalv1.OpenStackProvisionServerChecksumReadyRunningMessage))
+
+		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+	}
+	// checksum job - end
 
 	// We reached the end of the Reconcile, update the Ready condition based on
 	// the sub conditions
@@ -484,6 +553,7 @@ func (r *OpenStackProvisionServerReconciler) generateServiceConfigMaps(
 
 	templateParameters := make(map[string]interface{})
 	templateParameters["Port"] = strconv.FormatInt(int64(instance.Spec.Port), 10)
+	templateParameters["DocumentRoot"] = instance.Spec.OSImageDir
 
 	cms := []util.Template{
 		// Apache server config
@@ -599,8 +669,7 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 }
 
 func (r *OpenStackProvisionServerReconciler) getLocalImageURL(
-	ctx context.Context, helper *helper.Helper, instance *baremetalv1.OpenStackProvisionServer) (string, error) {
-	baseFilename := instance.Spec.OSImage
+	ctx context.Context, helper *helper.Helper, instance *baremetalv1.OpenStackProvisionServer, filename string) (string, error) {
 	host := instance.Status.ProvisionIP
 	if host == "" {
 		serviceLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{
@@ -619,5 +688,5 @@ func (r *OpenStackProvisionServerReconciler) getLocalImageURL(
 	if k8snet.IsIPv6(net.ParseIP(host)) {
 		host = fmt.Sprintf("[%s]", host)
 	}
-	return fmt.Sprintf("http://%s:%d/%s", host, instance.Spec.Port, baseFilename), nil
+	return fmt.Sprintf("http://%s:%d/%s", host, instance.Spec.Port, filename), nil
 }
