@@ -85,10 +85,6 @@ spec:
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
-                    preprovisioningNetworkDataName:
-                      description: PreprovisioningNetworkDataName - NetwoData Secret
-                        name for Preprovisining in the local namespace
-                      type: string
                     userData:
                       description: UserData - Host User Data
                       properties:
@@ -243,22 +239,6 @@ spec:
                         type: object
                     type: object
                 type: object
-              networkData:
-                description: NetworkData holds the reference to the Secret containing
-                  network data to be passed to the hosts. NetworkData can be set per
-                  host in BaremetalHosts or here. If none of these are provided it
-                  will use default NetworkData to configure CtlPlaneIP.
-                properties:
-                  name:
-                    description: name is unique within a namespace to reference a
-                      secret resource.
-                    type: string
-                  namespace:
-                    description: namespace defines the space within which the secret
-                      name must be unique.
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
               osContainerImageUrl:
                 description: OSContainerImageURL - Container image URL for init with
                   the OS qcow2 image (osImage)
@@ -290,22 +270,6 @@ spec:
                   with ProvisionServerName, it would be discovered from CBO.  This
                   is the provisioning interface on the OCP masters/workers.
                 type: string
-              userData:
-                description: UserData holds the reference to the Secret containing
-                  the user data to be passed to the host before it boots. UserData
-                  can be set per host in BaremetalHosts or here. If none of these
-                  are provided it will use a default cloud-config.
-                properties:
-                  name:
-                    description: name is unique within a namespace to reference a
-                      secret resource.
-                    type: string
-                  namespace:
-                    description: namespace defines the space within which the secret
-                      name must be unique.
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
             required:
             - cloudUserName
             - ctlplaneInterface
