@@ -309,16 +309,6 @@ func (in *OpenStackBaremetalSetSpec) DeepCopyInto(out *OpenStackBaremetalSetSpec
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
-	if in.UserData != nil {
-		in, out := &in.UserData, &out.UserData
-		*out = new(v1.SecretReference)
-		**out = **in
-	}
-	if in.NetworkData != nil {
-		in, out := &in.NetworkData, &out.NetworkData
-		*out = new(v1.SecretReference)
-		**out = **in
-	}
 	if in.BmhLabelSelector != nil {
 		in, out := &in.BmhLabelSelector, &out.BmhLabelSelector
 		*out = make(map[string]string, len(*in))
