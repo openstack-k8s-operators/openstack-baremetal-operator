@@ -16,10 +16,13 @@ limitations under the License.
 package functional
 
 import (
+	"strings"
+
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo/v2" //revive:disable:dot-imports
 	. "github.com/onsi/gomega"    //revive:disable:dot-imports
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 
 	//revive:disable-next-line:dot-imports
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
@@ -194,7 +197,24 @@ var _ = Describe("BaremetalSet Test", func() {
 				baremetalv1.OpenStackBaremetalSetProvServerReadyCondition,
 				corev1.ConditionFalse,
 			)
+		})
 
+		It("Should clean-up its auto-generated Provision Server if provisionServerName is later provided", func() {
+			Eventually(func(g Gomega) {
+				baremetalSet := GetBaremetalSet(baremetalSetName)
+				baremetalSet.Spec.ProvisionServerName = "unimportant"
+				g.Expect(th.K8sClient.Update(th.Ctx, baremetalSet)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				provisionServerName := types.NamespacedName{
+					Name:      strings.Join([]string{baremetalSetName.Name, "provisionserver"}, "-"),
+					Namespace: namespace,
+				}
+				instance := &baremetalv1.OpenStackProvisionServer{}
+				err := k8sClient.Get(ctx, provisionServerName, instance)
+				g.Expect(k8s_errors.IsNotFound(err)).To(BeTrue())
+			}, th.Timeout, th.Interval).Should(Succeed())
 		})
 	})
 
