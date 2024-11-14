@@ -44,7 +44,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/openstack-baremetal-operator/pkg/openstackbaremetalset"
-	openstackprovisionserver "github.com/openstack-k8s-operators/openstack-baremetal-operator/pkg/openstackprovisionserver"
 )
 
 // OpenStackBaremetalSetReconciler reconciles a OpenStackBaremetalSet object
@@ -503,16 +502,18 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 	}
 
 	op, err := controllerutil.CreateOrPatch(ctx, helper.GetClient(), provisionServer, func() error {
-		// Assign the prov server its existing port if this is an update, otherwise pick a new one
+		// Leave the prov server's existing port as-is if this is an update, otherwise pick a new one
 		// based on what is available
-		err := baremetalv1.AssignProvisionServerPort(
-			ctx,
-			helper.GetClient(),
-			provisionServer,
-			openstackprovisionserver.DefaultPort,
-		)
-		if err != nil {
-			return err
+		if provisionServer.Spec.Port == 0 {
+			err := baremetalv1.AssignProvisionServerPort(
+				ctx,
+				helper.GetClient(),
+				provisionServer,
+				baremetalv1.DefaultProvisionPort,
+			)
+			if err != nil {
+				return err
+			}
 		}
 		provisionServer.Spec.OSImage = instance.Spec.OSImage
 		provisionServer.Spec.OSContainerImageURL = instance.Spec.OSContainerImageURL
@@ -520,7 +521,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		provisionServer.Spec.AgentImageURL = instance.Spec.AgentImageURL
 		provisionServer.Spec.Interface = instance.Spec.ProvisioningInterface
 
-		err = controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())
+		err := controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())
 		if err != nil {
 			return err
 		}

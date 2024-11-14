@@ -115,4 +115,14 @@ func (r *OpenStackProvisionServer) Default() {
 	if r.Spec.OSImage == "" {
 		r.Spec.OSImage = openstackProvisionServerDefaults.OSImage
 	}
+	if r.Spec.Port == 0 {
+		err := AssignProvisionServerPort(context.TODO(), webhookClient, r, DefaultProvisionPort)
+		if err != nil {
+			// If this occurs, it will also be caught just after this defaulting webhook in the
+			// validating webhook, because that webhook calls the same underlying function that
+			// checks for the availability of ports.  That will cause the create/update of the
+			// CR to fail and halt moving forward.
+			openstackprovisionserverlog.Error(err, "Cannot assign port for OpenStackProvisionServer", "OpenStackProvisionServer", r)
+		}
+	}
 }
