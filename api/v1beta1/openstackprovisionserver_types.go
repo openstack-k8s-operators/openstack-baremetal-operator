@@ -35,6 +35,8 @@ const (
 	ProvisioningNetworkDisabled  ProvisioningNetwork = "Disabled"
 	// Checksum job hash
 	ChecksumHash = "checksum"
+	// DefaultProvisionPort - The starting default port for the OpenStackProvisionServer's Apache container
+	DefaultProvisionPort = 6190
 )
 
 const (
