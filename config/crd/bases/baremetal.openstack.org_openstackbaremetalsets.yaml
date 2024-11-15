@@ -268,9 +268,15 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               provisionServerName:
-                description: ProvisionServerName - Optional. If supplied will be used
-                  as the base Image for the baremetalset instead of baseImageURL.
+                description: ProvisionServerName - Optional. Existing OpenStackProvisionServer
+                  to use, else one would be created.
                 type: string
+              provisionServerNodeSelector:
+                additionalProperties:
+                  type: string
+                description: ProvisonServerNodeSelector to target subset of worker
+                  nodes running provision server
+                type: object
               provisioningInterface:
                 description: ProvisioningInterface - Optional. If not provided along
                   with ProvisionServerName, it would be discovered from CBO.  This
