@@ -71,9 +71,12 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:default=metadata
 	// +kubebuilder:validation:Optional
 	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode,omitempty"`
-	// ProvisionServerName - Optional. If supplied will be used as the base Image for the baremetalset instead of baseImageURL.
+	// ProvisionServerName - Optional. Existing OpenStackProvisionServer to use, else one would be created.
 	// +kubebuilder:validation:Optional
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
+	// +kubebuilder:validation:Optional
+	// ProvisonServerNodeSelector to target subset of worker nodes running provision server
+	ProvisonServerNodeSelector map[string]string `json:"provisionServerNodeSelector,omitempty"`
 	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.  This is the provisioning interface on the OCP masters/workers.
 	// +kubebuilder:validation:Optional
 	ProvisioningInterface string `json:"provisioningInterface,omitempty"`
