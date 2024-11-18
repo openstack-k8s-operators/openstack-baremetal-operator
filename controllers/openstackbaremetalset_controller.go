@@ -519,6 +519,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		provisionServer.Spec.OSContainerImageURL = instance.Spec.OSContainerImageURL
 		provisionServer.Spec.ApacheImageURL = instance.Spec.ApacheImageURL
 		provisionServer.Spec.AgentImageURL = instance.Spec.AgentImageURL
+		provisionServer.Spec.NodeSelector = instance.Spec.ProvisonServerNodeSelector
 		provisionServer.Spec.Interface = instance.Spec.ProvisioningInterface
 
 		err := controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())
