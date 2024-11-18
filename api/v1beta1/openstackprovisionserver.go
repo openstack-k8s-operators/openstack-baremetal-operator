@@ -7,7 +7,7 @@ import (
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GetExistingProvServerPorts - Get all ports currently in use by all OpenStackProvisionServers in this namespace
+// GetExistingProvServerPorts - Get all ports currently in use by all OpenStackProvisionServers
 func GetExistingProvServerPorts(
 	ctx context.Context,
 	c goClient.Client,
@@ -17,9 +17,7 @@ func GetExistingProvServerPorts(
 
 	provServerList := &OpenStackProvisionServerList{}
 
-	listOpts := []goClient.ListOption{
-		goClient.InNamespace(instance.Namespace),
-	}
+	listOpts := []goClient.ListOption{}
 
 	err := c.List(ctx, provServerList, listOpts...)
 	if err != nil {
@@ -40,11 +38,6 @@ func AssignProvisionServerPort(
 	instance *OpenStackProvisionServer,
 	portStart int32,
 ) error {
-	if instance.Spec.Port != 0 {
-		// Do nothing, already assigned
-		return nil
-	}
-
 	existingPorts, err := GetExistingProvServerPorts(ctx, c, instance)
 	if err != nil {
 		return err
