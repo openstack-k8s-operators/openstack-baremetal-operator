@@ -504,16 +504,15 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 	op, err := controllerutil.CreateOrPatch(ctx, helper.GetClient(), provisionServer, func() error {
 		// Leave the prov server's existing port as-is if this is an update, otherwise pick a new one
 		// based on what is available
-		if provisionServer.Spec.Port == 0 {
-			err := baremetalv1.AssignProvisionServerPort(
-				ctx,
-				helper.GetClient(),
-				provisionServer,
-				baremetalv1.DefaultProvisionPort,
-			)
-			if err != nil {
-				return err
-			}
+		err := baremetalv1.AssignProvisionServerPort(
+			ctx,
+			helper.GetClient(),
+			provisionServer,
+			baremetalv1.ProvisionServerPortStart,
+			baremetalv1.ProvisionServerPortEnd,
+		)
+		if err != nil {
+			return err
 		}
 		provisionServer.Spec.OSImage = instance.Spec.OSImage
 		provisionServer.Spec.OSContainerImageURL = instance.Spec.OSContainerImageURL
@@ -521,7 +520,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		provisionServer.Spec.AgentImageURL = instance.Spec.AgentImageURL
 		provisionServer.Spec.Interface = instance.Spec.ProvisioningInterface
 
-		err := controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())
+		err = controllerutil.SetControllerReference(instance, provisionServer, helper.GetScheme())
 		if err != nil {
 			return err
 		}
