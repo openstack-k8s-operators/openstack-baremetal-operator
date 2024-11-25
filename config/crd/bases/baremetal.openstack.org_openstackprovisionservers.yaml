@@ -82,6 +82,8 @@ spec:
               port:
                 description: Port - The port on which the Apache server should listen
                 format: int32
+                maximum: 6220
+                minimum: 6190
                 type: integer
               preserveJobs:
                 default: false
@@ -143,7 +145,6 @@ spec:
             - osContainerImageUrl
             - osImage
             - osImageDir
-            - port
             type: object
           status:
             description: OpenStackProvisionServerStatus defines the observed state

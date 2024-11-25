@@ -36,7 +36,8 @@ const (
 	// Checksum job hash
 	ChecksumHash = "checksum"
 	// DefaultProvisionPort - The starting default port for the OpenStackProvisionServer's Apache container
-	DefaultProvisionPort = 6190
+	ProvisionServerPortStart = 6190
+	ProvisionServerPortEnd   = 6210
 )
 
 const (
@@ -53,7 +54,10 @@ const (
 // OpenStackProvisionServerSpec defines the desired state of OpenStackProvisionServer
 type OpenStackProvisionServerSpec struct {
 	// Port - The port on which the Apache server should listen
-	Port int32 `json:"port"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=6190
+	// +kubebuilder:validation:Maximum=6220
+	Port int32 `json:"port,omitempty"`
 	// +kubebuilder:validation:Optional
 	// Interface - An optional interface to use instead of the cluster's default provisioning interface (if any)
 	Interface string `json:"interface,omitempty"`
