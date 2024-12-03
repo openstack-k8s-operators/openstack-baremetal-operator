@@ -13,9 +13,9 @@ require (
 	github.com/openstack-k8s-operators/lib-common/modules/common v0.5.1-0.20241114091812-6dc9fd0961dc
 	github.com/openstack-k8s-operators/openstack-baremetal-operator/api v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.8.1
-	k8s.io/api v0.29.10
-	k8s.io/apimachinery v0.29.10
-	k8s.io/client-go v0.29.10
+	k8s.io/api v0.29.11
+	k8s.io/apimachinery v0.29.11
+	k8s.io/client-go v0.29.11
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.17.6
 )
@@ -73,8 +73,8 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiextensions-apiserver v0.29.10 // indirect
-	k8s.io/component-base v0.29.10 // indirect
+	k8s.io/apiextensions-apiserver v0.29.11 // indirect
+	k8s.io/component-base v0.29.11 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
