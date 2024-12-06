@@ -106,6 +106,9 @@ func (r *OpenStackProvisionServer) Default() {
 	if r.Spec.OSContainerImageURL == "" {
 		r.Spec.OSContainerImageURL = openstackProvisionServerDefaults.OSContainerImageURL
 	}
+	if r.Spec.OSContainerImageType == "" {
+		r.Spec.OSContainerImageType = openstackProvisionServerDefaults.OSContainerImageType
+	}
 	if r.Spec.AgentImageURL == "" {
 		r.Spec.AgentImageURL = openstackProvisionServerDefaults.AgentImageURL
 	}

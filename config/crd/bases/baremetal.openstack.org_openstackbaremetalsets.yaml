@@ -245,12 +245,22 @@ spec:
                         type: object
                     type: object
                 type: object
+              osContainerImageType:
+                default: self-extracting
+                description: OSContainerImageType - Whether the OS container image
+                  is a self-extracting or a bootc based image
+                enum:
+                - self-extracting
+                - bootc
+                type: string
               osContainerImageUrl:
                 description: OSContainerImageURL - Container image URL for init with
                   the OS qcow2 image (osImage)
                 type: string
               osImage:
-                description: OSImage - OS qcow2 image Name
+                description: OSImage - For osContainerImageType=self-extracting, the
+                  name of the OS qcow2 file to extract from the image. For osContainerImageType=bootc,
+                  the name of the qcow2 file to write to for bootc install.
                 type: string
               passwordSecret:
                 description: 'PasswordSecret the name of the secret used to optionally

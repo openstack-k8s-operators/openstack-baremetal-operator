@@ -29,6 +29,22 @@ func getInitVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+		{
+			Name: "var-lib-containers",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/var/lib/containers",
+				},
+			},
+		},
+		{
+			Name: "dev",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/dev",
+				},
+			},
+		},
 	}
 }
 
@@ -53,6 +69,14 @@ func getInitVolumeMounts(instance *baremetalv1.OpenStackProvisionServer) []corev
 		{
 			Name:      "image-data",
 			MountPath: *instance.Spec.OSImageDir,
+		},
+		{
+			Name:      "var-lib-containers",
+			MountPath: "/var/lib/containers",
+		},
+		{
+			Name:      "dev",
+			MountPath: "/dev",
 		},
 	}
 }

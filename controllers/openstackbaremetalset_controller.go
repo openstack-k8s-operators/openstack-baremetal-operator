@@ -516,6 +516,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		}
 		provisionServer.Spec.OSImage = instance.Spec.OSImage
 		provisionServer.Spec.OSContainerImageURL = instance.Spec.OSContainerImageURL
+		provisionServer.Spec.OSContainerImageType = instance.Spec.OSContainerImageType
 		provisionServer.Spec.ApacheImageURL = instance.Spec.ApacheImageURL
 		provisionServer.Spec.AgentImageURL = instance.Spec.AgentImageURL
 		provisionServer.Spec.NodeSelector = instance.Spec.ProvisonServerNodeSelector
