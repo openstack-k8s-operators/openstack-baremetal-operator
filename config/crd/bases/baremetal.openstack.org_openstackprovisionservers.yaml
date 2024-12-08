@@ -67,12 +67,22 @@ spec:
                 description: NodeSelector to target subset of worker nodes running
                   this provision server
                 type: object
+              osContainerImageType:
+                default: self-extracting
+                description: OSContainerImageType - Whether the OS container image
+                  is a self-extracting or a bootc based image
+                enum:
+                - self-extracting
+                - bootc
+                type: string
               osContainerImageUrl:
                 description: OSContainerImageURL - Container image URL for init with
                   the OS qcow2 image (osImage)
                 type: string
               osImage:
-                description: OSImage - OS qcow2 image (compressed as gz, or uncompressed)
+                description: OSImage - For osContainerImageType=self-extracting, the
+                  name of the OS qcow2 file to extract from the image. For osContainerImageType=bootc,
+                  the name of the qcow2 file to write to for bootc install.
                 type: string
               osImageDir:
                 default: /usr/local/apache2/htdocs
@@ -143,7 +153,6 @@ spec:
             - agentImageUrl
             - apacheImageUrl
             - osContainerImageUrl
-            - osImage
             - osImageDir
             type: object
           status:

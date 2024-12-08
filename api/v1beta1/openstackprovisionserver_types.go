@@ -43,6 +43,8 @@ const (
 const (
 	// OSContainerImage - default fall-back image for OpenStackProvisionServer int container
 	OSContainerImage = "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified"
+	// OSContainerImageType - default fall-back image type for OSContainerImage
+	OSContainerImageType = "self-extracting"
 	// AgentImage - default fall-back image for OpenStackProvisionServer agent
 	AgentImage = "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest"
 	// ApacheImage - default fall-back image for Apache
@@ -61,7 +63,8 @@ type OpenStackProvisionServerSpec struct {
 	// +kubebuilder:validation:Optional
 	// Interface - An optional interface to use instead of the cluster's default provisioning interface (if any)
 	Interface string `json:"interface,omitempty"`
-	// OSImage - OS qcow2 image (compressed as gz, or uncompressed)
+	// +kubebuilder:validation:Optional
+	// OSImage - For osContainerImageType=self-extracting, the name of the OS qcow2 file to extract from the image. For osContainerImageType=bootc, the name of the qcow2 file to write to for bootc install.
 	OSImage string `json:"osImage"`
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=/usr/local/apache2/htdocs
@@ -69,6 +72,10 @@ type OpenStackProvisionServerSpec struct {
 	OSImageDir *string `json:"osImageDir"`
 	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
 	OSContainerImageURL string `json:"osContainerImageUrl"`
+	// +kubebuilder:validation:Enum=self-extracting;bootc
+	// +kubebuilder:default=self-extracting
+	// OSContainerImageType - Whether the OS container image is a self-extracting or a bootc based image
+	OSContainerImageType string `json:"osContainerImageType,omitempty"`
 	// ApacheImageURL - Container image URL for the main container that serves the downloaded OS qcow2 image (osImage)
 	ApacheImageURL string `json:"apacheImageUrl"`
 	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs
@@ -138,10 +145,11 @@ type OpenStackProvisionServerList struct {
 
 // OpenStackProvisionServerDefaults -
 type OpenStackProvisionServerDefaults struct {
-	OSContainerImageURL string
-	AgentImageURL       string
-	ApacheImageURL      string
-	OSImage             string
+	OSContainerImageURL  string
+	OSContainerImageType string
+	AgentImageURL        string
+	ApacheImageURL       string
+	OSImage              string
 }
 
 func init() {
@@ -168,10 +176,11 @@ func (instance OpenStackProvisionServer) RbacResourceName() string {
 func SetupDefaults() {
 	// Acquire environmental defaults and initialize OpenStackProvisionServer defaults with them
 	openstackProvisionServerDefaults := OpenStackProvisionServerDefaults{
-		OSContainerImageURL: util.GetEnvVar("RELATED_IMAGE_OS_CONTAINER_IMAGE_URL_DEFAULT", OSContainerImage),
-		AgentImageURL:       util.GetEnvVar("RELATED_IMAGE_AGENT_IMAGE_URL_DEFAULT", AgentImage),
-		ApacheImageURL:      util.GetEnvVar("RELATED_IMAGE_APACHE_IMAGE_URL_DEFAULT", ApacheImage),
-		OSImage:             util.GetEnvVar("OS_IMAGE_DEFAULT", OSImage),
+		OSContainerImageURL:  util.GetEnvVar("RELATED_IMAGE_OS_CONTAINER_IMAGE_URL_DEFAULT", OSContainerImage),
+		OSContainerImageType: util.GetEnvVar("RELATED_IMAGE_OS_CONTAINER_IMAGE_TYPE_DEFAULT", OSContainerImageType),
+		AgentImageURL:        util.GetEnvVar("RELATED_IMAGE_AGENT_IMAGE_URL_DEFAULT", AgentImage),
+		ApacheImageURL:       util.GetEnvVar("RELATED_IMAGE_APACHE_IMAGE_URL_DEFAULT", ApacheImage),
+		OSImage:              util.GetEnvVar("OS_IMAGE_DEFAULT", OSImage),
 	}
 
 	SetupOpenStackProvisionServerDefaults(openstackProvisionServerDefaults)

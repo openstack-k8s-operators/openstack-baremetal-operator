@@ -86,9 +86,10 @@ func ChecksumJob(
 	}
 
 	initContainerDetails := InitContainerDetails{
-		OsImageDir:     *instance.Spec.OSImageDir,
-		ContainerImage: instance.Spec.OSContainerImageURL,
-		VolumeMounts:   getInitVolumeMounts(instance),
+		OsImageDir:         *instance.Spec.OSImageDir,
+		ContainerImage:     instance.Spec.OSContainerImageURL,
+		ContainerImageType: instance.Spec.OSContainerImageType,
+		VolumeMounts:       getInitVolumeMounts(instance),
 	}
 	job.Spec.Template.Spec.InitContainers = InitContainer(initContainerDetails)
 
