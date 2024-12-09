@@ -143,10 +143,6 @@ spec:
                 description: CtlplaneInterface - Interface on the provisioned nodes
                   to use for ctlplane network
                 type: string
-              ctlplaneNetmask:
-                description: 'CtlplaneNetmask - Netmask to use for ctlplane network
-                  (TODO: acquire this is another manner?)'
-                type: string
               ctlplaneVlan:
                 description: CtlplaneVlan - Vlan for ctlplane network
                 type: integer
