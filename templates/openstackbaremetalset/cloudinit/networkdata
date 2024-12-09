@@ -7,7 +7,6 @@ networks:
   id: {{ .CtlplaneInterface }}
   type: {{ .CtlplaneIpVersion }}
   ip_address: {{ .CtlplaneIp }}
-  netmask: "{{ .CtlplaneNetmask }}"
 {{- if (index . "CtlplaneGateway") }}
   routes:
   - network: {{ if eq .CtlplaneIpVersion "ipv6" }}"::"{{ else }}0.0.0.0{{ end }}
