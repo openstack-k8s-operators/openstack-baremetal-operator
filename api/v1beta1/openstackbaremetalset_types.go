@@ -55,11 +55,15 @@ type OpenStackBaremetalSetSpec struct {
 	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
 	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts,omitempty"`
 	// +kubebuilder:validation:Optional
-	// OSImage - OS qcow2 image Name
+	// OSImage - For osContainerImageType=self-extracting, the name of the OS qcow2 file to extract from the image. For osContainerImageType=bootc, the name of the qcow2 file to write to for bootc install.
 	OSImage string `json:"osImage,omitempty"`
 	// +kubebuilder:validation:Optional
 	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
 	OSContainerImageURL string `json:"osContainerImageUrl,omitempty"`
+	// +kubebuilder:validation:Enum=self-extracting;bootc
+	// +kubebuilder:default=self-extracting
+	// OSContainerImageType - Whether the OS container image is a self-extracting or a bootc based image
+	OSContainerImageType string `json:"osContainerImageType,omitempty"`
 	// +kubebuilder:validation:Optional
 	// ApacheImageURL - Container image URL for the main container that serves the downloaded OS qcow2 image (osImage)
 	ApacheImageURL string `json:"apacheImageUrl,omitempty"`
