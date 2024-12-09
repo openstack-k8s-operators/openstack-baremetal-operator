@@ -97,24 +97,9 @@ func BaremetalHostProvision(
 	if networkDataSecret == nil {
 
 		// Check IP version and set template variables accordingly
-		ipAddr, ipNet, err := net.ParseCIDR(ctlPlaneIP)
+		ipAddr, _, err := net.ParseCIDR(ctlPlaneIP)
 		if err != nil {
-			// TODO: Remove this conversion once all usage sets ctlPlaneIP in CIDR format.
-			ipAddr = net.ParseIP(ctlPlaneIP)
-			if ipAddr == nil {
-				return err
-			}
-
-			var ipPrefix int
-			if ipAddr.To4() != nil {
-				ipPrefix, _ = net.IPMask(net.ParseIP(instance.Spec.CtlplaneNetmask).To4()).Size()
-			} else {
-				ipPrefix, _ = net.IPMask(net.ParseIP(instance.Spec.CtlplaneNetmask).To16()).Size()
-			}
-			_, ipNet, err = net.ParseCIDR(fmt.Sprintf("%s/%d", ipAddr, ipPrefix))
-			if err != nil {
-				return err
-			}
+			return err
 		}
 
 		CtlplaneIPVersion := "ipv6"
@@ -127,7 +112,6 @@ func BaremetalHostProvision(
 		templateParameters["CtlplaneIp"] = ipAddr
 		templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
 		templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
-		templateParameters["CtlplaneNetmask"] = net.IP(ipNet.Mask)
 		if len(instance.Spec.BootstrapDNS) > 0 {
 			templateParameters["CtlplaneDns"] = instance.Spec.BootstrapDNS
 		} else {
