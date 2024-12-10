@@ -183,9 +183,11 @@ func Deployment(
 	}
 
 	initContainerDetails := InitContainerDetails{
-		OsImageDir:     *instance.Spec.OSImageDir,
-		ContainerImage: instance.Spec.OSContainerImageURL,
-		VolumeMounts:   getInitVolumeMounts(instance),
+		OsImageDir:         *instance.Spec.OSImageDir,
+		OsImage:            instance.Spec.OSImage,
+		ContainerImage:     instance.Spec.OSContainerImageURL,
+		ContainerImageType: instance.Spec.OSContainerImageType,
+		VolumeMounts:       getInitVolumeMounts(instance),
 	}
 	deployment.Spec.Template.Spec.InitContainers = InitContainer(initContainerDetails)
 
