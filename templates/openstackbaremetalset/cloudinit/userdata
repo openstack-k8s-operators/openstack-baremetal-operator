@@ -8,6 +8,8 @@ users:
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     shell: /bin/bash
 {{- if (index . "NodeRootPassword") }}
+disable_root: false
+ssh_pwauth:   true
 chpasswd:
   list: |
     root:{{ .NodeRootPassword }}
