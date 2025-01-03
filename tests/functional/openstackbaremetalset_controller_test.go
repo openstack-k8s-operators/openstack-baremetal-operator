@@ -84,7 +84,6 @@ var _ = Describe("BaremetalSet Test", func() {
 				DeploymentSSHSecret:   "mysecret",
 				CtlplaneInterface:     "eth0",
 				CtlplaneGateway:       "",
-				CtlplaneNetmask:       "255.255.255.0",
 				BmhNamespace:          baremetalSetName.Namespace,
 				BmhLabelSelector:      map[string]string{"app": "openstack"},
 				HardwareReqs: baremetalv1.HardwareReqs{

@@ -88,7 +88,6 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default="255.255.255.0"
 	// CtlplaneNetmask - Netmask to use for ctlplane network (TODO: acquire this is another manner?)
 	CtlplaneNetmask string `json:"ctlplaneNetmask,omitempty"`
 	// +kubebuilder:default=openshift-machine-api
