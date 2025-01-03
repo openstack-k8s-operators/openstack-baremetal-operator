@@ -315,6 +315,11 @@ func (in *OpenStackBaremetalSetSpec) DeepCopyInto(out *OpenStackBaremetalSetSpec
 			(*out)[key] = val
 		}
 	}
+	if in.CtlplaneVlan != nil {
+		in, out := &in.CtlplaneVlan, &out.CtlplaneVlan
+		*out = new(int)
+		**out = **in
+	}
 	if in.BmhLabelSelector != nil {
 		in, out := &in.BmhLabelSelector, &out.BmhLabelSelector
 		*out = make(map[string]string, len(*in))
