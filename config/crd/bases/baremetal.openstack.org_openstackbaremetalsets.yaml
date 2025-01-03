@@ -144,7 +144,6 @@ spec:
                   to use for ctlplane network
                 type: string
               ctlplaneNetmask:
-                default: 255.255.255.0
                 description: 'CtlplaneNetmask - Netmask to use for ctlplane network
                   (TODO: acquire this is another manner?)'
                 type: string
