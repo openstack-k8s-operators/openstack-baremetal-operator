@@ -125,6 +125,9 @@ func BaremetalHostProvision(
 		templateParameters := make(map[string]interface{})
 		templateParameters["CtlplaneIpVersion"] = CtlplaneIPVersion
 		templateParameters["CtlplaneIp"] = ipAddr
+		if instance.Spec.CtlplaneVlan != nil {
+			templateParameters["CtlplaneVlan"] = *instance.Spec.CtlplaneVlan
+		}
 		templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
 		templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
 		templateParameters["CtlplaneNetmask"] = net.IP(ipNet.Mask)
