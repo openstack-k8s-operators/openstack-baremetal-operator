@@ -65,15 +65,7 @@ var _ = Describe("BaremetalSet Test", func() {
 		})
 		It("should have the Spec fields initialized", func() {
 			baremetalSetInstance := GetBaremetalSet(baremetalSetName)
-			spec := baremetalv1.OpenStackBaremetalSetSpec{
-				BaremetalHosts: map[string]baremetalv1.InstanceSpec{
-					"compute-0": {
-						CtlPlaneIP:       "10.0.0.1",
-						UserData:         nil,
-						NetworkData:      nil,
-						BmhLabelSelector: nil,
-					},
-				},
+			coreSpec := baremetalv1.OpenStackBaremetalSetTemplateSpec{
 				OSImage:               "",
 				OSContainerImageURL:   "",
 				ApacheImageURL:        "",
@@ -83,7 +75,6 @@ var _ = Describe("BaremetalSet Test", func() {
 				ProvisioningInterface: "",
 				DeploymentSSHSecret:   "mysecret",
 				CtlplaneInterface:     "eth0",
-				CtlplaneGateway:       "",
 				BmhNamespace:          baremetalSetName.Namespace,
 				BmhLabelSelector:      map[string]string{"app": "openstack"},
 				HardwareReqs: baremetalv1.HardwareReqs{
@@ -100,11 +91,23 @@ var _ = Describe("BaremetalSet Test", func() {
 						SSDReq: baremetalv1.DiskSSDReq{SSD: false, ExactMatch: false},
 					},
 				},
-				PasswordSecret:   nil,
-				CloudUserName:    "cloud-admin",
-				DomainName:       "",
-				BootstrapDNS:     nil,
-				DNSSearchDomains: nil,
+				PasswordSecret: nil,
+				CloudUserName:  "cloud-admin",
+			}
+			spec := baremetalv1.OpenStackBaremetalSetSpec{
+				BaremetalHosts: map[string]baremetalv1.InstanceSpec{
+					"compute-0": {
+						CtlPlaneIP:       "10.0.0.1",
+						UserData:         nil,
+						NetworkData:      nil,
+						BmhLabelSelector: nil,
+					},
+				},
+				CtlplaneGateway:                   "",
+				DomainName:                        "",
+				BootstrapDNS:                      nil,
+				DNSSearchDomains:                  nil,
+				OpenStackBaremetalSetTemplateSpec: coreSpec,
 			}
 			Expect(baremetalSetInstance.Spec).Should(Equal(spec))
 		})

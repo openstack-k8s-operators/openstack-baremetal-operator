@@ -49,11 +49,7 @@ const (
 	CleaningModeMetadata AutomatedCleaningMode = "metadata"
 )
 
-// OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
-type OpenStackBaremetalSetSpec struct {
-	// +kubebuilder:validation:Optional
-	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
-	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts,omitempty"`
+type OpenStackBaremetalSetTemplateSpec struct {
 	// +kubebuilder:validation:Optional
 	// OSImage - OS qcow2 image Name
 	OSImage string `json:"osImage,omitempty"`
@@ -84,9 +80,6 @@ type OpenStackBaremetalSetSpec struct {
 	DeploymentSSHSecret string `json:"deploymentSSHSecret"`
 	// CtlplaneInterface - Interface on the provisioned nodes to use for ctlplane network
 	CtlplaneInterface string `json:"ctlplaneInterface"`
-	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
-	// +kubebuilder:validation:Optional
-	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
 	// +kubebuilder:validation:Optional
 	// CtlplaneNetmask - Netmask to use for ctlplane network (TODO: acquire this is another manner?)
 	CtlplaneNetmask string `json:"ctlplaneNetmask,omitempty"`
@@ -108,6 +101,16 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:default=cloud-admin
 	// CloudUser to be configured for remote access
 	CloudUserName string `json:"cloudUserName"`
+}
+
+// OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
+type OpenStackBaremetalSetSpec struct {
+	// +kubebuilder:validation:Optional
+	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
+	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts,omitempty"`
+	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
+	// +kubebuilder:validation:Optional
+	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
 	// DomainName is the domain name that will be set on the underlying Metal3 BaremetalHosts (TODO: acquire this is another manner?)
 	// +kubebuilder:validation:Optional
 	DomainName string `json:"domainName,omitempty"`
@@ -118,7 +121,8 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	// DNSSearchDomains - initial DNS nameserver values to set on the BaremetalHosts when they are provisioned.
 	// Note that subsequent deployment will overwrite these values
-	DNSSearchDomains []string `json:"dnsSearchDomains,omitempty"`
+	DNSSearchDomains                  []string `json:"dnsSearchDomains,omitempty"`
+	OpenStackBaremetalSetTemplateSpec `json:",inline"`
 }
 
 // OpenStackBaremetalSetStatus defines the observed state of OpenStackBaremetalSet
