@@ -101,6 +101,9 @@ type OpenStackBaremetalSetTemplateSpec struct {
 	// +kubebuilder:default=cloud-admin
 	// CloudUser to be configured for remote access
 	CloudUserName string `json:"cloudUserName"`
+	// DomainName is the domain name that will be set on the underlying Metal3 BaremetalHosts (TODO: acquire this is another manner?)
+	// +kubebuilder:validation:Optional
+	DomainName string `json:"domainName,omitempty"`
 }
 
 // OpenStackBaremetalSetSpec defines the desired state of OpenStackBaremetalSet
@@ -114,9 +117,6 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	// CtlplaneVlan - Vlan for ctlplane network
 	CtlplaneVlan *int `json:"ctlplaneVlan,omitempty"`
-	// DomainName is the domain name that will be set on the underlying Metal3 BaremetalHosts (TODO: acquire this is another manner?)
-	// +kubebuilder:validation:Optional
-	DomainName string `json:"domainName,omitempty"`
 	// +kubebuilder:validation:Optional
 	// BootstrapDNS - initial DNS nameserver values to set on the BaremetalHosts when they are provisioned.
 	// Note that subsequent deployment will overwrite these values

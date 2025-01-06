@@ -82,7 +82,18 @@ func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 	return nil, nil
 }
 
+// Validate implements OpenStackBaremetalSetTemplateSpec validation
+func (spec OpenStackBaremetalSetTemplateSpec) ValidateTemplate(oldCount int, oldSpec OpenStackBaremetalSetTemplateSpec) error {
+	if oldCount > 0 &&
+		(!equality.Semantic.DeepEqual(spec.BmhLabelSelector, oldSpec.BmhLabelSelector) ||
+			!equality.Semantic.DeepEqual(spec.HardwareReqs, oldSpec.HardwareReqs)) {
+		return fmt.Errorf("cannot change \"bmhLabelSelector\" nor \"hardwareReqs\" when previous count of \"baremetalHosts\" > 0")
+	}
+	return nil
+}
+
 // Validate implements spec validation
+// Note: Remove this once opestack-operator has been updated.
 func (spec OpenStackBaremetalSetSpec) Validate(oldSpec OpenStackBaremetalSetSpec) error {
 	if len(oldSpec.BaremetalHosts) > 0 &&
 		(!equality.Semantic.DeepEqual(spec.BmhLabelSelector, oldSpec.BmhLabelSelector) ||
@@ -103,7 +114,8 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 		return nil, fmt.Errorf("runtime object is not an OpenStackBaremetalSet")
 	}
 
-	if err := r.Spec.Validate(oldInstance.Spec); err != nil {
+	if err := r.Spec.ValidateTemplate(len(oldInstance.Spec.BaremetalHosts),
+		oldInstance.Spec.OpenStackBaremetalSetTemplateSpec); err != nil {
 		return nil, err
 	}
 
