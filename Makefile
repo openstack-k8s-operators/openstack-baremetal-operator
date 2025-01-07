@@ -348,7 +348,7 @@ gotest: test
 
 .PHONY: golangci-lint
 golangci-lint:
-	test -s $(LOCALBIN)/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.51.2
+	test -s $(LOCALBIN)/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.59.1
 	$(LOCALBIN)/golangci-lint run --fix
 
 # Run go lint against code
