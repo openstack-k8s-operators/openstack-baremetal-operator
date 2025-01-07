@@ -93,6 +93,7 @@ var _ = Describe("BaremetalSet Test", func() {
 				},
 				PasswordSecret: nil,
 				CloudUserName:  "cloud-admin",
+				DomainName:     "",
 			}
 			spec := baremetalv1.OpenStackBaremetalSetSpec{
 				BaremetalHosts: map[string]baremetalv1.InstanceSpec{
@@ -104,7 +105,6 @@ var _ = Describe("BaremetalSet Test", func() {
 					},
 				},
 				CtlplaneGateway:                   "",
-				DomainName:                        "",
 				BootstrapDNS:                      nil,
 				DNSSearchDomains:                  nil,
 				OpenStackBaremetalSetTemplateSpec: coreSpec,
