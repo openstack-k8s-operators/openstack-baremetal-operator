@@ -65,7 +65,8 @@ func AssignProvisionServerPort(
 
 		if found {
 			if existingPorts[instance.GetName()] != cur {
-				return fmt.Errorf("%v port already used by another OpeStackProvisionServer", cur)
+				// continue to use the next port in the port range.
+				continue
 			} else {
 				break
 			}
