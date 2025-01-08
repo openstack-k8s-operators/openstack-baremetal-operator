@@ -257,6 +257,7 @@ spec:
                   the OS qcow2 image (osImage)
                 type: string
               osImage:
+                default: edpm-hardened-uefi.qcow2
                 description: OSImage - OS qcow2 image Name
                 type: string
               passwordSecret:

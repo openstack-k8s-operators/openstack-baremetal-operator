@@ -66,7 +66,7 @@ var _ = Describe("BaremetalSet Test", func() {
 		It("should have the Spec fields initialized", func() {
 			baremetalSetInstance := GetBaremetalSet(baremetalSetName)
 			coreSpec := baremetalv1.OpenStackBaremetalSetTemplateSpec{
-				OSImage:               "",
+				OSImage:               "edpm-hardened-uefi.qcow2",
 				OSContainerImageURL:   "",
 				ApacheImageURL:        "",
 				AgentImageURL:         "",
