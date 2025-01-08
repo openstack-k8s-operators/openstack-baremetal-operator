@@ -51,6 +51,7 @@ const (
 
 type OpenStackBaremetalSetTemplateSpec struct {
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=edpm-hardened-uefi.qcow2
 	// OSImage - OS qcow2 image Name
 	OSImage string `json:"osImage,omitempty"`
 	// +kubebuilder:validation:Optional
