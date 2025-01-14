@@ -81,7 +81,7 @@ func (r *OpenStackProvisionServer) validateCr() error {
 
 	for name, port := range existingPorts {
 		if name != r.Name && port == r.Spec.Port {
-			return fmt.Errorf("port %d is already in use by another OpeStackProvisionServer", port)
+			return fmt.Errorf("port %d is already in use by another OpenStackProvisionServer", port)
 		}
 	}
 
