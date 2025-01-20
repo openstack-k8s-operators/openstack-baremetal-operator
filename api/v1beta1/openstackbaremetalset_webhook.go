@@ -92,17 +92,6 @@ func (spec OpenStackBaremetalSetTemplateSpec) ValidateTemplate(oldCount int, old
 	return nil
 }
 
-// Validate implements spec validation
-// Note: Remove this once opestack-operator has been updated.
-func (spec OpenStackBaremetalSetSpec) Validate(oldSpec OpenStackBaremetalSetSpec) error {
-	if len(oldSpec.BaremetalHosts) > 0 &&
-		(!equality.Semantic.DeepEqual(spec.BmhLabelSelector, oldSpec.BmhLabelSelector) ||
-			!equality.Semantic.DeepEqual(spec.HardwareReqs, oldSpec.HardwareReqs)) {
-		return fmt.Errorf("cannot change \"bmhLabelSelector\" nor \"hardwareReqs\" when previous count of \"baremetalHosts\" > 0")
-	}
-	return nil
-}
-
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	openstackbaremetalsetlog.Info("validate update", "name", r.Name)
