@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/go-logr/logr v1.4.2
-	github.com/golang/glog v1.2.3
+	github.com/golang/glog v1.2.4
 	github.com/google/uuid v1.6.0
 	github.com/metal3-io/baremetal-operator/apis v0.6.3
 	github.com/onsi/ginkgo/v2 v2.20.1
