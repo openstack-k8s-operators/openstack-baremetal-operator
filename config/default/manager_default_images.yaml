@@ -14,8 +14,7 @@ spec:
         - name: RELATED_IMAGE_OS_CONTAINER_IMAGE_URL_DEFAULT
           value: quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified
         - name: RELATED_IMAGE_AGENT_IMAGE_URL_DEFAULT
-          # FIXME: REMOVE before merging
-          value: quay.io/andrewbays/openstack-baremetal-operator-agent:v0.0.1
+          value: quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest
         - name: RELATED_IMAGE_APACHE_IMAGE_URL_DEFAULT
           value: registry.redhat.io/ubi9/httpd-24:latest
         - name: OS_IMAGE_DEFAULT
