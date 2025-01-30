@@ -5,9 +5,9 @@ const (
 	BmhRefInitState = "unassigned"
 
 	// CloudInitUserDataSecretName - Naming template used for generating BaremetalHost cloudinit userdata secrets
-	CloudInitUserDataSecretName = "%s-cloudinit-userdata-%s"
+	CloudInitUserDataSecretName = "%s-cloudinit-userdata-%s" // #nosec G101
 	// CloudInitNetworkDataSecretName - Naming template used for generating BaremetalHost cloudinit networkdata secrets
-	CloudInitNetworkDataSecretName = "%s-cloudinit-networkdata-%s"
+	CloudInitNetworkDataSecretName = "%s-cloudinit-networkdata-%s" // #nosec G101
 
 	// HostnameLabelSelectorSuffix = Suffix used with OSBMS instance name to label BMH as belonging to an entry in OSBMS.Spec.BaremetalHosts
 	HostnameLabelSelectorSuffix = "-osbms-hostname"
