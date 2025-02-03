@@ -351,6 +351,11 @@ golangci-lint:
 	test -s $(LOCALBIN)/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.59.1
 	$(LOCALBIN)/golangci-lint run --fix
 
+.PHONY: vulncheck
+vulncheck: ## Run govulncheck against code
+	test -s $(LOCALBIN)/govulncheck || GOBIN=$(LOCALBIN) go install golang.org/x/vuln/cmd/govulncheck@v1.1.0
+	$(LOCALBIN)/govulncheck ./...
+
 # Run go lint against code
 golint: get-ci-tools
 	GOWORK=off PATH=$(GOBIN):$(PATH); $(CI_TOOLS_REPO_DIR)/test-runner/golint.sh
