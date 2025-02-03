@@ -128,7 +128,7 @@ func runChecksumStartCmd(_ *cobra.Command, _ []string) {
 	}
 
 	if checksumFileName == "" {
-		panic(fmt.Errorf("could not find any OSImage checksum file in %s", checksumStartOpts.osImageDir))
+		panic(fmt.Errorf("%w in %s", ErrOSImageNotFound, checksumStartOpts.osImageDir))
 	}
 
 	// Try to update status with checksum data until it succeeds, as it's possible to hit "object has been modified" k8s error here
