@@ -25,10 +25,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -61,6 +63,16 @@ var _ webhook.Validator = &OpenStackBaremetalSet{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 	openstackbaremetalsetlog.Info("validate create", "name", r.Name)
+	var errors field.ErrorList
+	// Check if OpenStackBaremetalSet name matches RFC1123 for use in labels
+	validate := validator.New()
+	if err := validate.Var(r.Name, "hostname_rfc1123"); err != nil {
+		openstackbaremetalsetlog.Error(err, "Error validating OpenStackBaremetalSet name, name must follow RFC1123")
+		errors = append(errors, field.Invalid(
+			field.NewPath("Name"),
+			r.Name,
+			fmt.Sprintf("Error validating OpenStackBaremetalSet name %s, name must follow RFC1123", r.Name)))
+	}
 
 	//
 	// Validate that there are enough available BMHs for the initial requested count

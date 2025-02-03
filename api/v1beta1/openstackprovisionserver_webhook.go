@@ -25,7 +25,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -61,6 +63,16 @@ var _ webhook.Validator = &OpenStackProvisionServer{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenStackProvisionServer) ValidateCreate() (admission.Warnings, error) {
 	openstackprovisionserverlog.Info("validate create", "name", r.Name)
+	var errors field.ErrorList
+	// Check if OpenStackProvisionServer name matches RFC1123 for use in labels
+	validate := validator.New()
+	if err := validate.Var(r.Name, "hostname_rfc1123"); err != nil {
+		openstackprovisionserverlog.Error(err, "Error validating OpenStackProvisionServer name, name must follow RFC1123")
+		errors = append(errors, field.Invalid(
+			field.NewPath("Name"),
+			r.Name,
+			fmt.Sprintf("Error validating OpenStackProvisionServer name %s, name must follow RFC1123", r.Name)))
+	}
 
 	return nil, r.validateCr()
 }
