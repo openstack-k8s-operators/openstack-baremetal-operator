@@ -53,7 +53,7 @@ func AssignProvisionServerPort(
 
 	for ; ; cur++ {
 		if cur > portEnd {
-			return fmt.Errorf("slected port is out of range %v-%v-%v", cur, portStart, portEnd)
+			return fmt.Errorf("selected port is out of range %v-%v-%v", cur, portStart, portEnd)
 		}
 		found := false
 		for _, port := range existingPorts {
