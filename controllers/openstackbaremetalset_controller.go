@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -28,10 +29,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
@@ -183,8 +187,34 @@ func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) err
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&baremetalv1.OpenStackBaremetalSet{}).
 		Owns(&baremetalv1.OpenStackProvisionServer{}).
-		Watches(&metal3v1.BareMetalHost{}, openshiftMachineAPIBareMetalHostsFn).
+		Watches(&metal3v1.BareMetalHost{}, openshiftMachineAPIBareMetalHostsFn,
+			builder.WithPredicates(statusChangePredicate())).
 		Complete(r)
+}
+
+func statusChangePredicate() predicate.Predicate {
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldObj, okOld := e.ObjectOld.(*metal3v1.BareMetalHost)
+			newObj, okNew := e.ObjectNew.(*metal3v1.BareMetalHost)
+			if !okOld || !okNew {
+				return false
+			}
+			return !reflect.DeepEqual(oldObj.Status, newObj.Status) // Only trigger if status changed
+		},
+
+		CreateFunc: func(_ event.CreateEvent) bool {
+			return false // Ignore create events
+		},
+
+		DeleteFunc: func(_ event.DeleteEvent) bool {
+			return false // Ignore delete events
+		},
+
+		GenericFunc: func(_ event.GenericEvent) bool {
+			return false // Ignore generic events
+		},
+	}
 }
 
 func (r *OpenStackBaremetalSetReconciler) reconcileDelete(ctx context.Context, instance *baremetalv1.OpenStackBaremetalSet, helper *helper.Helper) (ctrl.Result, error) {
