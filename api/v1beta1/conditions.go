@@ -72,8 +72,11 @@ const (
 	// OpenStackProvisionServerProvIntfReadyErrorMessage
 	OpenStackProvisionServerProvIntfReadyErrorMessage = "OpenStackProvisionServerProvIntf error occured %s"
 
+	// OpenStackProvisionServerProvIntfReadyRunningMessage
+	OpenStackProvisionServerProvIntfReadyRunningMessage = "OpenStackProvisionServerProvIntf acquisition in progress"
+
 	// OpenStackProvisionServerProvIntfReadyMessage
-	OpenStackProvisionServerProvIntfReadyMessage = "OpenStackProvisionServerProvIntf found"
+	OpenStackProvisionServerProvIntfReadyMessage = "OpenStackProvisionServerProvIntf found and IP acquired"
 
 	//
 	// OpenStackProvisionServerLocalImageURLReady condition messages

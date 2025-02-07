@@ -357,9 +357,7 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 		return ctrl.Result{}, err
 	}
 
-	if provInterfaceName != "" {
-		instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, baremetalv1.OpenStackProvisionServerProvIntfReadyMessage)
-	} else {
+	if provInterfaceName == "" {
 		instance.Status.Conditions.Remove(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition)
 	}
 
@@ -437,6 +435,33 @@ func (r *OpenStackProvisionServerReconciler) reconcileNormal(ctx context.Context
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	// create Deployment - end
+
+	// If we are using a provisioning interface, we need to wait until the agent signals
+	// that is has been found and has an IP
+	if provInterfaceName != "" {
+		if instance.Status.ProvisionIPError != "" {
+			err := fmt.Errorf("%w: %s", openstackprovisionserver.ErrProvisioningAgent, instance.Status.ProvisionIPError)
+			// Provisioning agent reported an error during the acquisition of the provisioning IP
+			instance.Status.Conditions.Set(condition.FalseCondition(
+				baremetalv1.OpenStackProvisionServerProvIntfReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityWarning,
+				baremetalv1.OpenStackProvisionServerProvIntfReadyErrorMessage,
+				err.Error()))
+			return ctrl.Result{}, err
+		}
+
+		if instance.Status.ProvisionIP == "" {
+			// Provisioning agent is still trying to acquire the IP on the provisioning interface
+			instance.Status.Conditions.Set(condition.FalseCondition(
+				baremetalv1.OpenStackProvisionServerProvIntfReadyCondition,
+				condition.RequestedReason,
+				condition.SeverityInfo,
+				baremetalv1.OpenStackProvisionServerProvIntfReadyRunningMessage))
+			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+		}
+		instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackProvisionServerProvIntfReadyCondition, baremetalv1.OpenStackProvisionServerProvIntfReadyMessage)
+	}
 
 	instance.Status.LocalImageURL, err = r.getLocalImageURL(ctx, helper, instance, instance.Spec.OSImage)
 	if err != nil {

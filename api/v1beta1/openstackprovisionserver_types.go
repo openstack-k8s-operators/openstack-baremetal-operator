@@ -96,6 +96,8 @@ type OpenStackProvisionServerStatus struct {
 	Hash map[string]string `json:"hash,omitempty"`
 	// IP of the provisioning interface on the node running the ProvisionServer pod
 	ProvisionIP string `json:"provisionIp,omitempty"`
+	// Any error reported by the provisioning agent during provisioning IP acquisition
+	ProvisionIPError string `json:"provisionIpError,omitempty"`
 	// URL of provisioning image on underlying Apache web server
 	LocalImageURL string `json:"localImageUrl,omitempty"`
 	// Filename of OSImage checksum

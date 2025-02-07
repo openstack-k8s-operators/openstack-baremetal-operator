@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"time"
@@ -103,9 +104,12 @@ func runProvisionIPStartCmd(_ *cobra.Command, _ []string) {
 		}
 
 		curIP := ""
+		intfFound := false
 
 		for _, iface := range ifaces {
 			if iface.Name == provisionIPStartOpts.provIntf {
+				intfFound = true
+
 				addrs, err := iface.Addrs()
 
 				if err != nil {
@@ -133,9 +137,7 @@ func runProvisionIPStartCmd(_ *cobra.Command, _ []string) {
 			}
 		}
 
-		if curIP == "" {
-			glog.V(0).Infof("ERROR: Unable to find provisioning IP for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerName, provisionIPStartOpts.provIntf)
-		} else if ip != curIP {
+		if curIP == "" || ip != curIP {
 			unstructured, err := provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).Get(context.Background(), provisionIPStartOpts.provServerName, metav1.GetOptions{}, "/status")
 
 			if k8s_errors.IsNotFound(err) {
@@ -153,18 +155,54 @@ func runProvisionIPStartCmd(_ *cobra.Command, _ []string) {
 
 			status := unstructured.Object["status"].(map[string]interface{})
 
-			status["provisionIp"] = curIP
+			if curIP == "" {
+				var errMsg string     // shorter message intended for surfacing in OpenStackProvisionServer CR
+				var errMsgFull string // longer message for provisiong agent pod logs
 
-			unstructured.Object["status"] = status
+				if intfFound {
+					// Missing IP
+					errMsg = fmt.Sprintf("Unable to find provisioning IP on interface %s", provisionIPStartOpts.provIntf)
+					errMsgFull = fmt.Sprintf("%s for OpenStackProvisionServer %s (namespace %s)\n", errMsg, provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace)
+				} else {
+					// Missing interface entirely
+					errMsg = fmt.Sprintf("Unable to find provisioning interface %s", provisionIPStartOpts.provIntf)
+					errMsgFull = fmt.Sprintf("%s for OpenStackProvisionServer %s (namespace %s)\n", errMsg, provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace)
+				}
 
-			_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
+				glog.V(0).Infof("ERROR: %s", errMsgFull)
 
-			if err != nil {
-				glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) \"provisionIp\" status: %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, err)
+				status["provisionIpError"] = errMsg
+
+				unstructured.Object["status"] = status
+
+				_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
+
+				if err != nil {
+					glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) status with provisioning IP acquisition error: %s\n",
+						provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace,
+						err)
+				} else {
+					glog.V(0).Infof("Updated OpenStackProvisionServer %s (namespace %s) status with provisioning IP acquisition error\n",
+						provisionIPStartOpts.provServerName,
+						provisionIPStartOpts.provServerNamespace)
+
+				}
 			} else {
-				ip = curIP
-				glog.V(0).Infof("Updated OpenStackProvisionServer %s (namespace %s) with status \"provisionIp\": %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, ip)
+				// ip != curIP case
+				status["provisionIp"] = curIP
+				status["provisionIpError"] = ""
 
+				unstructured.Object["status"] = status
+
+				_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
+
+				if err != nil {
+					glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) \"provisionIp\" status: %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, err)
+				} else {
+					ip = curIP
+					glog.V(0).Infof("Updated OpenStackProvisionServer %s (namespace %s) with status \"provisionIp\": %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, ip)
+
+				}
 			}
 		}
 
