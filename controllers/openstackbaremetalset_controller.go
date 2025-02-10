@@ -208,7 +208,7 @@ func statusChangePredicate() predicate.Predicate {
 		},
 
 		DeleteFunc: func(_ event.DeleteEvent) bool {
-			return false // Ignore delete events
+			return true // Reconcile for delete events
 		},
 
 		GenericFunc: func(_ event.GenericEvent) bool {
@@ -435,7 +435,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	// If so, we cannot proceed further as we will risk placing the CR into an
 	// inconsistent state and/or introducing unbounded reconciliation thrashing.
 	//
-	err = baremetalv1.VerifyBaremetalStatusBmhRefs(ctx, helper.GetClient(), instance)
+	err = baremetalv1.VerifyAndSyncBaremetalStatusBmhRefs(ctx, helper.GetClient(), instance)
 
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
