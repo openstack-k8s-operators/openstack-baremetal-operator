@@ -45,11 +45,10 @@ func GetBaremetalHosts(
 
 }
 
-// VerifyBaremetalStatusBmhRefs - Verify that BMHs haven't been improperly deleted
-// outside of our prescribed annotate-and-scale-count-down method.  If bad deletions
-// have occurred, we return an error to halt further reconciliation that could lead
-// to an inconsistent state for instance.Status.BaremetalHosts.
-func VerifyBaremetalStatusBmhRefs(
+// VerifyAndSyncBaremetalStatusBmhRefs - Verify that BMHs haven't been improperly deleted
+// outside of OpenStackBaremetalSet.  If deletions have occurred, we sync the state
+// of instance.Status.BaremetalHosts.
+func VerifyAndSyncBaremetalStatusBmhRefs(
 	ctx context.Context,
 	c goClient.Client,
 	instance *OpenStackBaremetalSet,
@@ -65,9 +64,8 @@ func VerifyBaremetalStatusBmhRefs(
 		return err
 	}
 
-	for _, bmhStatus := range instance.Status.BaremetalHosts {
+	for computeName, bmhStatus := range instance.Status.BaremetalHosts {
 		found := false
-
 		for _, bmh := range allBaremetalHosts.Items {
 			if bmh.Name == bmhStatus.BmhRef {
 				found = true
@@ -76,11 +74,8 @@ func VerifyBaremetalStatusBmhRefs(
 		}
 
 		if !found {
-			err := fmt.Errorf("existing BaremetalHost \"%s\" not found for OpenStackBaremetalSet %s.  "+
-				"Please check BaremetalHost resources and re-add \"%s\" to continue",
-				bmhStatus.BmhRef, instance.Name, bmhStatus.BmhRef)
-
-			return err
+			// bmh could be deleted without us knowing about it
+			delete(instance.Status.BaremetalHosts, computeName)
 		}
 	}
 

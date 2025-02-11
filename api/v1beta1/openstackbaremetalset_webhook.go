@@ -135,7 +135,7 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 		// operations for scaling up or down.
 		//
 		// TODO: Create a specific context here instead of passing TODO()?
-		if err := VerifyBaremetalStatusBmhRefs(context.TODO(), webhookClient, r); err != nil {
+		if err := VerifyAndSyncBaremetalStatusBmhRefs(context.TODO(), webhookClient, r); err != nil {
 			return nil, err
 		}
 
