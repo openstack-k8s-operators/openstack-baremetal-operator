@@ -500,7 +500,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 				condition.RequestedReason,
 				condition.SeverityInfo,
 				baremetalv1.OpenStackBaremetalSetBmhProvisioningReadyRunningMessage))
-			return ctrl.Result{RequeueAfter: time.Second * 20}, nil
+			return ctrl.Result{}, nil
 		}
 	}
 	instance.Status.Conditions.MarkTrue(baremetalv1.OpenStackBaremetalSetBmhProvisioningReadyCondition, baremetalv1.OpenStackBaremetalSetBmhProvisioningReadyMessage)
