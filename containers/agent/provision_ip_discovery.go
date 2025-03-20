@@ -171,9 +171,11 @@ func runProvisionIPStartCmd(_ *cobra.Command, _ []string) {
 
 				glog.V(0).Infof("ERROR: %s", errMsgFull)
 
+				status["provisionIp"] = ""
 				status["provisionIpError"] = errMsg
 
 				unstructured.Object["status"] = status
+				ip = curIP
 
 				_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
 
@@ -197,6 +199,8 @@ func runProvisionIPStartCmd(_ *cobra.Command, _ []string) {
 				_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
 
 				if err != nil {
+					// As the provision server status could not be updated, we need to reset this
+					ip = ""
 					glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) \"provisionIp\" status: %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, err)
 				} else {
 					ip = curIP
