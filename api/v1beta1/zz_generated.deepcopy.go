@@ -186,6 +186,11 @@ func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.CtlplaneVlan != nil {
+		in, out := &in.CtlplaneVlan, &out.CtlplaneVlan
+		*out = new(int)
+		**out = **in
+	}
 	if in.UserData != nil {
 		in, out := &in.UserData, &out.UserData
 		*out = new(v1.SecretReference)
@@ -307,11 +312,6 @@ func (in *OpenStackBaremetalSetSpec) DeepCopyInto(out *OpenStackBaremetalSetSpec
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
 		}
-	}
-	if in.CtlplaneVlan != nil {
-		in, out := &in.CtlplaneVlan, &out.CtlplaneVlan
-		*out = new(int)
-		**out = **in
 	}
 	if in.BootstrapDNS != nil {
 		in, out := &in.BootstrapDNS, &out.BootstrapDNS

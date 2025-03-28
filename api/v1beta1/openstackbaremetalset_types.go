@@ -34,6 +34,12 @@ type InstanceSpec struct {
 	// +kubebuilder:validation:Optional
 	// CtlPlaneIP - Control Plane IP in CIDR notation
 	CtlPlaneIP string `json:"ctlPlaneIP,omitempty"`
+	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
+	// +kubebuilder:validation:Optional
+	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
+	// +kubebuilder:validation:Optional
+	// CtlplaneVlan - Vlan for ctlplane network
+	CtlplaneVlan *int `json:"ctlplaneVlan,omitempty"`
 	// +kubebuilder:validation:Optional
 	// UserData - Host User Data
 	UserData *corev1.SecretReference `json:"userData,omitempty"`
@@ -109,12 +115,6 @@ type OpenStackBaremetalSetSpec struct {
 	// +kubebuilder:validation:Optional
 	// BaremetalHosts - Map of hostname to Instance Spec for all nodes to provision
 	BaremetalHosts map[string]InstanceSpec `json:"baremetalHosts,omitempty"`
-	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
-	// +kubebuilder:validation:Optional
-	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
-	// +kubebuilder:validation:Optional
-	// CtlplaneVlan - Vlan for ctlplane network
-	CtlplaneVlan *int `json:"ctlplaneVlan,omitempty"`
 	// +kubebuilder:validation:Optional
 	// BootstrapDNS - initial DNS nameserver values to set on the BaremetalHosts when they are provisioned.
 	// Note that subsequent deployment will overwrite these values

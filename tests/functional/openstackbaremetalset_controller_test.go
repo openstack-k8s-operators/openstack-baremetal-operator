@@ -104,7 +104,6 @@ var _ = Describe("BaremetalSet Test", func() {
 						BmhLabelSelector: nil,
 					},
 				},
-				CtlplaneGateway:                   "",
 				BootstrapDNS:                      nil,
 				DNSSearchDomains:                  nil,
 				OpenStackBaremetalSetTemplateSpec: coreSpec,
