@@ -34,6 +34,12 @@ type InstanceSpec struct {
 	// +kubebuilder:validation:Optional
 	// CtlPlaneIP - Control Plane IP in CIDR notation
 	CtlPlaneIP string `json:"ctlPlaneIP,omitempty"`
+	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
+	// +kubebuilder:validation:Optional
+	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
+	// +kubebuilder:validation:Optional
+	// CtlplaneVlan - Vlan for ctlplane network
+	CtlplaneVlan *int `json:"ctlplaneVlan,omitempty"`
 	// +kubebuilder:validation:Optional
 	// UserData - Host User Data
 	UserData *corev1.SecretReference `json:"userData,omitempty"`

@@ -110,11 +110,17 @@ func BaremetalHostProvision(
 		templateParameters := make(map[string]interface{})
 		templateParameters["CtlplaneIpVersion"] = CtlplaneIPVersion
 		templateParameters["CtlplaneIp"] = ipAddr
-		if instance.Spec.CtlplaneVlan != nil {
+		if instance.Spec.BaremetalHosts[hostName].CtlplaneVlan != nil {
+			templateParameters["CtlplaneVlan"] = *instance.Spec.BaremetalHosts[hostName].CtlplaneVlan
+		} else if instance.Spec.CtlplaneVlan != nil {
 			templateParameters["CtlplaneVlan"] = *instance.Spec.CtlplaneVlan
 		}
 		templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
-		templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
+		if instance.Spec.BaremetalHosts[hostName].CtlplaneGateway != "" {
+			templateParameters["CtlplaneGateway"] = instance.Spec.BaremetalHosts[hostName].CtlplaneGateway
+		} else {
+			templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
+		}
 		templateParameters["CtlplaneNetmask"] = net.IP(ipNet.Mask)
 		if len(instance.Spec.BootstrapDNS) > 0 {
 			templateParameters["CtlplaneDns"] = instance.Spec.BootstrapDNS
