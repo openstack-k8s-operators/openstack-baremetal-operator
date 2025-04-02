@@ -115,7 +115,11 @@ func BaremetalHostProvision(
 		} else if instance.Spec.CtlplaneVlan != nil {
 			templateParameters["CtlplaneVlan"] = *instance.Spec.CtlplaneVlan
 		}
-		templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
+		if instance.Spec.BaremetalHosts[hostName].CtlplaneInterface != "" {
+			templateParameters["CtlplaneInterface"] = instance.Spec.BaremetalHosts[hostName].CtlplaneInterface
+		} else {
+			templateParameters["CtlplaneInterface"] = instance.Spec.CtlplaneInterface
+		}
 		if instance.Spec.BaremetalHosts[hostName].CtlplaneGateway != "" {
 			templateParameters["CtlplaneGateway"] = instance.Spec.BaremetalHosts[hostName].CtlplaneGateway
 		} else {

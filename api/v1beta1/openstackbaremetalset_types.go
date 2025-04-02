@@ -37,6 +37,9 @@ type InstanceSpec struct {
 	// CtlplaneGateway - IP of gateway for ctrlplane network (TODO: acquire this is another manner?)
 	// +kubebuilder:validation:Optional
 	CtlplaneGateway string `json:"ctlplaneGateway,omitempty"`
+	// CtlplaneInterface - Interface on the provisioned nodes to use for ctlplane network
+	// +kubebuilder:validation:Optional
+	CtlplaneInterface string `json:"ctlplaneInterface,omitempty"`
 	// +kubebuilder:validation:Optional
 	// CtlplaneVlan - Vlan for ctlplane network
 	CtlplaneVlan *int `json:"ctlplaneVlan,omitempty"`
