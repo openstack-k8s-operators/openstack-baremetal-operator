@@ -10,7 +10,7 @@ require (
 	github.com/metal3-io/baremetal-operator/apis v0.6.3
 	github.com/onsi/ginkgo/v2 v2.20.1
 	github.com/onsi/gomega v1.34.1
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20250315090821-34e570d2d5fb
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20250402133843-5a4c5f4fb4f1
 	github.com/openstack-k8s-operators/openstack-baremetal-operator/api v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.9.1
 	k8s.io/api v0.29.15
@@ -47,7 +47,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.5 // indirect
+	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.6 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.5.1 // indirect
