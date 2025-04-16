@@ -1,6 +1,6 @@
 module github.com/openstack-k8s-operators/openstack-baremetal-operator
 
-go 1.21
+go 1.24
 
 require (
 	github.com/blang/semver v3.5.1+incompatible

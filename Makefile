@@ -86,7 +86,7 @@ SHELL = /usr/bin/env bash -o pipefail
 # Extra vars which will be passed to the Docker-build
 DOCKER_BUILD_ARGS ?=
 
-GOTOOLCHAIN_VERSION ?= go1.21.0
+GOTOOLCHAIN_VERSION ?= go1.24.0
 
 .PHONY: all
 all: build
@@ -347,9 +347,10 @@ govet: get-ci-tools
 # Run go test against code
 gotest: test
 
+GOLANGCI_LINT_VERSION ?= v2.4.0
 .PHONY: golangci-lint
 golangci-lint:
-	test -s $(LOCALBIN)/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.59.1
+	test -s $(LOCALBIN)/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s $(GOLANGCI_LINT_VERSION)
 	$(LOCALBIN)/golangci-lint run --fix
 
 .PHONY: vulncheck

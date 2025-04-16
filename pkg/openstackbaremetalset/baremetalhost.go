@@ -1,3 +1,4 @@
+// Package openstackbaremetalset provides functionality for managing OpenStack baremetal host sets
 package openstackbaremetalset
 
 import (

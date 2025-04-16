@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package controllers contains the Kubernetes controllers for managing OpenStack baremetal operator resources
 package controllers
 
 import (
@@ -81,7 +82,7 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 
 	// Fetch the OpenStackBaremetalSet instance
 	instance := &baremetalv1.OpenStackBaremetalSet{}
-	err := r.Client.Get(ctx, req.NamespacedName, instance)
+	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -406,7 +407,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 		// If the above call hit an error, the error will drop through and be handled below
 		if err == nil {
 			// Get the pre-existing OsProvServer that we intend to use
-			err = r.Client.Get(ctx, types.NamespacedName{Name: instance.Spec.ProvisionServerName, Namespace: instance.Namespace}, provisionServer)
+			err = r.Get(ctx, types.NamespacedName{Name: instance.Spec.ProvisionServerName, Namespace: instance.Namespace}, provisionServer)
 		}
 	}
 
@@ -548,8 +549,8 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 	// Next deploy the provisioning image (Apache) server
 	provisionServer := &baremetalv1.OpenStackProvisionServer{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.ObjectMeta.Name + "-provisionserver",
-			Namespace: instance.ObjectMeta.Namespace,
+			Name:      instance.Name + "-provisionserver",
+			Namespace: instance.Namespace,
 		},
 	}
 
@@ -599,11 +600,11 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerDelete(
 	provisionServer := &baremetalv1.OpenStackProvisionServer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-provisionserver", instance.Name),
-			Namespace: instance.ObjectMeta.Namespace,
+			Namespace: instance.Namespace,
 		},
 	}
 
-	err := r.Client.Delete(ctx, provisionServer)
+	err := r.Delete(ctx, provisionServer)
 
 	if err == nil {
 		l.Info("OpenStackProvisionServer successfully deleted", "OpenStackProvisionServer", provisionServer.Name)

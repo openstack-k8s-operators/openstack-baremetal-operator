@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package openstackprovisionserver provides functionality for managing OpenStack provisioning servers
 package openstackprovisionserver
 
 const (
