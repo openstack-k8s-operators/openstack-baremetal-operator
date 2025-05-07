@@ -25,7 +25,7 @@ func GetExistingProvServerPorts(
 	}
 
 	for _, provServer := range provServerList.Items {
-		found[provServer.Name] = provServer.Spec.Port
+		found[fmt.Sprintf("%s-%s", provServer.Name, provServer.Namespace)] = provServer.Spec.Port
 	}
 
 	return found, nil
@@ -46,7 +46,8 @@ func AssignProvisionServerPort(
 
 	// It's possible that this prov server already exists and we are just dealing with
 	// a minimized version of it (only its ObjectMeta is set, etc)
-	cur := existingPorts[instance.GetName()]
+	instanceKey := fmt.Sprintf("%s-%s", instance.GetName(), instance.GetNamespace())
+	cur := existingPorts[instanceKey]
 	if cur == 0 {
 		cur = portStart
 	}
@@ -64,7 +65,7 @@ func AssignProvisionServerPort(
 		}
 
 		if found {
-			if existingPorts[instance.GetName()] != cur {
+			if existingPorts[instanceKey] != cur {
 				// continue to use the next port in the port range.
 				continue
 			} else {

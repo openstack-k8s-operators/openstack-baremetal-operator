@@ -51,13 +51,14 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	k8sClient client.Client // You'll be using this client in your tests.
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
-	logger    logr.Logger
-	th        *TestHelper
-	namespace string
+	k8sClient          client.Client // You'll be using this client in your tests.
+	testEnv            *envtest.Environment
+	ctx                context.Context
+	cancel             context.CancelFunc
+	logger             logr.Logger
+	th                 *TestHelper
+	namespace          string
+	secondaryNamespace string
 )
 
 const (
@@ -170,6 +171,9 @@ var _ = BeforeEach(func() {
 	// https://book.kubebuilder.io/reference/envtest.html#namespace-usage-limitation
 	namespace = uuid.New().String()
 	th.CreateNamespace(namespace)
+
+	secondaryNamespace = uuid.New().String()
+	th.CreateNamespace(secondaryNamespace)
 	// We still request the delete of the Namespace to properly cleanup if
 	// we run the test in an existing cluster.
 	DeferCleanup(th.DeleteNamespace, namespace)

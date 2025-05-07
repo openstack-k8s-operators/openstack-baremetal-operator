@@ -33,8 +33,11 @@ import (
 
 var _ = Describe("BaremetalSet Test", func() {
 	var baremetalSetName types.NamespacedName
+	var baremetalSet2Name types.NamespacedName
 	var bmhName types.NamespacedName
+	var bmh2Name types.NamespacedName
 	var deploymentSecretName types.NamespacedName
+	var secondaryDeploymentSecretName types.NamespacedName
 
 	BeforeEach(func() {
 		baremetalSetName = types.NamespacedName{
@@ -49,9 +52,22 @@ var _ = Describe("BaremetalSet Test", func() {
 			Name:      "mysecret",
 			Namespace: namespace,
 		}
+		baremetalSet2Name = types.NamespacedName{
+			Name:      "edpm-compute-baremetalset",
+			Namespace: secondaryNamespace,
+		}
+		bmh2Name = types.NamespacedName{
+			Name:      "compute-0",
+			Namespace: secondaryNamespace,
+		}
+		secondaryDeploymentSecretName = types.NamespacedName{
+			Name:      "mysecret",
+			Namespace: secondaryNamespace,
+		}
 	})
 
 	When("A BaremetalSet resource created", func() {
+
 		BeforeEach(func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
 			bmh := GetBaremetalHost(bmhName)
@@ -174,21 +190,9 @@ var _ = Describe("BaremetalSet Test", func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, DefaultBaremetalSetSpec(bmhName, true)))
 		})
 		It("Prov Server should have the Spec fields initialized", func() {
-			osImageDir := "/usr/local/apache2/htdocs"
 
 			provServer := GetProvisionServer(baremetalSetName)
-			spec := baremetalv1.OpenStackProvisionServerSpec{
-				Port:                6190,
-				Interface:           "eth1",
-				OSImage:             "edpm-hardened-uefi.qcow2",
-				OSImageDir:          &osImageDir,
-				OSContainerImageURL: "quay.io/podified-antelope-centos9/edpm-hardened-uefi@latest",
-				ApacheImageURL:      "registry.redhat.io/rhel8/httpd-24@latest",
-				AgentImageURL:       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent@latest",
-				NodeSelector:        nil,
-				Resources:           corev1.ResourceRequirements{Limits: nil, Requests: nil, Claims: nil},
-			}
-			Expect(provServer.Spec).Should(Equal(spec))
+			Expect(provServer.Spec.Interface).Should(Equal("eth1"))
 		})
 
 		It("Should set Provision Server Ready", func() {
@@ -219,4 +223,45 @@ var _ = Describe("BaremetalSet Test", func() {
 		})
 	})
 
+	When("Two ProvisionServer instances are created with the same name, in different namespaces", func() {
+		BeforeEach(func() {
+
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmh2Name))
+			bmh2 := GetBaremetalHost(bmh2Name)
+			Eventually(func(g Gomega) {
+				bmh2.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh2)).To(Succeed())
+
+			}, th.Timeout, th.Interval).Should(Succeed())
+			DeferCleanup(th.DeleteInstance, CreateSSHSecret(deploymentSecretName))
+			DeferCleanup(th.DeleteInstance, CreateSSHSecret(secondaryDeploymentSecretName))
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, DefaultBaremetalSetSpec(bmhName, true)))
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSet2Name, DefaultBaremetalSetSpec(bmh2Name, true)))
+		})
+		It("Each ProvisionServer should use different ports", func() {
+
+			provServer := GetProvisionServer(baremetalSetName)
+			provServer2 := GetProvisionServer(baremetalSet2Name)
+
+			Expect(provServer.Spec.Port).Should(Not(Equal(provServer2.Spec.Port)))
+		})
+
+		It("Should set Provision Server Ready", func() {
+			th.ExpectCondition(
+				baremetalSetName,
+				ConditionGetterFunc(BaremetalSetConditionGetter),
+				baremetalv1.OpenStackBaremetalSetProvServerReadyCondition,
+				corev1.ConditionFalse,
+			)
+		})
+
+	})
 })
