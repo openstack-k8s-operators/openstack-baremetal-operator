@@ -41,173 +41,134 @@ func init() {
 }
 
 func runProvisionIPStartCmd(_ *cobra.Command, _ []string) {
-	var err error
-	err = flag.Set("logtostderr", "true")
-	if err != nil {
+	// Setup logging
+	if err := flag.Set("logtostderr", "true"); err != nil {
 		panic(err.Error())
 	}
-
 	flag.Parse()
-
 	glog.V(0).Info("Starting ProvisionIpDiscoveryAgent")
 
-	if provisionIPStartOpts.provIntf == "" {
-		name, ok := os.LookupEnv("PROV_INTF")
-		if !ok || name == "" {
-			glog.Fatalf("prov-intf is required")
-		}
-		provisionIPStartOpts.provIntf = name
-	}
+	// Set required environment variables or fail gracefully
+	provisionIPStartOpts.provIntf = getEnvOrFail("PROV_INTF", provisionIPStartOpts.provIntf)
+	provisionIPStartOpts.provServerName = getEnvOrFail("PROV_SERVER_NAME", provisionIPStartOpts.provServerName)
+	provisionIPStartOpts.provServerNamespace = getEnvOrFail("PROV_SERVER_NAMESPACE", provisionIPStartOpts.provServerNamespace)
 
-	if provisionIPStartOpts.provServerName == "" {
-		name, ok := os.LookupEnv("PROV_SERVER_NAME")
-		if !ok || name == "" {
-			glog.Fatalf("prov-server-name is required")
-		}
-		provisionIPStartOpts.provServerName = name
-	}
-
-	if provisionIPStartOpts.provServerNamespace == "" {
-		name, ok := os.LookupEnv("PROV_SERVER_NAMESPACE")
-		if !ok || name == "" {
-			glog.Fatalf("prov-server-namespace is required")
-		}
-		provisionIPStartOpts.provServerNamespace = name
-	}
-
-	var config *rest.Config
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if kubeconfig != "" {
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	} else {
-		// creates the in-cluster config
-		config, err = rest.InClusterConfig()
-	}
-
+	// Kubernetes client setup
+	config, err := getKubeConfig()
 	if err != nil {
 		panic(err.Error())
 	}
 
 	dClient := dynamic.NewForConfigOrDie(config)
-
 	provServerClient := dClient.Resource(openstackProvisionServerGVR)
 
-	ip := ""
-
-	// Get provision interface IP and update the status, and then sleep 5 seconds
-	// and check again over and over (because the IP address could change)
+	var ip string
 	for {
-		ifaces, err := net.Interfaces()
-
-		if err != nil {
-			panic(err.Error())
-		}
-
-		curIP := ""
-		intfFound := false
-
-		for _, iface := range ifaces {
-			if iface.Name == provisionIPStartOpts.provIntf {
-				intfFound = true
-
-				addrs, err := iface.Addrs()
-
-				if err != nil {
-					panic(err.Error())
-				}
-
-				for _, addr := range addrs {
-					ipObj, _, err := net.ParseCIDR(addr.String())
-
-					if err != nil || ipObj == nil {
-						glog.V(0).Infof("WARNING: Cannot parse IP address for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerName, provisionIPStartOpts.provIntf)
-						if err != nil {
-							glog.V(0).Infof("ERROR: %s", err.Error())
-						}
-						continue
-					}
-
-					if ipObj = ipObj.To4(); ipObj != nil {
-						curIP = ipObj.String()
-						break
-					}
-					glog.V(0).Infof("INFO: Ignoring IPv6 address (%s) for OpenStackProvisionServer %s (namespace %s) on interface %s!\n", addr, provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerName, provisionIPStartOpts.provIntf)
-				}
-				break
+		curIP, intfFound := getInterfaceIP(provisionIPStartOpts.provIntf)
+		if curIP == "" || curIP != ip {
+			err := updateProvisioningStatus(provServerClient, curIP, intfFound)
+			if err != nil {
+				glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) status: %s",
+					provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, err)
+				// Set ip to empty string as we've to update provisonserver in the next try
+				ip = ""
+			} else {
+				ip = curIP
 			}
 		}
+		time.Sleep(time.Second * 5)
+	}
+}
 
-		if curIP == "" || ip != curIP {
-			unstructured, err := provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).Get(context.Background(), provisionIPStartOpts.provServerName, metav1.GetOptions{}, "/status")
+// getEnvOrFail retrieves an environment variable or returns a default value, failing if the value is empty.
+func getEnvOrFail(envVar, defaultValue string) string {
+	if defaultValue == "" {
+		val, ok := os.LookupEnv(envVar)
+		if !ok || val == "" {
+			glog.Fatalf("%s is required", envVar)
+		}
+		return val
+	}
+	return defaultValue
+}
 
-			if k8s_errors.IsNotFound(err) {
-				// Deleted somehow, so just break
-				break
-			}
+// getKubeConfig returns the Kubernetes configuration, either from the provided KUBECONFIG environment variable or from the cluster.
+func getKubeConfig() (*rest.Config, error) {
+	kubeconfig := os.Getenv("KUBECONFIG")
+	if kubeconfig != "" {
+		return clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+	return rest.InClusterConfig()
+}
 
+// getInterfaceIP returns the IP address for the given interface, or an empty string if not found.
+func getInterfaceIP(interfaceName string) (string, bool) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	intfFound := false
+
+	for _, iface := range ifaces {
+		if iface.Name == interfaceName {
+			intfFound = true
+			addrs, err := iface.Addrs()
 			if err != nil {
 				panic(err.Error())
 			}
 
-			if unstructured.Object["status"] == nil {
-				unstructured.Object["status"] = map[string]interface{}{}
-			}
-
-			status := unstructured.Object["status"].(map[string]interface{})
-
-			if curIP == "" {
-				var errMsg string     // shorter message intended for surfacing in OpenStackProvisionServer CR
-				var errMsgFull string // longer message for provisiong agent pod logs
-
-				if intfFound {
-					// Missing IP
-					errMsg = fmt.Sprintf("Unable to find provisioning IP on interface %s", provisionIPStartOpts.provIntf)
-					errMsgFull = fmt.Sprintf("%s for OpenStackProvisionServer %s (namespace %s)\n", errMsg, provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace)
-				} else {
-					// Missing interface entirely
-					errMsg = fmt.Sprintf("Unable to find provisioning interface %s", provisionIPStartOpts.provIntf)
-					errMsgFull = fmt.Sprintf("%s for OpenStackProvisionServer %s (namespace %s)\n", errMsg, provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace)
+			for _, addr := range addrs {
+				ipObj, _, err := net.ParseCIDR(addr.String())
+				if err != nil || ipObj == nil {
+					glog.V(0).Infof("WARNING: Cannot parse IP address for interface %s: %v", interfaceName, err)
+					continue
 				}
 
-				glog.V(0).Infof("ERROR: %s", errMsgFull)
-
-				status["provisionIpError"] = errMsg
-
-				unstructured.Object["status"] = status
-
-				_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
-
-				if err != nil {
-					glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) status with provisioning IP acquisition error: %s\n",
-						provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace,
-						err)
-				} else {
-					glog.V(0).Infof("Updated OpenStackProvisionServer %s (namespace %s) status with provisioning IP acquisition error\n",
-						provisionIPStartOpts.provServerName,
-						provisionIPStartOpts.provServerNamespace)
-
+				if ipObj = ipObj.To4(); ipObj != nil {
+					return ipObj.String(), intfFound
 				}
-			} else {
-				// ip != curIP case
-				status["provisionIp"] = curIP
-				status["provisionIpError"] = ""
-
-				unstructured.Object["status"] = status
-
-				_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
-
-				if err != nil {
-					glog.V(0).Infof("Error updating OpenStackProvisionServer %s (namespace %s) \"provisionIp\" status: %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, err)
-				} else {
-					ip = curIP
-					glog.V(0).Infof("Updated OpenStackProvisionServer %s (namespace %s) with status \"provisionIp\": %s\n", provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace, ip)
-
-				}
+				glog.V(0).Infof("INFO: Ignoring IPv6 address (%s) on interface %s", addr, interfaceName)
 			}
 		}
+	}
+	return "", intfFound
+}
 
-		time.Sleep(time.Second * 5)
+// updateProvisioningStatus updates the provisioning status in Kubernetes with the given IP and error status.
+func updateProvisioningStatus(provServerClient dynamic.NamespaceableResourceInterface, curIP string, intfFound bool) error {
+	unstructured, err := provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).Get(context.Background(), provisionIPStartOpts.provServerName, metav1.GetOptions{}, "/status")
+	if k8s_errors.IsNotFound(err) {
+		// Server deleted, stop the loop
+		return nil
+	}
+	if err != nil {
+		return err
 	}
 
-	glog.V(0).Info("Shutting down ProvisionIpDiscoveryAgent")
+	if unstructured.Object["status"] == nil {
+		unstructured.Object["status"] = map[string]interface{}{}
+	}
+
+	status := unstructured.Object["status"].(map[string]interface{})
+	if curIP == "" {
+		var errMsg, errMsgFull string
+		if intfFound {
+			errMsg = fmt.Sprintf("Unable to find provisioning IP on interface %s", provisionIPStartOpts.provIntf)
+		} else {
+			errMsg = fmt.Sprintf("Unable to find provisioning interface %s", provisionIPStartOpts.provIntf)
+		}
+		errMsgFull = fmt.Sprintf("%s for OpenStackProvisionServer %s (namespace %s)", errMsg, provisionIPStartOpts.provServerName, provisionIPStartOpts.provServerNamespace)
+		glog.V(0).Infof("ERROR: %s", errMsgFull)
+
+		status["provisionIp"] = ""
+		status["provisionIpError"] = errMsg
+	} else {
+		status["provisionIp"] = curIP
+		status["provisionIpError"] = ""
+	}
+
+	unstructured.Object["status"] = status
+	_, err = provServerClient.Namespace(provisionIPStartOpts.provServerNamespace).UpdateStatus(context.Background(), unstructured, metav1.UpdateOptions{})
+	return err
 }
