@@ -178,7 +178,7 @@ func Deployment(
 		},
 	}
 
-	if instance.Spec.NodeSelector != nil && len(instance.Spec.NodeSelector) > 0 {
+	if len(instance.Spec.NodeSelector) > 0 {
 		deployment.Spec.Template.Spec.NodeSelector = instance.Spec.NodeSelector
 	}
 
