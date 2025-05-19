@@ -250,8 +250,7 @@ var _ = Describe("BaremetalSet Test", func() {
 
 			provServer := GetProvisionServer(baremetalSetName)
 			provServer2 := GetProvisionServer(baremetalSet2Name)
-
-			Expect(provServer.Spec.Port).Should(Not(Equal(provServer2.Spec.Port)))
+			Expect(provServer.Spec.Port).ShouldNot(Equal(provServer2.Spec.Port))
 		})
 
 		It("Should set Provision Server Ready", func() {
