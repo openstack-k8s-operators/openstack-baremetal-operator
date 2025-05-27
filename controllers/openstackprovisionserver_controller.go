@@ -135,6 +135,11 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 	// Always patch the instance status when exiting this function so we can
 	// persist any changes.
 	defer func() {
+		// Don't update the status, if reconciler Panics
+		if rc := recover(); rc != nil {
+			r.Log.Info(fmt.Sprintf("panic during reconcile %v\n", rc))
+			panic(rc)
+		}
 		condition.RestoreLastTransitionTimes(
 			&instance.Status.Conditions, savedConditions)
 		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
