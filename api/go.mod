@@ -3,7 +3,7 @@ module github.com/openstack-k8s-operators/openstack-baremetal-operator/api
 go 1.21
 
 require (
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/go-playground/validator/v10 v10.25.0
 	github.com/metal3-io/baremetal-operator/apis v0.6.3
 	github.com/onsi/ginkgo/v2 v2.20.1
