@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -14,18 +15,20 @@ func GetExistingProvServerPorts(
 	instance *OpenStackProvisionServer,
 ) (map[string]int32, error) {
 	found := map[string]int32{}
-
 	provServerList := &OpenStackProvisionServerList{}
 
 	listOpts := []goClient.ListOption{}
 
 	err := c.List(ctx, provServerList, listOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get list of all OpenStackProvisionServer(s): %s", err.Error())
+		return nil, fmt.Errorf("failed to get list of all OpenStackProvisionServer(s): %s", err.Error())
 	}
 
 	for _, provServer := range provServerList.Items {
-		found[fmt.Sprintf("%s-%s", provServer.Name, provServer.Namespace)] = provServer.Spec.Port
+		namespacedName := types.NamespacedName{
+			Namespace: provServer.Namespace,
+			Name:      provServer.Name}
+		found[namespacedName.String()] = provServer.Spec.Port
 	}
 
 	return found, nil
@@ -44,10 +47,12 @@ func AssignProvisionServerPort(
 		return err
 	}
 
+	namespacedName := types.NamespacedName{
+		Namespace: instance.Namespace,
+		Name:      instance.Name}
 	// It's possible that this prov server already exists and we are just dealing with
 	// a minimized version of it (only its ObjectMeta is set, etc)
-	instanceKey := fmt.Sprintf("%s-%s", instance.GetName(), instance.GetNamespace())
-	cur := existingPorts[instanceKey]
+	cur := existingPorts[namespacedName.String()]
 	if cur == 0 {
 		cur = portStart
 	}
@@ -65,7 +70,7 @@ func AssignProvisionServerPort(
 		}
 
 		if found {
-			if existingPorts[instanceKey] != cur {
+			if existingPorts[namespacedName.String()] != cur {
 				// continue to use the next port in the port range.
 				continue
 			} else {
