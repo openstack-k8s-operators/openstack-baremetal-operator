@@ -79,7 +79,7 @@ func BaremetalHostProvision(
 
 		userDataSt := util.Template{
 			Name:               userDataSecretName,
-			Namespace:          instance.Namespace,
+			Namespace:          instance.Spec.BmhNamespace,
 			Type:               util.TemplateTypeConfig,
 			InstanceType:       instance.Kind,
 			AdditionalTemplate: map[string]string{"userData": "/openstackbaremetalset/cloudinit/userdata"},
@@ -89,7 +89,7 @@ func BaremetalHostProvision(
 		sts = append(sts, userDataSt)
 		userDataSecret = &corev1.SecretReference{
 			Name:      userDataSecretName,
-			Namespace: instance.Namespace,
+			Namespace: instance.Spec.BmhNamespace,
 		}
 
 	}
@@ -147,7 +147,7 @@ func BaremetalHostProvision(
 
 		networkDataSt := util.Template{
 			Name:               networkDataSecretName,
-			Namespace:          instance.Namespace,
+			Namespace:          instance.Spec.BmhNamespace,
 			Type:               util.TemplateTypeConfig,
 			InstanceType:       instance.Kind,
 			AdditionalTemplate: map[string]string{"networkData": "/openstackbaremetalset/cloudinit/networkdata"},
@@ -157,7 +157,7 @@ func BaremetalHostProvision(
 		sts = append(sts, networkDataSt)
 		networkDataSecret = &corev1.SecretReference{
 			Name:      networkDataSecretName,
-			Namespace: instance.Namespace,
+			Namespace: instance.Spec.BmhNamespace,
 		}
 	}
 
