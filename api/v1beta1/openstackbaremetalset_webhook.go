@@ -29,7 +29,9 @@ import (
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,8 +74,17 @@ func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 			field.NewPath("Name"),
 			r.Name,
 			fmt.Sprintf("Error validating OpenStackBaremetalSet name %s, name must follow RFC1123", r.Name)))
+		return nil, apierrors.NewInvalid(
+			schema.GroupKind{Group: "baremetal.openstack.org", Kind: "OpenStackBaremetalSet"},
+			r.Name,
+			errors)
 	}
 
+	// Validate userData and networkData secrets namespace
+	err := r.ValidateCloudInitSecrets()
+	if err != nil {
+		return nil, err
+	}
 	//
 	// Validate that there are enough available BMHs for the initial requested count
 	//
@@ -92,6 +103,26 @@ func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	return nil, nil
+}
+
+// ValidateCloudInitSecrets checks if userData and networkData secrets are in the same namespace as bmh
+func (r *OpenStackBaremetalSet) ValidateCloudInitSecrets() error {
+	var secretsWithIssue []string
+
+	for _, host := range r.Spec.BaremetalHosts {
+		if host.NetworkData != nil && host.NetworkData.Namespace != r.Spec.BmhNamespace {
+			secretsWithIssue = append(secretsWithIssue, host.NetworkData.Name)
+		}
+		if host.UserData != nil && host.UserData.Namespace != r.Spec.BmhNamespace {
+			secretsWithIssue = append(secretsWithIssue, host.UserData.Name)
+		}
+	}
+
+	if len(secretsWithIssue) > 0 {
+		return fmt.Errorf("userData and networkData secrets %v should exist in the bmh namespace %s",
+			secretsWithIssue, r.Spec.BmhNamespace)
+	}
+	return nil
 }
 
 // Validate implements OpenStackBaremetalSetTemplateSpec validation
