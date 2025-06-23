@@ -131,8 +131,18 @@ func VerifyBaremetalSetScaleUp(
 				mismatch = true
 			}
 
-			if baremetalHost.Spec.Online {
-				l.Info("BaremetalHost cannot be used because it is already online", "BMH", baremetalHost.ObjectMeta.Name)
+			if baremetalHost.Spec.Image != nil && baremetalHost.Spec.Image.URL != "" {
+				l.Info("BaremetalHost cannot be used because it already has an image", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
+			}
+
+			if baremetalHost.Spec.ExternallyProvisioned {
+				l.Info("BaremetalHost cannot be used because it is externally provisioned", "BMH", baremetalHost.ObjectMeta.Name)
+				mismatch = true
+			}
+
+			if baremetalHost.Spec.CustomDeploy != nil {
+				l.Info("BaremetalHost cannot be used because it already has a customDeploy", "BMH", baremetalHost.ObjectMeta.Name)
 				mismatch = true
 			}
 
