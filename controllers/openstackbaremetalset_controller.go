@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -48,6 +49,11 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/openstack-baremetal-operator/pkg/openstackbaremetalset"
+)
+
+var (
+	// ErrBaremetalSetReconciliationPanic indicates a panic occurred during BaremetalSet reconciliation
+	ErrBaremetalSetReconciliationPanic = errors.New("baremetal set reconciliation panic occurred")
 )
 
 // OpenStackBaremetalSetReconciler reconciles a OpenStackBaremetalSet object
@@ -112,17 +118,28 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 	// Always patch the instance status when exiting this function so we can
 	// persist any changes.
 	defer func() {
-		// Don't update the status, if reconciler Panics
+		// Handle reconciler panics gracefully to prevent controller crash
 		if rc := recover(); rc != nil {
-			r.Log.Info(fmt.Sprintf("panic during reconcile %v\n", rc))
-			panic(rc)
+			// Log detailed panic information
+			r.Log.Error(ErrBaremetalSetReconciliationPanic,
+				"Panic occurred during OpenStackBaremetalSet reconciliation",
+				"instance", instance.Name,
+				"namespace", instance.Namespace,
+				"panic", rc)
+
+			// Set return error to trigger requeue with backoff
+			_err = fmt.Errorf("%w: %v", ErrBaremetalSetReconciliationPanic, rc)
+			return // Skip status update - reconciliation incomplete, let controller-runtime handle requeue
 		}
+
 		condition.RestoreLastTransitionTimes(
 			&instance.Status.Conditions, savedConditions)
 		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
 			instance.Status.Conditions.Set(
 				instance.Status.Conditions.Mirror(condition.ReadyCondition))
 		}
+
+		// Update status only if no panic occurred
 		err := helper.PatchInstance(ctx, instance)
 		if err != nil {
 			_err = err
