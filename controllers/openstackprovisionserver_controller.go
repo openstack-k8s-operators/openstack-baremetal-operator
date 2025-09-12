@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -61,6 +62,9 @@ var (
 		Version:  "v1alpha1",
 		Resource: "provisionings",
 	}
+
+	// ErrProvisionServerReconciliationPanic indicates a panic occurred during ProvisionServer reconciliation
+	ErrProvisionServerReconciliationPanic = errors.New("provision server reconciliation panic occurred")
 )
 
 // OpenStackProvisionServerReconciler reconciles a OpenStackProvisionServer object
@@ -135,17 +139,28 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 	// Always patch the instance status when exiting this function so we can
 	// persist any changes.
 	defer func() {
-		// Don't update the status, if reconciler Panics
+		// Handle reconciler panics gracefully to prevent controller crash
 		if rc := recover(); rc != nil {
-			r.Log.Info(fmt.Sprintf("panic during reconcile %v\n", rc))
-			panic(rc)
+			// Log detailed panic information
+			r.Log.Error(ErrProvisionServerReconciliationPanic,
+				"Panic occurred during OpenStackProvisionServer reconciliation",
+				"instance", instance.Name,
+				"namespace", instance.Namespace,
+				"panic", rc)
+
+			// Set return error to trigger requeue with backoff
+			_err = fmt.Errorf("%w: %v", ErrProvisionServerReconciliationPanic, rc)
+			return // Skip status update - reconciliation incomplete, let controller-runtime handle requeue
 		}
+
 		condition.RestoreLastTransitionTimes(
 			&instance.Status.Conditions, savedConditions)
 		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
 			instance.Status.Conditions.Set(
 				instance.Status.Conditions.Mirror(condition.ReadyCondition))
 		}
+
+		// Update status only if no panic occurred
 		err := helper.PatchInstance(ctx, instance)
 		if err != nil {
 			_err = err
