@@ -1,3 +1,4 @@
+// Package main provides a checksum discovery agent for OpenStack baremetal provisioning
 package main
 
 import (
