@@ -83,7 +83,7 @@ func (r *OpenStackBaremetalSet) ValidateCreate(ctx context.Context, obj runtime.
 	}
 
 	// Validate userData and networkData secrets namespace
-	err := r.ValidateCloudInitSecrets()
+	err := r.ValidateCloudInitSecrets(bmSet)
 	if err != nil {
 		return nil, err
 	}
@@ -108,21 +108,21 @@ func (r *OpenStackBaremetalSet) ValidateCreate(ctx context.Context, obj runtime.
 }
 
 // ValidateCloudInitSecrets checks if userData and networkData secrets are in the same namespace as bmh
-func (r *OpenStackBaremetalSet) ValidateCloudInitSecrets() error {
+func (r *OpenStackBaremetalSet) ValidateCloudInitSecrets(instance *OpenStackBaremetalSet) error {
 	var secretsWithIssue []string
 
-	for _, host := range r.Spec.BaremetalHosts {
-		if host.NetworkData != nil && host.NetworkData.Namespace != r.Spec.BmhNamespace {
+	for _, host := range instance.Spec.BaremetalHosts {
+		if host.NetworkData != nil && host.NetworkData.Namespace != instance.Spec.BmhNamespace {
 			secretsWithIssue = append(secretsWithIssue, host.NetworkData.Name)
 		}
-		if host.UserData != nil && host.UserData.Namespace != r.Spec.BmhNamespace {
+		if host.UserData != nil && host.UserData.Namespace != instance.Spec.BmhNamespace {
 			secretsWithIssue = append(secretsWithIssue, host.UserData.Name)
 		}
 	}
 
 	if len(secretsWithIssue) > 0 {
 		return fmt.Errorf("userData and networkData secrets %v should exist in the bmh namespace %s",
-			secretsWithIssue, r.Spec.BmhNamespace)
+			secretsWithIssue, instance.Spec.BmhNamespace)
 	}
 	return nil
 }

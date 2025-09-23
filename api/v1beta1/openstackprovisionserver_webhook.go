@@ -85,19 +85,19 @@ func (r *OpenStackProvisionServer) ValidateCreate(ctx context.Context, obj runti
 func (r *OpenStackProvisionServer) ValidateUpdate(ctx context.Context, old runtime.Object, new runtime.Object) (admission.Warnings, error) {
 	openstackprovisionserverlog.Info("validate update", "name", old.(*OpenStackProvisionServer).Name)
 
-	return nil, r.validateCr(old.(*OpenStackProvisionServer))
+	return nil, r.validateCr(new.(*OpenStackProvisionServer))
 }
 
-func (r *OpenStackProvisionServer) validateCr(oldInstance *OpenStackProvisionServer) error {
+func (r *OpenStackProvisionServer) validateCr(instance *OpenStackProvisionServer) error {
 	// TODO: Create a specific context here instead of passing TODO()?
-	existingPorts, err := GetExistingProvServerPorts(context.TODO(), webhookClient, oldInstance)
+	existingPorts, err := GetExistingProvServerPorts(context.TODO(), webhookClient, instance)
 	if err != nil {
 		return err
 	}
 
 	for name, port := range existingPorts {
-		namespacedName := types.NamespacedName{Namespace: oldInstance.Namespace, Name: oldInstance.Name}
-		if port == r.Spec.Port && name != namespacedName.String() {
+		namespacedName := types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}
+		if port == instance.Spec.Port && name != namespacedName.String() {
 			return fmt.Errorf("port %d is already in use by another OpenStackProvisionServer: %s", port, name)
 		}
 	}
@@ -120,19 +120,20 @@ var OpenStackProvisionServerCustomDefaulter webhook.CustomDefaulter = &OpenStack
 func (r *OpenStackProvisionServer) Default(ctx context.Context, obj runtime.Object) error {
 	openstackprovisionserverlog.Info("default", "name", obj.(*OpenStackProvisionServer).Name)
 	var err error
-	if r.Spec.OSContainerImageURL == "" {
-		r.Spec.OSContainerImageURL = openstackProvisionServerDefaults.OSContainerImageURL
+	instance := obj.(*OpenStackProvisionServer)
+	if instance.Spec.OSContainerImageURL == "" {
+		instance.Spec.OSContainerImageURL = openstackProvisionServerDefaults.OSContainerImageURL
 	}
-	if r.Spec.AgentImageURL == "" {
-		r.Spec.AgentImageURL = openstackProvisionServerDefaults.AgentImageURL
+	if instance.Spec.AgentImageURL == "" {
+		instance.Spec.AgentImageURL = openstackProvisionServerDefaults.AgentImageURL
 	}
-	if r.Spec.ApacheImageURL == "" {
-		r.Spec.ApacheImageURL = openstackProvisionServerDefaults.ApacheImageURL
+	if instance.Spec.ApacheImageURL == "" {
+		instance.Spec.ApacheImageURL = openstackProvisionServerDefaults.ApacheImageURL
 	}
-	if r.Spec.OSImage == "" {
-		r.Spec.OSImage = openstackProvisionServerDefaults.OSImage
+	if instance.Spec.OSImage == "" {
+		instance.Spec.OSImage = openstackProvisionServerDefaults.OSImage
 	}
-	if r.Spec.Port == 0 {
+	if instance.Spec.Port == 0 {
 		err = AssignProvisionServerPort(context.TODO(), webhookClient, obj.(*OpenStackProvisionServer),
 			ProvisionServerPortStart, ProvisionServerPortEnd)
 		if err != nil {
