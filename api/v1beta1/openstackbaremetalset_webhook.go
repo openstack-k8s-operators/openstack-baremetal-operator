@@ -54,29 +54,31 @@ func (r *OpenStackBaremetalSet) SetupWebhookWithManager(mgr ctrl.Manager) error 
 	}
 
 	return ctrl.NewWebhookManagedBy(mgr).
+		WithValidator(OpenStackBaremetalSetCustomValidator).
 		For(r).
 		Complete()
 }
 
 // +kubebuilder:webhook:verbs=create;update;delete,path=/validate-baremetal-openstack-org-v1beta1-openstackbaremetalset,mutating=false,failurePolicy=fail,sideEffects=None,groups=baremetal.openstack.org,resources=openstackbaremetalsets,versions=v1beta1,name=vopenstackbaremetalset.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &OpenStackBaremetalSet{}
+var OpenStackBaremetalSetCustomValidator webhook.CustomValidator = &OpenStackBaremetalSet{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
-	openstackbaremetalsetlog.Info("validate create", "name", r.Name)
+func (r *OpenStackBaremetalSet) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	bmSet := obj.(*OpenStackBaremetalSet)
+	openstackbaremetalsetlog.Info("validate create", "name", bmSet.Name)
 	var errors field.ErrorList
 	// Check if OpenStackBaremetalSet name matches RFC1123 for use in labels
 	validate := validator.New()
-	if err := validate.Var(r.Name, "hostname_rfc1123"); err != nil {
+	if err := validate.Var(bmSet.Name, "hostname_rfc1123"); err != nil {
 		openstackbaremetalsetlog.Error(err, "Error validating OpenStackBaremetalSet name, name must follow RFC1123")
 		errors = append(errors, field.Invalid(
 			field.NewPath("Name"),
-			r.Name,
-			fmt.Sprintf("Error validating OpenStackBaremetalSet name %s, name must follow RFC1123", r.Name)))
+			bmSet.Name,
+			fmt.Sprintf("Error validating OpenStackBaremetalSet name %s, name must follow RFC1123", bmSet.Name)))
 		return nil, apierrors.NewInvalid(
 			schema.GroupKind{Group: "baremetal.openstack.org", Kind: "OpenStackBaremetalSet"},
-			r.Name,
+			bmSet.Name,
 			errors)
 	}
 
@@ -91,14 +93,14 @@ func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 	baremetalHostsList, err := GetBaremetalHosts(
 		context.TODO(),
 		webhookClient,
-		r.Spec.BmhNamespace,
-		r.Spec.BmhLabelSelector,
+		bmSet.Spec.BmhNamespace,
+		bmSet.Spec.BmhLabelSelector,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := VerifyBaremetalSetScaleUp(openstackbaremetalsetlog, r, baremetalHostsList, &metal3v1.BareMetalHostList{}); err != nil {
+	if _, err := VerifyBaremetalSetScaleUp(openstackbaremetalsetlog, bmSet, baremetalHostsList, &metal3v1.BareMetalHostList{}); err != nil {
 		return nil, err
 	}
 
@@ -136,8 +138,9 @@ func (spec OpenStackBaremetalSetTemplateSpec) ValidateTemplate(oldCount int, old
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	openstackbaremetalsetlog.Info("validate update", "name", r.Name)
+func (r *OpenStackBaremetalSet) ValidateUpdate(ctx context.Context,
+	old runtime.Object, new runtime.Object) (admission.Warnings, error) {
+	openstackbaremetalsetlog.Info("validate update", "name", old.(*OpenStackBaremetalSet).Name)
 
 	var ok bool
 	var oldInstance *OpenStackBaremetalSet
@@ -146,7 +149,7 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 		return nil, fmt.Errorf("runtime object is not an OpenStackBaremetalSet")
 	}
 
-	if err := r.Spec.ValidateTemplate(len(oldInstance.Spec.BaremetalHosts),
+	if err := oldInstance.Spec.ValidateTemplate(len(oldInstance.Spec.BaremetalHosts),
 		oldInstance.Spec.OpenStackBaremetalSetTemplateSpec); err != nil {
 		return nil, err
 	}
@@ -156,7 +159,8 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 	// We do this to maintain consistency across the gathered list of BMHs during reconcile.
 	//
 	oldCount := len(oldInstance.Spec.BaremetalHosts)
-	newCount := len(r.Spec.BaremetalHosts)
+	newInstance := new.(*OpenStackBaremetalSet)
+	newCount := len(newInstance.Spec.BaremetalHosts)
 
 	if newCount != oldCount {
 		//
@@ -166,7 +170,7 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 		// operations for scaling up or down.
 		//
 		// TODO: Create a specific context here instead of passing TODO()?
-		if err := VerifyAndSyncBaremetalStatusBmhRefs(context.TODO(), webhookClient, r); err != nil {
+		if err := VerifyAndSyncBaremetalStatusBmhRefs(context.TODO(), webhookClient, oldInstance); err != nil {
 			return nil, err
 		}
 
@@ -178,8 +182,8 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 			baremetalHostsList, err := GetBaremetalHosts(
 				context.TODO(),
 				webhookClient,
-				r.Spec.BmhNamespace,
-				r.Spec.BmhLabelSelector,
+				oldInstance.Spec.BmhNamespace,
+				oldInstance.Spec.BmhLabelSelector,
 			)
 			if err != nil {
 				return nil, err
@@ -189,14 +193,14 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 			existingBaremetalHosts, err := GetBaremetalHosts(
 				context.TODO(),
 				webhookClient,
-				r.Spec.BmhNamespace,
-				labels.GetLabels(r, labels.GetGroupLabel(ServiceName), map[string]string{}),
+				oldInstance.Spec.BmhNamespace,
+				labels.GetLabels(oldInstance, labels.GetGroupLabel(ServiceName), map[string]string{}),
 			)
 			if err != nil {
 				return nil, err
 			}
 
-			if _, err := VerifyBaremetalSetScaleUp(openstackbaremetalsetlog, r, baremetalHostsList, existingBaremetalHosts); err != nil {
+			if _, err := VerifyBaremetalSetScaleUp(openstackbaremetalsetlog, newInstance, baremetalHostsList, existingBaremetalHosts); err != nil {
 				return nil, err
 			}
 		}
@@ -206,8 +210,8 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackBaremetalSet) ValidateDelete() (admission.Warnings, error) {
-	openstackbaremetalsetlog.Info("validate delete", "name", r.Name)
+func (r *OpenStackBaremetalSet) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	openstackbaremetalsetlog.Info("validate delete", "name", obj.(*OpenStackBaremetalSet).Name)
 
 	return nil, nil
 }
