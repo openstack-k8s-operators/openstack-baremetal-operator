@@ -149,7 +149,8 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(ctx context.Context,
 		return nil, fmt.Errorf("runtime object is not an OpenStackBaremetalSet")
 	}
 
-	if err := oldInstance.Spec.ValidateTemplate(len(oldInstance.Spec.BaremetalHosts),
+	newInstance := new.(*OpenStackBaremetalSet)
+	if err := newInstance.Spec.ValidateTemplate(len(oldInstance.Spec.BaremetalHosts),
 		oldInstance.Spec.OpenStackBaremetalSetTemplateSpec); err != nil {
 		return nil, err
 	}
@@ -159,7 +160,6 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(ctx context.Context,
 	// We do this to maintain consistency across the gathered list of BMHs during reconcile.
 	//
 	oldCount := len(oldInstance.Spec.BaremetalHosts)
-	newInstance := new.(*OpenStackBaremetalSet)
 	newCount := len(newInstance.Spec.BaremetalHosts)
 
 	if newCount != oldCount {

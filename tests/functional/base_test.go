@@ -293,3 +293,26 @@ func GetProvisionServer(name types.NamespacedName) *baremetalv1.OpenStackProvisi
 	}, timeout, interval).Should(Succeed())
 	return instance
 }
+
+// DefaultProvisionServerSpec returns a basic spec for OpenStackProvisionServer
+func DefaultProvisionServerSpec() map[string]interface{} {
+	return map[string]interface{}{
+		"osImage":             "test-image.qcow2",
+		"osContainerImageUrl": "quay.io/test/os-container:latest",
+		"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
+		"agentImageUrl":       "quay.io/test/agent:latest",
+	}
+}
+
+// DefaultProvisionServerTemplate builds an OpenStackProvisionServer struct with preset values
+func DefaultProvisionServerTemplate(name types.NamespacedName, spec map[string]interface{}) map[string]interface{} {
+	return map[string]interface{}{
+		"apiVersion": "baremetal.openstack.org/v1beta1",
+		"kind":       "OpenStackProvisionServer",
+		"metadata": map[string]interface{}{
+			"name":      name.Name,
+			"namespace": name.Namespace,
+		},
+		"spec": spec,
+	}
+}
