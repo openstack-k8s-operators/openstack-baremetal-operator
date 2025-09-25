@@ -376,7 +376,7 @@ tidy: ## Run go mod tidy on every mod file in the repo
 
 .PHONY: operator-lint
 operator-lint: gowork ## Runs operator-lint
-	GOBIN=$(LOCALBIN) go install github.com/gibizer/operator-lint@latest
+	GOBIN=$(LOCALBIN) go install github.com/gibizer/operator-lint@v0.1.0
 	go vet -vettool=$(LOCALBIN)/operator-lint ./... ./api/...
 
 # Used for webhook testing
