@@ -53,50 +53,47 @@ func (r *OpenStackProvisionServer) SetupWebhookWithManager(mgr ctrl.Manager) err
 	}
 
 	return ctrl.NewWebhookManagedBy(mgr).
-		WithValidator(OpenStackProvisionServerCustomValidator).
-		WithDefaulter(OpenStackProvisionServerCustomDefaulter).
 		For(r).
 		Complete()
 }
 
 //+kubebuilder:webhook:path=/validate-baremetal-openstack-org-v1beta1-openstackprovisionserver,mutating=false,failurePolicy=fail,sideEffects=None,groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=create;update,versions=v1beta1,name=vopenstackprovisionserver.kb.io,admissionReviewVersions=v1
 
-var OpenStackProvisionServerCustomValidator webhook.CustomValidator = &OpenStackProvisionServer{}
+var _ webhook.Validator = &OpenStackProvisionServer{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackProvisionServer) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	provServer := obj.(*OpenStackProvisionServer)
-	openstackprovisionserverlog.Info("validate create", "name", provServer.Name)
+func (r *OpenStackProvisionServer) ValidateCreate() (admission.Warnings, error) {
+	openstackprovisionserverlog.Info("validate create", "name", r.Name)
 	var errors field.ErrorList
 	// Check if OpenStackProvisionServer name matches RFC1123 for use in labels
 	validate := validator.New()
-	if err := validate.Var(provServer.Name, "hostname_rfc1123"); err != nil {
+	if err := validate.Var(r.Name, "hostname_rfc1123"); err != nil {
 		openstackprovisionserverlog.Error(err, "Error validating OpenStackProvisionServer name, name must follow RFC1123")
 		errors = append(errors, field.Invalid(
 			field.NewPath("Name"),
-			provServer.Name,
-			fmt.Sprintf("Error validating OpenStackProvisionServer name %s, name must follow RFC1123", provServer.Name)))
+			r.Name,
+			fmt.Sprintf("Error validating OpenStackProvisionServer name %s, name must follow RFC1123", r.Name)))
 	}
 
-	return nil, r.validateCr(provServer)
+	return nil, r.validateCr()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackProvisionServer) ValidateUpdate(ctx context.Context, old runtime.Object, new runtime.Object) (admission.Warnings, error) {
-	openstackprovisionserverlog.Info("validate update", "name", old.(*OpenStackProvisionServer).Name)
+func (r *OpenStackProvisionServer) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	openstackprovisionserverlog.Info("validate update", "name", r.Name)
 
-	return nil, r.validateCr(old.(*OpenStackProvisionServer))
+	return nil, r.validateCr()
 }
 
-func (r *OpenStackProvisionServer) validateCr(oldInstance *OpenStackProvisionServer) error {
+func (r *OpenStackProvisionServer) validateCr() error {
 	// TODO: Create a specific context here instead of passing TODO()?
-	existingPorts, err := GetExistingProvServerPorts(context.TODO(), webhookClient, oldInstance)
+	existingPorts, err := GetExistingProvServerPorts(context.TODO(), webhookClient, r)
 	if err != nil {
 		return err
 	}
 
 	for name, port := range existingPorts {
-		namespacedName := types.NamespacedName{Namespace: oldInstance.Namespace, Name: oldInstance.Name}
+		namespacedName := types.NamespacedName{Namespace: r.Namespace, Name: r.Name}
 		if port == r.Spec.Port && name != namespacedName.String() {
 			return fmt.Errorf("port %d is already in use by another OpenStackProvisionServer: %s", port, name)
 		}
@@ -106,20 +103,20 @@ func (r *OpenStackProvisionServer) validateCr(oldInstance *OpenStackProvisionSer
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *OpenStackProvisionServer) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	openstackprovisionserverlog.Info("validate delete", "name", obj.(*OpenStackProvisionServer).Name)
+func (r *OpenStackProvisionServer) ValidateDelete() (admission.Warnings, error) {
+	openstackprovisionserverlog.Info("validate delete", "name", r.Name)
 
 	return nil, nil
 }
 
 //+kubebuilder:webhook:path=/mutate-baremetal-openstack-org-v1beta1-openstackprovisionserver,mutating=true,failurePolicy=fail,sideEffects=None,groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=create;update,versions=v1beta1,name=mopenstackprovisionserver.kb.io,admissionReviewVersions=v1
 
-var OpenStackProvisionServerCustomDefaulter webhook.CustomDefaulter = &OpenStackProvisionServer{}
+var _ webhook.Defaulter = &OpenStackProvisionServer{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *OpenStackProvisionServer) Default(ctx context.Context, obj runtime.Object) error {
-	openstackprovisionserverlog.Info("default", "name", obj.(*OpenStackProvisionServer).Name)
-	var err error
+func (r *OpenStackProvisionServer) Default() {
+	openstackprovisionserverlog.Info("default", "name", r.Name)
+
 	if r.Spec.OSContainerImageURL == "" {
 		r.Spec.OSContainerImageURL = openstackProvisionServerDefaults.OSContainerImageURL
 	}
@@ -133,16 +130,14 @@ func (r *OpenStackProvisionServer) Default(ctx context.Context, obj runtime.Obje
 		r.Spec.OSImage = openstackProvisionServerDefaults.OSImage
 	}
 	if r.Spec.Port == 0 {
-		err = AssignProvisionServerPort(context.TODO(), webhookClient, obj.(*OpenStackProvisionServer),
+		err := AssignProvisionServerPort(context.TODO(), webhookClient, r,
 			ProvisionServerPortStart, ProvisionServerPortEnd)
 		if err != nil {
 			// If this occurs, it will also be caught just after this defaulting webhook in the
 			// validating webhook, because that webhook calls the same underlying function that
 			// checks for the availability of ports.  That will cause the create/update of the
 			// CR to fail and halt moving forward.
-			openstackprovisionserverlog.Error(err, "Cannot assign port for OpenStackProvisionServer", "OpenStackProvisionServer",
-				obj.(*OpenStackProvisionServer))
+			openstackprovisionserverlog.Error(err, "Cannot assign port for OpenStackProvisionServer", "OpenStackProvisionServer", r)
 		}
 	}
-	return err
 }
