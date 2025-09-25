@@ -36,11 +36,6 @@ spec:
       name: BMC
       priority: 1
       type: string
-    - description: The type of hardware detected
-      jsonPath: .status.hardwareProfile
-      name: Hardware_Profile
-      priority: 1
-      type: string
     - description: Whether the host is online or not
       jsonPath: .spec.online
       name: Online
@@ -737,6 +732,7 @@ spec:
                 type: object
               hardwareProfile:
                 description: The name of the profile matching the hardware details.
+                  Hardware profiles are deprecated and should not be relied on.
                 type: string
               lastUpdated:
                 description: LastUpdated identifies when this status was last observed.
@@ -1133,7 +1129,6 @@ spec:
             required:
             - errorCount
             - errorMessage
-            - hardwareProfile
             - operationalStatus
             - poweredOn
             - provisioning
