@@ -62,7 +62,7 @@ type OpenStackBaremetalSetTemplateSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=edpm-hardened-uefi.qcow2
 	// OSImage - OS qcow2 image Name
-	OSImage string `json:"osImage,omitempty"`
+	OSImage string `json:"osImage"`
 	// +kubebuilder:validation:Optional
 	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
 	OSContainerImageURL string `json:"osContainerImageUrl,omitempty"`
@@ -76,7 +76,7 @@ type OpenStackBaremetalSetTemplateSpec struct {
 	// during provisioning and deprovisioning.
 	// +kubebuilder:default=metadata
 	// +kubebuilder:validation:Optional
-	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode,omitempty"`
+	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode"`
 	// ProvisionServerName - Optional. Existing OpenStackProvisionServer to use, else one would be created.
 	// +kubebuilder:validation:Optional
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
@@ -93,7 +93,7 @@ type OpenStackBaremetalSetTemplateSpec struct {
 	// +kubebuilder:default=openshift-machine-api
 	// +kubebuilder:validation:Optional
 	// BmhNamespace Namespace to look for BaremetalHosts(default: openshift-machine-api)
-	BmhNamespace string `json:"bmhNamespace,omitempty"`
+	BmhNamespace string `json:"bmhNamespace"`
 	// +kubebuilder:validation:Optional
 	// BmhLabelSelector allows for a sub-selection of BaremetalHosts based on arbitrary labels
 	BmhLabelSelector map[string]string `json:"bmhLabelSelector,omitempty"`
