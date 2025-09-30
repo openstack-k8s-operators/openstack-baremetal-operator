@@ -302,11 +302,13 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 	sshSecret, hash, err := oko_secret.GetSecret(ctx, helper, instance.Spec.DeploymentSSHSecret, instance.Namespace)
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
+			// Since the deployment SSH secret should have been manually created by the user and referenced in the spec,
+			// we treat this as a warning because it means that the service will not be able to start.
 			l.Info("Deployment SSH secret not found", "Deployment SSH secret", instance.Spec.DeploymentSSHSecret)
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				condition.InputReadyCondition,
-				condition.RequestedReason,
-				condition.SeverityInfo,
+				condition.ErrorReason,
+				condition.SeverityWarning,
 				condition.InputReadyWaitingMessage))
 			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		}
@@ -333,11 +335,13 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 			instance.Spec.PasswordSecret.Namespace)
 		if err != nil {
 			if k8s_errors.IsNotFound(err) {
+				// Since the password secret should have been manually created by the user and referenced in the spec,
+				// we treat this as a warning because it means that the service will not be able to start.
 				l.Info("Root password secret not found", "Root password secret", instance.Spec.PasswordSecret)
 				instance.Status.Conditions.Set(condition.FalseCondition(
 					condition.InputReadyCondition,
-					condition.RequestedReason,
-					condition.SeverityInfo,
+					condition.ErrorReason,
+					condition.SeverityWarning,
 					condition.InputReadyWaitingMessage))
 				return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 			}
@@ -413,11 +417,14 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
+			// Since the provision server should have been either automatically created by this controller
+			// or manually created by the user and referenced in the spec, we treat this as a warning
+			// because it means that the service will not be able to start.
 			l.Info("OpenStackProvisionServer not found", "OpenStackProvisionServer", instance.Spec.ProvisionServerName)
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				baremetalv1.OpenStackBaremetalSetProvServerReadyCondition,
-				condition.RequestedReason,
-				condition.SeverityInfo,
+				condition.ErrorReason,
+				condition.SeverityWarning,
 				baremetalv1.OpenStackBaremetalSetProvServerReadyWaitingMessage))
 			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		}
