@@ -59,7 +59,7 @@ func BaremetalHostProvision(
 	sts := []util.Template{}
 	// User data cloud-init secret
 	if userDataSecret == nil {
-		templateParameters := make(map[string]interface{})
+		templateParameters := make(map[string]any)
 		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
 		templateParameters["HostName"] = hostName
 		//If Hostname is fqdn, use it
@@ -108,7 +108,7 @@ func BaremetalHostProvision(
 			CtlplaneIPVersion = "ipv4"
 		}
 
-		templateParameters := make(map[string]interface{})
+		templateParameters := make(map[string]any)
 		templateParameters["CtlplaneIpVersion"] = CtlplaneIPVersion
 		templateParameters["CtlplaneIp"] = ipAddr
 		if instance.Spec.BaremetalHosts[hostName].CtlplaneVlan != nil {

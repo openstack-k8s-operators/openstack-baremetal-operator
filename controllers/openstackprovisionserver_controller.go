@@ -605,7 +605,7 @@ func (r *OpenStackProvisionServerReconciler) generateServiceConfigMaps(
 
 	cmLabels := labels.GetLabels(instance, openstackprovisionserver.AppLabel, map[string]string{})
 
-	templateParameters := make(map[string]interface{})
+	templateParameters := make(map[string]any)
 	templateParameters["Port"] = strconv.FormatInt(int64(instance.Spec.Port), 10)
 	templateParameters["DocumentRoot"] = instance.Spec.OSImageDir
 
@@ -706,7 +706,7 @@ func (r *OpenStackProvisionServerReconciler) getProvisioningInterface(
 
 	provisioningSpecIntf := provisioning.Object["spec"]
 
-	if provisioningSpec, ok := provisioningSpecIntf.(map[string]interface{}); ok {
+	if provisioningSpec, ok := provisioningSpecIntf.(map[string]any); ok {
 		bootMode := provisioningSpec["provisioningNetwork"]
 		if bootMode == nil || bootMode != baremetalv1.ProvisioningNetworkManaged {
 			return "", nil

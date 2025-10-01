@@ -146,10 +146,10 @@ func runChecksumStartCmd(_ *cobra.Command, _ []string) {
 		}
 
 		if unstructured.Object["status"] == nil {
-			unstructured.Object["status"] = map[string]interface{}{}
+			unstructured.Object["status"] = map[string]any{}
 		}
 
-		status := unstructured.Object["status"].(map[string]interface{})
+		status := unstructured.Object["status"].(map[string]any)
 
 		status["osImageChecksumFilename"] = checksumFileName
 		status["osImageChecksumType"] = checksumType
