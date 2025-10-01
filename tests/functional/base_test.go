@@ -29,18 +29,18 @@ import (
 )
 
 // Create OpenstackBaremetalSet in k8s and test that no errors occur
-func CreateBaremetalSet(name types.NamespacedName, spec map[string]interface{}) *unstructured.Unstructured {
+func CreateBaremetalSet(name types.NamespacedName, spec map[string]any) *unstructured.Unstructured {
 	instance := DefaultBaremetalSetTemplate(name, spec)
 	return th.CreateUnstructured(instance)
 }
 
 // Build OpenStackBaremetalSet struct and fill it with preset values
-func DefaultBaremetalSetTemplate(name types.NamespacedName, spec map[string]interface{}) map[string]interface{} {
-	return map[string]interface{}{
+func DefaultBaremetalSetTemplate(name types.NamespacedName, spec map[string]any) map[string]any {
+	return map[string]any{
 
 		"apiVersion": "baremetal.openstack.org/v1beta1",
 		"kind":       "OpenStackBaremetalSet",
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"name":      name.Name,
 			"namespace": name.Namespace,
 		},
@@ -49,10 +49,10 @@ func DefaultBaremetalSetTemplate(name types.NamespacedName, spec map[string]inte
 }
 
 // Build BaremetalSetSpec struct and fill it with preset values
-func DefaultBaremetalSetSpec(name types.NamespacedName, withProvInterface bool) map[string]interface{} {
-	spec := map[string]interface{}{
-		"baremetalHosts": map[string]interface{}{
-			"compute-0": map[string]interface{}{
+func DefaultBaremetalSetSpec(name types.NamespacedName, withProvInterface bool) map[string]any {
+	spec := map[string]any{
+		"baremetalHosts": map[string]any{
+			"compute-0": map[string]any{
 				"ctlPlaneIP": "10.0.0.1",
 			},
 		},
@@ -74,13 +74,13 @@ func DefaultBaremetalSetSpec(name types.NamespacedName, withProvInterface bool) 
 }
 
 // Build BaremetalSetSpec struct for two nodes
-func TwoNodeBaremetalSetSpec(namespace string) map[string]interface{} {
-	spec := map[string]interface{}{
-		"baremetalHosts": map[string]interface{}{
-			"compute-0": map[string]interface{}{
+func TwoNodeBaremetalSetSpec(namespace string) map[string]any {
+	spec := map[string]any{
+		"baremetalHosts": map[string]any{
+			"compute-0": map[string]any{
 				"ctlPlaneIP": "10.0.0.1",
 			},
-			"compute-1": map[string]interface{}{
+			"compute-1": map[string]any{
 				"ctlPlaneIP": "10.0.0.1",
 			},
 		},
@@ -92,14 +92,14 @@ func TwoNodeBaremetalSetSpec(namespace string) map[string]interface{} {
 	return spec
 }
 
-func TwoNodeBaremetalSetSpecWithNodeLabel(namespace string) map[string]interface{} {
-	spec := map[string]interface{}{
-		"baremetalHosts": map[string]interface{}{
-			"compute-0": map[string]interface{}{
+func TwoNodeBaremetalSetSpecWithNodeLabel(namespace string) map[string]any {
+	spec := map[string]any{
+		"baremetalHosts": map[string]any{
+			"compute-0": map[string]any{
 				"ctlPlaneIP":       "10.0.0.1",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-0"},
 			},
-			"compute-1": map[string]interface{}{
+			"compute-1": map[string]any{
 				"ctlPlaneIP":       "10.0.0.1",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-1"},
 			},
@@ -112,14 +112,14 @@ func TwoNodeBaremetalSetSpecWithNodeLabel(namespace string) map[string]interface
 	return spec
 }
 
-func TwoNodeBaremetalSetSpecWithWrongNodeLabel(namespace string) map[string]interface{} {
-	spec := map[string]interface{}{
-		"baremetalHosts": map[string]interface{}{
-			"compute-0": map[string]interface{}{
+func TwoNodeBaremetalSetSpecWithWrongNodeLabel(namespace string) map[string]any {
+	spec := map[string]any{
+		"baremetalHosts": map[string]any{
+			"compute-0": map[string]any{
 				"ctlPlaneIP":       "10.0.0.1",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-0"},
 			},
-			"compute-1": map[string]interface{}{
+			"compute-1": map[string]any{
 				"ctlPlaneIP":       "10.0.0.1",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-2"},
 			},
@@ -132,18 +132,18 @@ func TwoNodeBaremetalSetSpecWithWrongNodeLabel(namespace string) map[string]inte
 	return spec
 }
 
-func MultiNodeBaremetalSetSpecWithSameNodeLabel(namespace string) map[string]interface{} {
-	spec := map[string]interface{}{
-		"baremetalHosts": map[string]interface{}{
-			"compute-0": map[string]interface{}{
+func MultiNodeBaremetalSetSpecWithSameNodeLabel(namespace string) map[string]any {
+	spec := map[string]any{
+		"baremetalHosts": map[string]any{
+			"compute-0": map[string]any{
 				"ctlPlaneIP":       "10.0.0.1",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
 			},
-			"compute-1": map[string]interface{}{
+			"compute-1": map[string]any{
 				"ctlPlaneIP":       "10.0.0.2",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
 			},
-			"compute-2": map[string]interface{}{
+			"compute-2": map[string]any{
 				"ctlPlaneIP":       "10.0.0.3",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
 			},
@@ -156,18 +156,18 @@ func MultiNodeBaremetalSetSpecWithSameNodeLabel(namespace string) map[string]int
 	return spec
 }
 
-func MultiNodeBaremetalSetSpecWithOverlappingNodeLabels(namespace string) map[string]interface{} {
-	spec := map[string]interface{}{
-		"baremetalHosts": map[string]interface{}{
-			"compute-0": map[string]interface{}{
+func MultiNodeBaremetalSetSpecWithOverlappingNodeLabels(namespace string) map[string]any {
+	spec := map[string]any{
+		"baremetalHosts": map[string]any{
+			"compute-0": map[string]any{
 				"ctlPlaneIP":       "10.0.0.1",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute", "dummyLabel": "dummy"},
 			},
-			"compute-1": map[string]interface{}{
+			"compute-1": map[string]any{
 				"ctlPlaneIP":       "10.0.0.2",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute", "nodeName": "compute-1"},
 			},
-			"compute-2": map[string]interface{}{
+			"compute-2": map[string]any{
 				"ctlPlaneIP":       "10.0.0.3",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute", "dummyLabel": "dummy"},
 			},
@@ -181,22 +181,22 @@ func MultiNodeBaremetalSetSpecWithOverlappingNodeLabels(namespace string) map[st
 }
 
 // Default BMH Template with preset values
-func DefaultBMHTemplate(name types.NamespacedName) map[string]interface{} {
-	return map[string]interface{}{
+func DefaultBMHTemplate(name types.NamespacedName) map[string]any {
+	return map[string]any{
 		"apiVersion": "metal3.io/v1alpha1",
 		"kind":       "BareMetalHost",
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"name":      name.Name,
 			"namespace": name.Namespace,
 			"labels": map[string]string{
 				"app": "openstack",
 			},
-			"annotations": map[string]interface{}{
+			"annotations": map[string]any{
 				"inspect.metal3.io": "disabled",
 			},
 		},
-		"spec": map[string]interface{}{
-			"bmc": map[string]interface{}{
+		"spec": map[string]any{
+			"bmc": map[string]any{
 				"address":         "fake_address",
 				"credentialsName": "fake_credential",
 			},
@@ -208,21 +208,21 @@ func DefaultBMHTemplate(name types.NamespacedName) map[string]interface{} {
 }
 
 // Default BMH Template with preset values
-func BMHTemplateWithNodeLabels(name types.NamespacedName, nodeLabels map[string]string) map[string]interface{} {
+func BMHTemplateWithNodeLabels(name types.NamespacedName, nodeLabels map[string]string) map[string]any {
 	labels := util.MergeMaps(map[string]string{"app": "openstack"}, nodeLabels)
-	return map[string]interface{}{
+	return map[string]any{
 		"apiVersion": "metal3.io/v1alpha1",
 		"kind":       "BareMetalHost",
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"name":      name.Name,
 			"namespace": name.Namespace,
 			"labels":    labels,
-			"annotations": map[string]interface{}{
+			"annotations": map[string]any{
 				"inspect.metal3.io": "disabled",
 			},
 		},
-		"spec": map[string]interface{}{
-			"bmc": map[string]interface{}{
+		"spec": map[string]any{
+			"bmc": map[string]any{
 				"address":         "fake_address",
 				"credentialsName": "fake_credential",
 			},

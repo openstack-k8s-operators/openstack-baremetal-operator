@@ -147,10 +147,10 @@ func updateProvisioningStatus(provServerClient dynamic.NamespaceableResourceInte
 	}
 
 	if unstructured.Object["status"] == nil {
-		unstructured.Object["status"] = map[string]interface{}{}
+		unstructured.Object["status"] = map[string]any{}
 	}
 
-	status := unstructured.Object["status"].(map[string]interface{})
+	status := unstructured.Object["status"].(map[string]any)
 	if curIP == "" {
 		var errMsg, errMsgFull string
 		if intfFound {
