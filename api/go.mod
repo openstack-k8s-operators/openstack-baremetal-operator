@@ -1,6 +1,6 @@
 module github.com/openstack-k8s-operators/openstack-baremetal-operator/api
 
-go 1.24
+go 1.24.4
 
 require (
 	github.com/go-logr/logr v1.4.3
