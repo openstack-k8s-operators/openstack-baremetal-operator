@@ -1,6 +1,6 @@
 module github.com/openstack-k8s-operators/openstack-baremetal-operator
 
-go 1.24
+go 1.24.4
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
@@ -93,10 +93,6 @@ require (
 )
 
 replace github.com/openstack-k8s-operators/openstack-baremetal-operator/api => ./api
-
-// needed to to cert-manager v1.11.4 see https://github.com/cert-manager/cert-manager/blob/v1.11.4/go.mod#L263C1-L264C104
-// remove this once we bump to cert-manager v1.12.x
-replace github.com/Venafi/vcert/v4 => github.com/jetstack/vcert/v4 v4.9.6-0.20230519122548-219f317ae107 //allow-merging
 
 // mschuppert: map to latest commit from release-4.18 tag
 // must consistent within modules and service operators
