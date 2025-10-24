@@ -126,6 +126,16 @@ func BaremetalHostProvision(
 		} else {
 			templateParameters["CtlplaneGateway"] = instance.Spec.CtlplaneGateway
 		}
+		// Handle bonding configuration from template spec
+		if instance.Spec.CtlplaneBond != nil {
+			templateParameters["CtlplaneBondInterfaces"] = instance.Spec.CtlplaneBond.BondInterfaces
+			if instance.Spec.CtlplaneBond.BondMode != "" {
+				templateParameters["CtlplaneBondMode"] = instance.Spec.CtlplaneBond.BondMode
+			}
+			if len(instance.Spec.CtlplaneBond.BondOptions) > 0 {
+				templateParameters["CtlplaneBondOptions"] = instance.Spec.CtlplaneBond.BondOptions
+			}
+		}
 		templateParameters["CtlplaneNetmask"] = net.IP(ipNet.Mask)
 		if len(instance.Spec.BootstrapDNS) > 0 {
 			templateParameters["CtlplaneDns"] = instance.Spec.BootstrapDNS
