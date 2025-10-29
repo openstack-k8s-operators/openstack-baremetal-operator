@@ -53,7 +53,7 @@ func DefaultBaremetalSetSpec(name types.NamespacedName, withProvInterface bool) 
 	spec := map[string]any{
 		"baremetalHosts": map[string]any{
 			"compute-0": map[string]any{
-				"ctlPlaneIP": "10.0.0.1",
+				"ctlPlaneIP": "10.0.0.1/24",
 			},
 		},
 		"bmhLabelSelector":    map[string]string{"app": "openstack"},
@@ -78,10 +78,10 @@ func TwoNodeBaremetalSetSpec(namespace string) map[string]any {
 	spec := map[string]any{
 		"baremetalHosts": map[string]any{
 			"compute-0": map[string]any{
-				"ctlPlaneIP": "10.0.0.1",
+				"ctlPlaneIP": "10.0.0.1/24",
 			},
 			"compute-1": map[string]any{
-				"ctlPlaneIP": "10.0.0.1",
+				"ctlPlaneIP": "10.0.0.2/24",
 			},
 		},
 		"bmhLabelSelector":    map[string]string{"app": "openstack"},
@@ -96,11 +96,11 @@ func TwoNodeBaremetalSetSpecWithNodeLabel(namespace string) map[string]any {
 	spec := map[string]any{
 		"baremetalHosts": map[string]any{
 			"compute-0": map[string]any{
-				"ctlPlaneIP":       "10.0.0.1",
+				"ctlPlaneIP":       "10.0.0.1/24",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-0"},
 			},
 			"compute-1": map[string]any{
-				"ctlPlaneIP":       "10.0.0.1",
+				"ctlPlaneIP":       "10.0.0.2/24",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-1"},
 			},
 		},
@@ -116,11 +116,11 @@ func TwoNodeBaremetalSetSpecWithWrongNodeLabel(namespace string) map[string]any 
 	spec := map[string]any{
 		"baremetalHosts": map[string]any{
 			"compute-0": map[string]any{
-				"ctlPlaneIP":       "10.0.0.1",
+				"ctlPlaneIP":       "10.0.0.1/24",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-0"},
 			},
 			"compute-1": map[string]any{
-				"ctlPlaneIP":       "10.0.0.1",
+				"ctlPlaneIP":       "10.0.0.2/24",
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-2"},
 			},
 		},
@@ -136,15 +136,15 @@ func MultiNodeBaremetalSetSpecWithSameNodeLabel(namespace string) map[string]any
 	spec := map[string]any{
 		"baremetalHosts": map[string]any{
 			"compute-0": map[string]any{
-				"ctlPlaneIP":       "10.0.0.1",
+				"ctlPlaneIP":       "10.0.0.1/24",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
 			},
 			"compute-1": map[string]any{
-				"ctlPlaneIP":       "10.0.0.2",
+				"ctlPlaneIP":       "10.0.0.2/24",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
 			},
 			"compute-2": map[string]any{
-				"ctlPlaneIP":       "10.0.0.3",
+				"ctlPlaneIP":       "10.0.0.3/24",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
 			},
 		},
@@ -160,15 +160,15 @@ func MultiNodeBaremetalSetSpecWithOverlappingNodeLabels(namespace string) map[st
 	spec := map[string]any{
 		"baremetalHosts": map[string]any{
 			"compute-0": map[string]any{
-				"ctlPlaneIP":       "10.0.0.1",
+				"ctlPlaneIP":       "10.0.0.1/24",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute", "dummyLabel": "dummy"},
 			},
 			"compute-1": map[string]any{
-				"ctlPlaneIP":       "10.0.0.2",
+				"ctlPlaneIP":       "10.0.0.2/24",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute", "nodeName": "compute-1"},
 			},
 			"compute-2": map[string]any{
-				"ctlPlaneIP":       "10.0.0.3",
+				"ctlPlaneIP":       "10.0.0.3/24",
 				"bmhLabelSelector": map[string]string{"nodeType": "compute", "dummyLabel": "dummy"},
 			},
 		},
