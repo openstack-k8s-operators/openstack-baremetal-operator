@@ -141,6 +141,10 @@ var _ = BeforeSuite(func() {
 		LeaderElection: false,
 	})
 	Expect(err).ToNot(HaveOccurred())
+
+	// Initialize webhook defaults
+	baremetalv1.SetupDefaults()
+
 	err = (&baremetalv1.OpenStackBaremetalSet{}).SetupWebhookWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
 

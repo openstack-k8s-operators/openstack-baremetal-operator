@@ -283,7 +283,21 @@ func CreateSSHSecret(name types.NamespacedName) *corev1.Secret {
 	)
 }
 
-// Get ProvisionServer
+// Create ProvisionServer
+func CreateProvisionServer(name types.NamespacedName, spec map[string]any) *unstructured.Unstructured {
+	raw := map[string]interface{}{
+		"apiVersion": "baremetal.openstack.org/v1beta1",
+		"kind":       "OpenStackProvisionServer",
+		"metadata": map[string]interface{}{
+			"name":      name.Name,
+			"namespace": name.Namespace,
+		},
+		"spec": spec,
+	}
+	return th.CreateUnstructured(raw)
+}
+
+// Get ProvisionServer (for baremetalset-created provision servers with appended name)
 func GetProvisionServer(name types.NamespacedName) *baremetalv1.OpenStackProvisionServer {
 	instance := &baremetalv1.OpenStackProvisionServer{}
 	name.Name = strings.Join([]string{name.Name, "provisionserver"}, "-")
@@ -292,4 +306,20 @@ func GetProvisionServer(name types.NamespacedName) *baremetalv1.OpenStackProvisi
 		return nil
 	}, timeout, interval).Should(Succeed())
 	return instance
+}
+
+// Get ProvisionServer directly (without name transformation)
+func GetProvisionServerDirect(name types.NamespacedName) *baremetalv1.OpenStackProvisionServer {
+	instance := &baremetalv1.OpenStackProvisionServer{}
+	Eventually(func(g Gomega) error {
+		g.Expect(k8sClient.Get(ctx, name, instance)).Should(Succeed())
+		return nil
+	}, timeout, interval).Should(Succeed())
+	return instance
+}
+
+// ProvisionServerConditionGetter
+func ProvisionServerConditionGetter(name types.NamespacedName) condition.Conditions {
+	instance := GetProvisionServerDirect(name)
+	return instance.Status.Conditions
 }
