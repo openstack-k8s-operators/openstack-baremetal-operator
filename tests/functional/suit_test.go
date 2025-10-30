@@ -18,6 +18,7 @@ package functional
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -75,6 +76,10 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	// Set OPERATOR_TEMPLATES to point to the templates directory
+	err := os.Setenv("OPERATOR_TEMPLATES", filepath.Join("..", "..", "templates"))
+	Expect(err).NotTo(HaveOccurred())
 
 	ctx, cancel = context.WithCancel(context.TODO())
 	By("bootstrapping test environment")
@@ -136,6 +141,10 @@ var _ = BeforeSuite(func() {
 		LeaderElection: false,
 	})
 	Expect(err).ToNot(HaveOccurred())
+
+	// Initialize webhook defaults
+	baremetalv1.SetupDefaults()
+
 	err = (&baremetalv1.OpenStackBaremetalSet{}).SetupWebhookWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
 
