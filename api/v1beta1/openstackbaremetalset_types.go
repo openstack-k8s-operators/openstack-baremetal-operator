@@ -26,6 +26,19 @@ import (
 // +kubebuilder:validation:Enum=metadata;disabled
 type AutomatedCleaningMode string
 
+// BondConfig defines the bonding configuration for network interfaces
+type BondConfig struct {
+	// BondInterfaces - List of physical interfaces to bond
+	// +kubebuilder:validation:MinItems=2
+	BondInterfaces []string `json:"bondInterfaces"`
+	// +kubebuilder:default=active-backup
+	// BondMode - Bonding mode (e.g., active-backup, 802.3ad)
+	BondMode string `json:"bondMode,omitempty"`
+	// +kubebuilder:validation:Optional
+	// BondOptions - Additional bonding options as key-value pairs
+	BondOptions map[string]string `json:"bondOptions,omitempty"`
+}
+
 // InstanceSpec Instance specific attributes
 type InstanceSpec struct {
 	// +kubebuilder:validation:Optional
@@ -90,6 +103,9 @@ type OpenStackBaremetalSetTemplateSpec struct {
 	DeploymentSSHSecret string `json:"deploymentSSHSecret"`
 	// CtlplaneInterface - Interface on the provisioned nodes to use for ctlplane network
 	CtlplaneInterface string `json:"ctlplaneInterface"`
+	// +kubebuilder:validation:Optional
+	// CtlplaneBond - Bonding configuration for ctlplane network
+	CtlplaneBond *BondConfig `json:"ctlplaneBond,omitempty"`
 	// +kubebuilder:default=openshift-machine-api
 	// +kubebuilder:validation:Optional
 	// BmhNamespace Namespace to look for BaremetalHosts(default: openshift-machine-api)
