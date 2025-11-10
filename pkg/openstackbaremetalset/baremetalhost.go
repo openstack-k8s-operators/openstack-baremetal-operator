@@ -206,10 +206,18 @@ func BaremetalHostProvision(
 		// Ensure the image url is up to date unless already provisioned
 		//
 		if foundBaremetalHost.Status.Provisioning.State != metal3v1.StateProvisioned {
-			foundBaremetalHost.Spec.Image = &metal3v1.Image{
-				URL:          provServer.Status.LocalImageURL,
-				Checksum:     provServer.Status.LocalImageChecksumURL,
-				ChecksumType: provServer.Status.OSImageChecksumType,
+			if instance.Spec.OSImageDeploymentType == baremetalv1.OSImageDeploymentTypePassThrough {
+				// PassThrough mode: use container URL directly
+				foundBaremetalHost.Spec.Image = &metal3v1.Image{
+					URL: instance.Spec.OSContainerImageURL,
+				}
+			} else {
+				// SelfExtracting mode: use provision server
+				foundBaremetalHost.Spec.Image = &metal3v1.Image{
+					URL:          provServer.Status.LocalImageURL,
+					Checksum:     provServer.Status.LocalImageChecksumURL,
+					ChecksumType: provServer.Status.OSImageChecksumType,
+				}
 			}
 		}
 
@@ -219,10 +227,18 @@ func BaremetalHostProvision(
 		if foundBaremetalHost.Spec.ConsumerRef == nil {
 			foundBaremetalHost.Spec.Online = true
 			foundBaremetalHost.Spec.ConsumerRef = &corev1.ObjectReference{Name: instance.Name, Kind: instance.Kind, Namespace: instance.Namespace}
-			foundBaremetalHost.Spec.Image = &metal3v1.Image{
-				URL:          provServer.Status.LocalImageURL,
-				Checksum:     provServer.Status.LocalImageChecksumURL,
-				ChecksumType: provServer.Status.OSImageChecksumType,
+			if instance.Spec.OSImageDeploymentType == baremetalv1.OSImageDeploymentTypePassThrough {
+				// PassThrough mode: use container URL directly
+				foundBaremetalHost.Spec.Image = &metal3v1.Image{
+					URL: instance.Spec.OSContainerImageURL,
+				}
+			} else {
+				// SelfExtracting mode: use provision server
+				foundBaremetalHost.Spec.Image = &metal3v1.Image{
+					URL:          provServer.Status.LocalImageURL,
+					Checksum:     provServer.Status.LocalImageChecksumURL,
+					ChecksumType: provServer.Status.OSImageChecksumType,
+				}
 			}
 			foundBaremetalHost.Spec.UserData = userDataSecret
 			foundBaremetalHost.Spec.NetworkData = networkDataSecret

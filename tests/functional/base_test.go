@@ -56,10 +56,11 @@ func DefaultBaremetalSetSpec(name types.NamespacedName, withProvInterface bool) 
 				"ctlPlaneIP": "10.0.0.1/24",
 			},
 		},
-		"bmhLabelSelector":    map[string]string{"app": "openstack"},
-		"deploymentSSHSecret": "mysecret",
-		"ctlplaneInterface":   "eth0",
-		"bmhNamespace":        name.Namespace,
+		"bmhLabelSelector":      map[string]string{"app": "openstack"},
+		"deploymentSSHSecret":   "mysecret",
+		"ctlplaneInterface":     "eth0",
+		"bmhNamespace":          name.Namespace,
+		"osImageDeploymentType": "SelfExtracting",
 	}
 	if withProvInterface {
 		spec["provisioningInterface"] = "eth1"
@@ -70,7 +71,24 @@ func DefaultBaremetalSetSpec(name types.NamespacedName, withProvInterface bool) 
 	}
 
 	return spec
+}
 
+// Build BaremetalSetSpec struct for PassThrough mode and fill it with preset values
+func PassThroughBaremetalSetSpec(name types.NamespacedName) map[string]any {
+	spec := map[string]any{
+		"baremetalHosts": map[string]any{
+			"compute-0": map[string]any{
+				"ctlPlaneIP": "10.0.0.1/24",
+			},
+		},
+		"bmhLabelSelector":      map[string]string{"app": "openstack"},
+		"deploymentSSHSecret":   "mysecret",
+		"ctlplaneInterface":     "eth0",
+		"bmhNamespace":          name.Namespace,
+		"osImageDeploymentType": "PassThrough",
+		"osContainerImageUrl":   "quay.io/podified-antelope-centos9/edpm-hardened-uefi@latest",
+	}
+	return spec
 }
 
 // Build BaremetalSetSpec struct for two nodes
@@ -84,10 +102,11 @@ func TwoNodeBaremetalSetSpec(namespace string) map[string]any {
 				"ctlPlaneIP": "10.0.0.2/24",
 			},
 		},
-		"bmhLabelSelector":    map[string]string{"app": "openstack"},
-		"deploymentSSHSecret": "mysecret",
-		"ctlplaneInterface":   "eth0",
-		"bmhNamespace":        namespace,
+		"bmhLabelSelector":      map[string]string{"app": "openstack"},
+		"deploymentSSHSecret":   "mysecret",
+		"ctlplaneInterface":     "eth0",
+		"bmhNamespace":          namespace,
+		"osImageDeploymentType": "SelfExtracting",
 	}
 	return spec
 }
@@ -104,10 +123,11 @@ func TwoNodeBaremetalSetSpecWithNodeLabel(namespace string) map[string]any {
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-1"},
 			},
 		},
-		"bmhLabelSelector":    map[string]string{"app": "openstack"},
-		"deploymentSSHSecret": "mysecret",
-		"ctlplaneInterface":   "eth0",
-		"bmhNamespace":        namespace,
+		"bmhLabelSelector":      map[string]string{"app": "openstack"},
+		"deploymentSSHSecret":   "mysecret",
+		"ctlplaneInterface":     "eth0",
+		"bmhNamespace":          namespace,
+		"osImageDeploymentType": "SelfExtracting",
 	}
 	return spec
 }
@@ -124,10 +144,11 @@ func TwoNodeBaremetalSetSpecWithWrongNodeLabel(namespace string) map[string]any 
 				"bmhLabelSelector": map[string]string{"nodeName": "compute-2"},
 			},
 		},
-		"bmhLabelSelector":    map[string]string{"app": "openstack"},
-		"deploymentSSHSecret": "mysecret",
-		"ctlplaneInterface":   "eth0",
-		"bmhNamespace":        namespace,
+		"bmhLabelSelector":      map[string]string{"app": "openstack"},
+		"deploymentSSHSecret":   "mysecret",
+		"ctlplaneInterface":     "eth0",
+		"bmhNamespace":          namespace,
+		"osImageDeploymentType": "SelfExtracting",
 	}
 	return spec
 }
@@ -148,10 +169,11 @@ func MultiNodeBaremetalSetSpecWithSameNodeLabel(namespace string) map[string]any
 				"bmhLabelSelector": map[string]string{"nodeType": "compute"},
 			},
 		},
-		"bmhLabelSelector":    map[string]string{"app": "openstack"},
-		"deploymentSSHSecret": "mysecret",
-		"ctlplaneInterface":   "eth0",
-		"bmhNamespace":        namespace,
+		"bmhLabelSelector":      map[string]string{"app": "openstack"},
+		"deploymentSSHSecret":   "mysecret",
+		"ctlplaneInterface":     "eth0",
+		"bmhNamespace":          namespace,
+		"osImageDeploymentType": "SelfExtracting",
 	}
 	return spec
 }
@@ -172,10 +194,11 @@ func MultiNodeBaremetalSetSpecWithOverlappingNodeLabels(namespace string) map[st
 				"bmhLabelSelector": map[string]string{"nodeType": "compute", "dummyLabel": "dummy"},
 			},
 		},
-		"bmhLabelSelector":    map[string]string{"app": "openstack"},
-		"deploymentSSHSecret": "mysecret",
-		"ctlplaneInterface":   "eth0",
-		"bmhNamespace":        namespace,
+		"bmhLabelSelector":      map[string]string{"app": "openstack"},
+		"deploymentSSHSecret":   "mysecret",
+		"ctlplaneInterface":     "eth0",
+		"bmhNamespace":          namespace,
+		"osImageDeploymentType": "SelfExtracting",
 	}
 	return spec
 }

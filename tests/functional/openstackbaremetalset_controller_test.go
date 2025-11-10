@@ -68,7 +68,7 @@ var _ = Describe("BaremetalSet Test", func() {
 		}
 	})
 
-	When("A BaremetalSet resource created", func() {
+	When("A BaremetalSet resource with SelfExtracting mode created", func() {
 
 		BeforeEach(func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
@@ -81,11 +81,12 @@ var _ = Describe("BaremetalSet Test", func() {
 			}, th.Timeout, th.Interval).Should(Succeed())
 			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, DefaultBaremetalSetSpec(bmhName, false)))
 		})
-		It("should have the Spec fields initialized", func() {
+		It("should have the Spec fields initialized for SelfExtracting mode", func() {
 			baremetalSetInstance := GetBaremetalSet(baremetalSetName)
 			coreSpec := baremetalv1.OpenStackBaremetalSetTemplateSpec{
 				OSImage:               "edpm-hardened-uefi.qcow2",
 				OSContainerImageURL:   "",
+				OSImageDeploymentType: "SelfExtracting",
 				ApacheImageURL:        "",
 				AgentImageURL:         "",
 				AutomatedCleaningMode: "metadata",
@@ -340,7 +341,7 @@ var _ = Describe("BaremetalSet Test", func() {
 			Expect(networkData).To(ContainSubstring("type: ipv4"))
 		})
 
-		It("Should set BMH image URLs from provision server", func() {
+		It("Should set BMH image URLs from provision server for SelfExtracting mode", func() {
 			Eventually(func(g Gomega) {
 				bmh := GetBaremetalHost(bmhName)
 				g.Expect(bmh.Spec.Image).ToNot(BeNil())
@@ -1106,6 +1107,72 @@ var _ = Describe("BaremetalSet Test", func() {
 				g.Expect(networkData).Should(ContainSubstring("vlan_id: 100"))
 				g.Expect(networkData).Should(ContainSubstring("bond0.100"))
 			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+	})
+
+	When("A BaremetalSet with PassThrough mode is created", func() {
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			DeferCleanup(th.DeleteInstance, CreateSSHSecret(deploymentSecretName))
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, PassThroughBaremetalSetSpec(bmhName)))
+		})
+
+		It("should have the Spec fields initialized for PassThrough mode", func() {
+			baremetalSetInstance := GetBaremetalSet(baremetalSetName)
+			Expect(baremetalSetInstance.Spec.OSImageDeploymentType).Should(Equal(baremetalv1.OSImageDeploymentType("PassThrough")))
+			Expect(baremetalSetInstance.Spec.OSContainerImageURL).Should(Equal("quay.io/podified-antelope-centos9/edpm-hardened-uefi@latest"))
+		})
+
+		It("Should set Provision Server Ready without creating a provision server", func() {
+			th.ExpectCondition(
+				baremetalSetName,
+				ConditionGetterFunc(BaremetalSetConditionGetter),
+				baremetalv1.OpenStackBaremetalSetProvServerReadyCondition,
+				corev1.ConditionTrue,
+			)
+		})
+
+		It("Should provision BMH without provision server", func() {
+			Eventually(func(g Gomega) {
+				bmh := GetBaremetalHost(bmhName)
+				g.Expect(bmh.Spec.ConsumerRef).ToNot(BeNil())
+				g.Expect(bmh.Spec.ConsumerRef.Name).To(Equal(baremetalSetName.Name))
+				// In PassThrough mode, image URL should come from OSContainerImageURL
+				g.Expect(bmh.Spec.Image.URL).To(Equal("quay.io/podified-antelope-centos9/edpm-hardened-uefi@latest"))
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+	})
+
+	When("A BaremetalSet with PassThrough mode missing OSContainerImageURL", func() {
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			DeferCleanup(th.DeleteInstance, CreateSSHSecret(deploymentSecretName))
+
+			// Create spec without osContainerImageUrl
+			spec := PassThroughBaremetalSetSpec(bmhName)
+			delete(spec, "osContainerImageUrl")
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, spec))
+		})
+
+		It("Should report InputReady as False due to missing OSContainerImageURL", func() {
+			th.ExpectCondition(
+				baremetalSetName,
+				ConditionGetterFunc(BaremetalSetConditionGetter),
+				condition.InputReadyCondition,
+				corev1.ConditionFalse,
+			)
 		})
 	})
 })
