@@ -1,7 +1,32 @@
 links:
+{{- if (index . "CtlplaneBondInterfaces") }}
+{{- range $iface := .CtlplaneBondInterfaces }}
+- name: {{ $iface }}
+  id: {{ $iface }}
+  type: vif
+{{- end }}
+- name: {{ .CtlplaneInterface }}
+  id: {{ .CtlplaneInterface }}
+  type: bond
+  bond_interfaces:
+  {{- range $iface := .CtlplaneBondInterfaces }}
+    - {{ $iface }}
+  {{- end }}
+  bond_mode: {{ if .CtlplaneBondMode }}{{ .CtlplaneBondMode }}{{ else }}active-backup{{ end }}
+  {{- if (index . "CtlplaneBondOptions") }}
+  params:
+    {{- range $key, $value := .CtlplaneBondOptions }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+  {{- else }}
+  params:
+    bond-miimon: 100
+  {{- end }}
+{{- else }}
 - name: {{ .CtlplaneInterface }}
   id: {{ .CtlplaneInterface }}
   type: vif
+{{- end }}
 {{- if (index . "CtlplaneVlan") }}
 - name: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
   id: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}

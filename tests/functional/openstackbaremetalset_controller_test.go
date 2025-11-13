@@ -22,13 +22,15 @@ import (
 	. "github.com/onsi/ginkgo/v2" //revive:disable:dot-imports
 	. "github.com/onsi/gomega"    //revive:disable:dot-imports
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 
 	//revive:disable-next-line:dot-imports
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
-	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 var _ = Describe("BaremetalSet Test", func() {
@@ -267,8 +269,8 @@ var _ = Describe("BaremetalSet Test", func() {
 	When("BMH provisioned with generated userdata and networkdata", func() {
 		BeforeEach(func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
-			bmh := GetBaremetalHost(bmhName)
 			Eventually(func(g Gomega) {
+				bmh := GetBaremetalHost(bmhName)
 				bmh.Status.Provisioning.State = metal3v1.StateAvailable
 				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
 			}, th.Timeout, th.Interval).Should(Succeed())
@@ -327,6 +329,11 @@ var _ = Describe("BaremetalSet Test", func() {
 			})
 			Expect(networkDataSecret.Data).To(HaveKey("networkData"))
 			networkData := string(networkDataSecret.Data["networkData"])
+			// Verify proper YAML formatting - links: should be on its own line
+			Expect(networkData).To(MatchRegexp("(?m)^links:\n"))
+			Expect(networkData).To(MatchRegexp("(?m)^networks:\n"))
+			Expect(networkData).NotTo(ContainSubstring("links:- "))
+			Expect(networkData).NotTo(ContainSubstring("networks:- "))
 			Expect(networkData).To(ContainSubstring("links:"))
 			Expect(networkData).To(ContainSubstring("name: eth0"))
 			Expect(networkData).To(ContainSubstring("ip_address: 10.0.0.1"))
@@ -454,6 +461,9 @@ var _ = Describe("BaremetalSet Test", func() {
 				Namespace: bmhName.Namespace,
 			})
 			networkData := string(networkDataSecret.Data["networkData"])
+			// Verify proper YAML formatting for routes
+			Expect(networkData).To(MatchRegexp("(?m)^  routes:\n"))
+			Expect(networkData).NotTo(ContainSubstring("routes:  - network:"))
 			Expect(networkData).To(ContainSubstring("gateway: 10.0.0.254"))
 			Expect(networkData).To(ContainSubstring("routes:"))
 		})
@@ -472,6 +482,11 @@ var _ = Describe("BaremetalSet Test", func() {
 				Namespace: bmhName.Namespace,
 			})
 			networkData := string(networkDataSecret.Data["networkData"])
+			// Verify proper YAML formatting for DNS sections
+			Expect(networkData).To(MatchRegexp("(?m)^  dns_nameservers:\n"))
+			Expect(networkData).NotTo(ContainSubstring("dns_nameservers:    - "))
+			Expect(networkData).To(MatchRegexp("(?m)^  dns_search:\n"))
+			Expect(networkData).NotTo(ContainSubstring("dns_search:    - "))
 			Expect(networkData).To(ContainSubstring("dns_nameservers:"))
 			Expect(networkData).To(ContainSubstring("8.8.8.8"))
 			Expect(networkData).To(ContainSubstring("8.8.4.4"))
@@ -945,6 +960,152 @@ var _ = Describe("BaremetalSet Test", func() {
 				condition.ReadyCondition,
 				corev1.ConditionFalse,
 			)
+		})
+	})
+
+	When("A BaremetalSet with bonding configuration generates network data", func() {
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			DeferCleanup(th.DeleteInstance, CreateSSHSecret(deploymentSecretName))
+		})
+
+		// Helper to patch provision server to be ready
+		patchProvisionServerReady := func() {
+			provServerName := types.NamespacedName{
+				Name:      strings.Join([]string{baremetalSetName.Name, "provisionserver"}, "-"),
+				Namespace: namespace,
+			}
+
+			// Wait for provision server to be created by the controller
+			// and patch it to be ready
+			Eventually(func(g Gomega) {
+				provServer := &baremetalv1.OpenStackProvisionServer{}
+				g.Expect(th.K8sClient.Get(th.Ctx, provServerName, provServer)).To(Succeed())
+				provServer.Status.ProvisionIP = "192.168.122.100"
+				provServer.Status.LocalImageURL = "http://192.168.122.100:6190/images/edpm-hardened-uefi.qcow2"
+				provServer.Status.LocalImageChecksumURL = "http://192.168.122.100:6190/images/edpm-hardened-uefi.qcow2.sha256sum"
+				provServer.Status.ReadyCount = 1
+
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, provServer)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+		}
+
+		It("Should generate networkdata secret with bonding configuration", func() {
+			bondSpec := DefaultBaremetalSetSpec(bmhName, true) // Need provision server
+			bondSpec["ctlplaneInterface"] = "bond0"
+			bondSpec["ctlplaneBond"] = map[string]any{
+				"bondInterfaces": []string{"eno1", "eno2"},
+				"bondMode":       "active-backup",
+			}
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, bondSpec))
+
+			// Verify default was applied
+			baremetalSetInstance := GetBaremetalSet(baremetalSetName)
+			Expect(baremetalSetInstance.Spec.CtlplaneBond.BondMode).Should(Equal("active-backup"))
+
+			//patch provision server to be ready
+			patchProvisionServerReady()
+
+			// Wait for network data secret with bonding config
+			Eventually(func(g Gomega) {
+				secretName := types.NamespacedName{
+					Name:      strings.Join([]string{baremetalSetName.Name, "cloudinit-networkdata", "compute-0"}, "-"),
+					Namespace: namespace,
+				}
+				secret := &corev1.Secret{}
+				g.Expect(th.K8sClient.Get(th.Ctx, secretName, secret)).To(Succeed())
+
+				networkData := string(secret.Data["networkData"])
+				// Verify proper YAML formatting
+				g.Expect(networkData).To(MatchRegexp("(?m)^links:\n"))
+				g.Expect(networkData).NotTo(ContainSubstring("links:- "))
+				g.Expect(networkData).To(MatchRegexp("(?m)^  bond_interfaces:\n"))
+				g.Expect(networkData).NotTo(ContainSubstring("bond_interfaces:    - "))
+				g.Expect(networkData).To(MatchRegexp("bond_mode: [^\n]+\n  "))
+				g.Expect(networkData).NotTo(MatchRegexp("bond_mode: [^\n]+  params:"))
+				g.Expect(networkData).Should(ContainSubstring("type: bond"))
+				g.Expect(networkData).Should(ContainSubstring("bond_mode: active-backup"))
+				g.Expect(networkData).Should(ContainSubstring("eno1"))
+				g.Expect(networkData).Should(ContainSubstring("eno2"))
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+
+		It("Should reject bonding with less than 2 interfaces", func() {
+			bondSpec := DefaultBaremetalSetSpec(bmhName, true)
+			bondSpec["ctlplaneInterface"] = "bond0"
+			bondSpec["ctlplaneBond"] = map[string]any{
+				"bondInterfaces": []string{"eno1"}, // Only one interface - should fail
+				"bondMode":       "active-backup",
+			}
+
+			object := DefaultBaremetalSetTemplate(baremetalSetName, bondSpec)
+			unstructuredObj := &unstructured.Unstructured{Object: object}
+			_, err := controllerutil.CreateOrPatch(
+				th.Ctx, th.K8sClient, unstructuredObj, func() error { return nil })
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring("bondInterfaces"))
+		})
+
+		It("Should generate networkdata without bonding (backward compatibility)", func() {
+			noBondSpec := DefaultBaremetalSetSpec(bmhName, true)
+			noBondSpec["ctlplaneInterface"] = "eth0"
+
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, noBondSpec))
+
+			// Verify provision server to be ready
+			patchProvisionServerReady()
+
+			// Wait for network data secret without bonding
+			Eventually(func(g Gomega) {
+				secretName := types.NamespacedName{
+					Name:      strings.Join([]string{baremetalSetName.Name, "cloudinit-networkdata", "compute-0"}, "-"),
+					Namespace: namespace,
+				}
+				secret := &corev1.Secret{}
+				g.Expect(th.K8sClient.Get(th.Ctx, secretName, secret)).To(Succeed())
+
+				networkData := string(secret.Data["networkData"])
+				g.Expect(networkData).ShouldNot(ContainSubstring("type: bond"))
+				g.Expect(networkData).Should(ContainSubstring("type: vif"))
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+
+		It("Should generate networkdata with bonding and VLAN", func() {
+			bondVlanSpec := DefaultBaremetalSetSpec(bmhName, true)
+			bondVlanSpec["ctlplaneInterface"] = "bond0"
+			bondVlanSpec["ctlplaneVlan"] = 100
+			bondVlanSpec["ctlplaneBond"] = map[string]any{
+				"bondInterfaces": []string{"eno1", "eno2"},
+				"bondMode":       "802.3ad",
+			}
+
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, bondVlanSpec))
+
+			// Verify provision server to be ready
+			patchProvisionServerReady()
+
+			// Wait for network data secret with bonding + VLAN
+			Eventually(func(g Gomega) {
+				secretName := types.NamespacedName{
+					Name:      strings.Join([]string{baremetalSetName.Name, "cloudinit-networkdata", "compute-0"}, "-"),
+					Namespace: namespace,
+				}
+				secret := &corev1.Secret{}
+				g.Expect(th.K8sClient.Get(th.Ctx, secretName, secret)).To(Succeed())
+
+				networkData := string(secret.Data["networkData"])
+				g.Expect(networkData).Should(ContainSubstring("type: bond"))
+				g.Expect(networkData).Should(ContainSubstring("bond_mode: 802.3ad"))
+				g.Expect(networkData).Should(ContainSubstring("type: vlan"))
+				g.Expect(networkData).Should(ContainSubstring("vlan_id: 100"))
+				g.Expect(networkData).Should(ContainSubstring("bond0.100"))
+			}, th.Timeout, th.Interval).Should(Succeed())
 		})
 	})
 })
