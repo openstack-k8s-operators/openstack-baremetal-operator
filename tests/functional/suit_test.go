@@ -44,7 +44,8 @@ import (
 
 	//revive:disable-next-line:dot-imports
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
-	"github.com/openstack-k8s-operators/openstack-baremetal-operator/controllers"
+	controllers "github.com/openstack-k8s-operators/openstack-baremetal-operator/internal/controller"
+	webhookv1beta1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/internal/webhook/v1beta1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -146,10 +147,10 @@ var _ = BeforeSuite(func() {
 	// Initialize webhook defaults
 	baremetalv1.SetupDefaults()
 
-	err = (&baremetalv1.OpenStackBaremetalSet{}).SetupWebhookWithManager(k8sManager)
+	err = webhookv1beta1.SetupOpenStackBaremetalSetWebhookWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&baremetalv1.OpenStackProvisionServer{}).SetupWebhookWithManager(k8sManager)
+	err = webhookv1beta1.SetupOpenStackProvisionServerWebhookWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
 
 	kclient, err := kubernetes.NewForConfig(cfg)

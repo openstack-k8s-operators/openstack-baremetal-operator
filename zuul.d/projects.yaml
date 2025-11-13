@@ -3,7 +3,9 @@
     name: openstack-k8s-operators/openstack-baremetal-operator
     github-check:
       jobs:
-        - openstack-baremetal-operator-content-provider
+        - openstack-baremetal-operator-content-provider:
+            vars:
+              cifmw_install_yamls_sdk_version: v1.41.1
         - openstack-baremetal-operator-crc-podified-edpm-baremetal:
             dependencies:
               - openstack-baremetal-operator-content-provider

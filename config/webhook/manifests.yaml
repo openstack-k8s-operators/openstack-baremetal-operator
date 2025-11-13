@@ -10,9 +10,29 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-baremetal-openstack-org-v1beta1-openstackbaremetalset
+  failurePolicy: Fail
+  name: mopenstackbaremetalset-v1beta1.kb.io
+  rules:
+  - apiGroups:
+    - baremetal.openstack.org
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - openstackbaremetalsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-baremetal-openstack-org-v1beta1-openstackprovisionserver
   failurePolicy: Fail
-  name: mopenstackprovisionserver.kb.io
+  name: mopenstackprovisionserver-v1beta1.kb.io
   rules:
   - apiGroups:
     - baremetal.openstack.org
@@ -38,7 +58,7 @@ webhooks:
       namespace: system
       path: /validate-baremetal-openstack-org-v1beta1-openstackbaremetalset
   failurePolicy: Fail
-  name: vopenstackbaremetalset.kb.io
+  name: vopenstackbaremetalset-v1beta1.kb.io
   rules:
   - apiGroups:
     - baremetal.openstack.org
@@ -47,7 +67,6 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
-    - DELETE
     resources:
     - openstackbaremetalsets
   sideEffects: None
@@ -59,7 +78,7 @@ webhooks:
       namespace: system
       path: /validate-baremetal-openstack-org-v1beta1-openstackprovisionserver
   failurePolicy: Fail
-  name: vopenstackprovisionserver.kb.io
+  name: vopenstackprovisionserver-v1beta1.kb.io
   rules:
   - apiGroups:
     - baremetal.openstack.org
