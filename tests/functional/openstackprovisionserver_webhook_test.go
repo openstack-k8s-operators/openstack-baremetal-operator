@@ -147,24 +147,27 @@ var _ = Describe("OpenStackProvisionServer Webhook", func() {
 				Name:      "test-provisionserver-2",
 				Namespace: namespace,
 			}
-			// Create first provision server with specific port
+			// Create first provision server and let it auto-assign an available port
 			spec := map[string]interface{}{
 				"osImage":             "edpm-hardened-uefi.qcow2",
 				"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
 				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
 				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
-				"port":                int64(6200),
 			}
 			DeferCleanup(th.DeleteInstance, CreateProvisionServer(provisionServerName, spec))
 		})
 
 		It("should fail when trying to use same port", func() {
+			// Get the port that was auto-assigned to the first provision server
+			instance := GetProvisionServerDirect(provisionServerName)
+			assignedPort := instance.Spec.Port
+
 			spec := map[string]interface{}{
 				"osImage":             "edpm-hardened-uefi.qcow2",
 				"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
 				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
 				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
-				"port":                int64(6200), // Same as first server
+				"port":                int64(assignedPort), // Same as first server
 			}
 			raw := map[string]interface{}{
 				"apiVersion": "baremetal.openstack.org/v1beta1",
@@ -185,12 +188,12 @@ var _ = Describe("OpenStackProvisionServer Webhook", func() {
 		})
 
 		It("should succeed when using different port", func() {
+			// Don't specify port - it will auto-assign a different available port
 			spec := map[string]interface{}{
 				"osImage":             "edpm-hardened-uefi.qcow2",
 				"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
 				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
 				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
-				"port":                int64(6201), // Different port
 			}
 			raw := map[string]interface{}{
 				"apiVersion": "baremetal.openstack.org/v1beta1",
