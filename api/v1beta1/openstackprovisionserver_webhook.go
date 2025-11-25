@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -45,19 +44,6 @@ func SetupOpenStackProvisionServerDefaults(defaults OpenStackProvisionServerDefa
 	openstackProvisionServerDefaults = defaults
 	openstackprovisionserverlog.Info("OpenStackProvisionServer defaults initialized", "defaults", defaults)
 }
-
-// SetupWebhookWithManager - register this webhook with the controller manager
-func (r *OpenStackProvisionServer) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	if webhookClient == nil {
-		webhookClient = mgr.GetClient()
-	}
-
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-//+kubebuilder:webhook:path=/validate-baremetal-openstack-org-v1beta1-openstackprovisionserver,mutating=false,failurePolicy=fail,sideEffects=None,groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=create;update,versions=v1beta1,name=vopenstackprovisionserver.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &OpenStackProvisionServer{}
 
@@ -108,8 +94,6 @@ func (r *OpenStackProvisionServer) ValidateDelete() (admission.Warnings, error) 
 
 	return nil, nil
 }
-
-//+kubebuilder:webhook:path=/mutate-baremetal-openstack-org-v1beta1-openstackprovisionserver,mutating=true,failurePolicy=fail,sideEffects=None,groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=create;update,versions=v1beta1,name=mopenstackprovisionserver.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &OpenStackProvisionServer{}
 

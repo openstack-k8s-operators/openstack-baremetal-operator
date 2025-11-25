@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -44,21 +43,14 @@ import (
 // to any particular webhook)
 var webhookClient goClient.Client
 
-// log is for logging in this package.
-var openstackbaremetalsetlog = logf.Log.WithName("openstackbaremetalset-resource")
-
-// SetupWebhookWithManager - register this webhook with the controller manager
-func (r *OpenStackBaremetalSet) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	if webhookClient == nil {
-		webhookClient = mgr.GetClient()
-	}
-
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
+// SetupWebhookClient sets the webhook client for API webhook functions.
+// This allows internal webhooks to initialize the client before calling validation/default functions.
+func SetupWebhookClient(client goClient.Client) {
+	webhookClient = client
 }
 
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-baremetal-openstack-org-v1beta1-openstackbaremetalset,mutating=false,failurePolicy=fail,sideEffects=None,groups=baremetal.openstack.org,resources=openstackbaremetalsets,versions=v1beta1,name=vopenstackbaremetalset.kb.io,admissionReviewVersions=v1
+// log is for logging in this package.
+var openstackbaremetalsetlog = logf.Log.WithName("openstackbaremetalset-resource")
 
 var _ webhook.Validator = &OpenStackBaremetalSet{}
 

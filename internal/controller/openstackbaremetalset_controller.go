@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package controllers contains the Kubernetes controllers for managing OpenStack baremetal operator resources
-package controllers
+// Package controller contains the Kubernetes controllers for managing OpenStack baremetal operator resources.
+package controller
 
 import (
 	"context"
@@ -49,7 +49,7 @@ import (
 	oko_secret "github.com/openstack-k8s-operators/lib-common/modules/common/secret"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
-	"github.com/openstack-k8s-operators/openstack-baremetal-operator/pkg/openstackbaremetalset"
+	"github.com/openstack-k8s-operators/openstack-baremetal-operator/internal/openstackbaremetalset"
 )
 
 var (
