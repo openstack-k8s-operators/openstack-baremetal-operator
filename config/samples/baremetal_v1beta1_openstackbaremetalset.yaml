@@ -1,13 +1,16 @@
+# SelfExtracting deployment using qcow2
 apiVersion: baremetal.openstack.org/v1beta1
 kind: OpenStackBaremetalSet
 metadata:
-  name: openstackbaremetalset
+  name: openstackbaremetalset-selfextracting
 spec:
   # Define how many BaremetalHosts are desired to be provisioned and assign
   # a control plane IP to them
   baremetalHosts:
     compute-0: 172.22.0.100/24
     compute-1: 172.22.0.101/24
+  # SelfExtracting Deployment using qcow2
+  osImageDeploymentType: SelfExtracting
   # The image to install on the provisioned nodes
   osImage: edpm-hardened-uefi.qcow2
   # provisionServerName: openstack  # uncomment if you pre-deploy a separate OsProvServer (use its name for the value)
@@ -19,4 +22,26 @@ spec:
   ctlplaneGateway: 172.22.0.3
   # An optional secret holding a data entry called "NodeRootPassword"
   # This will be set as the root password on all provisioned BaremetalHosts
+  passwordSecret: baremetalset-password-secret
+
+---
+# PassThrough deployment using direct container URL passing
+apiVersion: baremetal.openstack.org/v1beta1
+kind: OpenStackBaremetalSet
+metadata:
+  name: openstackbaremetalset-passthrough
+spec:
+  # Define how many BaremetalHosts are desired to be provisioned and assign
+  # a control plane IP to them
+  baremetalHosts:
+    compute-0: 172.22.0.100/24
+    compute-1: 172.22.0.101/24
+  # PassThrough deployment using direct container URL passing
+  osImageDeploymentType: PassThrough
+  osContainerImageUrl: quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified
+  # The secret containing the SSH pub key to place on the provisioned nodes
+  deploymentSSHSecret: baremetalset-deploy-secret
+  domainName: osptest.openstack.org
+  ctlplaneInterface: enp1s0
+  ctlplaneGateway: 172.22.0.3
   passwordSecret: baremetalset-password-secret

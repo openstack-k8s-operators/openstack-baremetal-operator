@@ -39,6 +39,10 @@ type BondConfig struct {
 	BondOptions map[string]string `json:"bondOptions,omitempty"`
 }
 
+// OSImageDeploymentType specifies the type of OS image deployment
+// +kubebuilder:validation:Enum=SelfExtracting;PassThrough
+type OSImageDeploymentType string
+
 // InstanceSpec Instance specific attributes
 type InstanceSpec struct {
 	// +kubebuilder:validation:Optional
@@ -71,32 +75,42 @@ const (
 	CleaningModeMetadata AutomatedCleaningMode = "metadata"
 )
 
+// Allowed OS image deployment types
+const (
+	OSImageDeploymentTypeSelfExtracting OSImageDeploymentType = "SelfExtracting"
+	OSImageDeploymentTypePassThrough    OSImageDeploymentType = "PassThrough"
+)
+
 type OpenStackBaremetalSetTemplateSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=edpm-hardened-uefi.qcow2
-	// OSImage - OS qcow2 image Name
+	// OSImage - OS qcow2 image Name. Ignored when osImageDeploymentType is PassThrough.
 	OSImage string `json:"osImage"`
 	// +kubebuilder:validation:Optional
-	// OSContainerImageURL - Container image URL for init with the OS qcow2 image (osImage)
+	// OSContainerImageURL - When osImageDeploymentType is SelfExtracting, container image URL for init with the OS qcow2 image (osImage). When osImageDeploymentType is PassThrough this can be any image URL which the underlying Metal3 instance supports.
 	OSContainerImageURL string `json:"osContainerImageUrl,omitempty"`
 	// +kubebuilder:validation:Optional
-	// ApacheImageURL - Container image URL for the main container that serves the downloaded OS qcow2 image (osImage)
+	// +kubebuilder:default=SelfExtracting
+	// OSImageDeploymentType - Whether the OS image deployment is self-extracting or pass-through based
+	OSImageDeploymentType OSImageDeploymentType `json:"osImageDeploymentType"`
+	// +kubebuilder:validation:Optional
+	// ApacheImageURL - Container image URL for the main container that serves the downloaded OS qcow2 image (osImage). Ignored when osImageDeploymentType is PassThrough.
 	ApacheImageURL string `json:"apacheImageUrl,omitempty"`
 	// +kubebuilder:validation:Optional
-	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs
+	// AgentImageURL - Container image URL for the sidecar container that discovers provisioning network IPs. Ignored when osImageDeploymentType is PassThrough.
 	AgentImageURL string `json:"agentImageUrl,omitempty"`
 	// When set to disabled, automated cleaning will be avoided
 	// during provisioning and deprovisioning.
 	// +kubebuilder:default=metadata
 	// +kubebuilder:validation:Optional
 	AutomatedCleaningMode AutomatedCleaningMode `json:"automatedCleaningMode"`
-	// ProvisionServerName - Optional. Existing OpenStackProvisionServer to use, else one would be created.
+	// ProvisionServerName - Optional. Existing OpenStackProvisionServer to use, else one would be created. Ignored when osImageDeploymentType is PassThrough.
 	// +kubebuilder:validation:Optional
 	ProvisionServerName string `json:"provisionServerName,omitempty"`
 	// +kubebuilder:validation:Optional
-	// ProvisonServerNodeSelector to target subset of worker nodes running provision server
+	// ProvisonServerNodeSelector to target subset of worker nodes running provision server, ignored when osImageDeploymentType is PassThrough.
 	ProvisonServerNodeSelector map[string]string `json:"provisionServerNodeSelector,omitempty"`
-	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.  This is the provisioning interface on the OCP masters/workers.
+	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.  This is the provisioning interface on the OCP masters/workers. Ignored when osImageDeploymentType is PassThrough.
 	// +kubebuilder:validation:Optional
 	ProvisioningInterface string `json:"provisioningInterface,omitempty"`
 	// DeploymentSSHSecret - Name of secret holding the cloud-admin ssh keys
