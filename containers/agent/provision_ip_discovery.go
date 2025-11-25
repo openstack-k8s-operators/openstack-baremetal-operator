@@ -118,6 +118,7 @@ func getInterfaceIP(interfaceName string) (string, bool) {
 				panic(err.Error())
 			}
 
+			var ipv4Addr, ipv6Addr string
 			for _, addr := range addrs {
 				ipObj, _, err := net.ParseCIDR(addr.String())
 				if err != nil || ipObj == nil {
@@ -125,10 +126,18 @@ func getInterfaceIP(interfaceName string) (string, bool) {
 					continue
 				}
 
-				if ipObj = ipObj.To4(); ipObj != nil {
-					return ipObj.String(), intfFound
+				if ipObj.To4() != nil {
+					ipv4Addr = ipObj.String()
+				} else {
+					ipv6Addr = ipObj.String()
 				}
-				glog.V(0).Infof("INFO: Ignoring IPv6 address (%s) on interface %s", addr, interfaceName)
+			}
+			// Prefer IPv4, but fall back to IPv6 if no IPv4 is found
+			if ipv4Addr != "" {
+				return ipv4Addr, intfFound
+			}
+			if ipv6Addr != "" {
+				return ipv6Addr, intfFound
 			}
 		}
 	}
