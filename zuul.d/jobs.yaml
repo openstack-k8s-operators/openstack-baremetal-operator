@@ -12,3 +12,6 @@
 - job:
     name: openstack-baremetal-operator-crc-podified-edpm-baremetal
     parent: cifmw-crc-podified-edpm-baremetal
+- job:
+    name: openstack-baremetal-operator-edpm-baremetal-minor-update
+    parent: cifmw-crc-podified-edpm-baremetal-minor-update

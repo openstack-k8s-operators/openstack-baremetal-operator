@@ -7,3 +7,6 @@
         - openstack-baremetal-operator-crc-podified-edpm-baremetal:
             dependencies:
               - openstack-baremetal-operator-content-provider
+        - openstack-baremetal-operator-edpm-baremetal-minor-update:
+            dependencies:
+              - openstack-baremetal-operator-content-provider
