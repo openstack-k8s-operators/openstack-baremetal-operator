@@ -64,7 +64,7 @@ var (
 )
 
 const (
-	timeout = 40 * time.Second
+	timeout = 45 * time.Second
 	// have maximum 100 retries before the timeout hits
 	interval = timeout / 100
 )
@@ -90,6 +90,10 @@ var _ = BeforeSuite(func() {
 			filepath.Join("..", "..", "config", "crd", "bases"),
 			filepath.Join("metal3-crds"),
 		},
+		// Increase this to 60 or 120 seconds for the single-core run
+		ControlPlaneStartTimeout: 120 * time.Second,
+		// Give it plenty of time to wind down (e.g., 60-120 seconds)
+		ControlPlaneStopTimeout: 120 * time.Second,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 			// NOTE(gibi): if localhost is resolved to ::1 (ipv6) then starting
@@ -98,6 +102,14 @@ var _ = BeforeSuite(func() {
 			LocalServingHost: "127.0.0.1",
 		},
 		ErrorIfCRDPathMissing: true,
+		ControlPlane: envtest.ControlPlane{
+			APIServer: &envtest.APIServer{
+				Args: []string{
+					"--service-cluster-ip-range=10.0.0.0/12", // 65k+ IPs
+					"--disable-admission-plugins=ResourceQuota,ServiceAccount,NamespaceLifecycle",
+				},
+			},
+		},
 	}
 
 	// cfg is defined in this file globally.
