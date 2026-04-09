@@ -107,7 +107,7 @@ func Deployment(
 			Name:            "osp-provision-ip-discovery-agent",
 			Command:         []string{"/openstack-baremetal-agent", "provision-ip-discovery"},
 			Image:           instance.Spec.AgentImageURL,
-			ImagePullPolicy: corev1.PullAlways,
+			ImagePullPolicy: corev1.PullIfNotPresent,
 			Env: []corev1.EnvVar{
 				{
 					Name:  "PROV_INTF",
