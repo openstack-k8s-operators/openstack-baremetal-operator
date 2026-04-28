@@ -12,3 +12,6 @@
         - openstack-baremetal-operator-edpm-baremetal-minor-update:
             dependencies:
               - openstack-baremetal-operator-content-provider
+        - openstack-baremetal-operator-hotstack-bm:
+            dependencies:
+              - openstack-baremetal-operator-content-provider
