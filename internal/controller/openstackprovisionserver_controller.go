@@ -43,6 +43,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/annotations"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/deployment"
@@ -112,6 +113,12 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 		}
 		// Error reading the object - requeue the request.
 		return ctrl.Result{}, err
+	}
+
+	// If paused and not being deleted, return immediately — no status updates
+	if annotations.IsPaused(instance) && instance.DeletionTimestamp.IsZero() {
+		r.Log.Info("Reconciliation paused", "instance", instance.Name)
+		return ctrl.Result{}, nil
 	}
 
 	helper, err := helper.NewHelper(

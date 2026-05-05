@@ -24,6 +24,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -100,6 +101,73 @@ var _ = Describe("ProvisionServer Test", func() {
 			instance1 := GetProvisionServerDirect(provisionServerName)
 			instance2 := GetProvisionServerDirect(provisionServer2Name)
 			Expect(instance1.Spec.Port).ShouldNot(Equal(instance2.Spec.Port))
+		})
+	})
+
+	When("A ProvisionServer resource is created with pause annotation", func() {
+		BeforeEach(func() {
+			raw := map[string]interface{}{
+				"apiVersion": "baremetal.openstack.org/v1beta1",
+				"kind":       "OpenStackProvisionServer",
+				"metadata": map[string]interface{}{
+					"name":      provisionServerName.Name,
+					"namespace": provisionServerName.Namespace,
+					"annotations": map[string]string{
+						"openstack.org/paused": "",
+					},
+				},
+				"spec": map[string]interface{}{
+					"osImage":             "edpm-hardened-uefi.qcow2",
+					"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
+					"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
+					"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
+				},
+			}
+			DeferCleanup(th.DeleteInstance, th.CreateUnstructured(raw))
+		})
+
+		It("should not update status conditions while paused", func() {
+			Consistently(func(g Gomega) {
+				instance := &baremetalv1.OpenStackProvisionServer{}
+				g.Expect(k8sClient.Get(ctx, provisionServerName, instance)).To(Succeed())
+				g.Expect(instance.Status.Conditions).To(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("should resume reconciliation when pause annotation is removed", func() {
+			Consistently(func(g Gomega) {
+				instance := &baremetalv1.OpenStackProvisionServer{}
+				g.Expect(k8sClient.Get(ctx, provisionServerName, instance)).To(Succeed())
+				g.Expect(instance.Status.Conditions).To(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				instance := &baremetalv1.OpenStackProvisionServer{}
+				g.Expect(k8sClient.Get(ctx, provisionServerName, instance)).To(Succeed())
+				instance.Annotations = map[string]string{}
+				g.Expect(k8sClient.Update(ctx, instance)).To(Succeed())
+			}, timeout, interval).Should(Succeed())
+
+			th.ExpectCondition(
+				provisionServerName,
+				ConditionGetterFunc(ProvisionServerConditionGetter),
+				condition.ReadyCondition,
+				corev1.ConditionFalse,
+			)
+		})
+
+		It("should still allow deletion when paused", func() {
+			instance := &baremetalv1.OpenStackProvisionServer{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, provisionServerName, instance)).To(Succeed())
+			}, timeout, interval).Should(Succeed())
+
+			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, provisionServerName, instance)
+				g.Expect(k8s_errors.IsNotFound(err)).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
