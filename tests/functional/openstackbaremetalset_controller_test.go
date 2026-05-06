@@ -1149,6 +1149,70 @@ var _ = Describe("BaremetalSet Test", func() {
 		})
 	})
 
+	When("A BaremetalSet resource is created with pause annotation", func() {
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			raw := DefaultBaremetalSetTemplate(baremetalSetName, DefaultBaremetalSetSpec(bmhName, false))
+			raw["metadata"].(map[string]any)["annotations"] = map[string]string{
+				"openstack.org/paused": "",
+			}
+			DeferCleanup(th.DeleteInstance, th.CreateUnstructured(raw))
+		})
+
+		It("should not update status conditions while paused", func() {
+			Consistently(func(g Gomega) {
+				instance := &baremetalv1.OpenStackBaremetalSet{}
+				g.Expect(k8sClient.Get(ctx, baremetalSetName, instance)).To(Succeed())
+				g.Expect(instance.Status.Conditions).To(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("should resume reconciliation when pause annotation is removed", func() {
+			// Verify paused — no conditions
+			Consistently(func(g Gomega) {
+				instance := &baremetalv1.OpenStackBaremetalSet{}
+				g.Expect(k8sClient.Get(ctx, baremetalSetName, instance)).To(Succeed())
+				g.Expect(instance.Status.Conditions).To(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+
+			// Remove annotation
+			Eventually(func(g Gomega) {
+				instance := &baremetalv1.OpenStackBaremetalSet{}
+				g.Expect(k8sClient.Get(ctx, baremetalSetName, instance)).To(Succeed())
+				instance.Annotations = map[string]string{}
+				g.Expect(k8sClient.Update(ctx, instance)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			// Verify reconciliation resumes — conditions should appear
+			th.ExpectCondition(
+				baremetalSetName,
+				ConditionGetterFunc(BaremetalSetConditionGetter),
+				condition.ReadyCondition,
+				corev1.ConditionFalse,
+			)
+		})
+
+		It("should still allow deletion when paused", func() {
+			instance := &baremetalv1.OpenStackBaremetalSet{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, baremetalSetName, instance)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, baremetalSetName, instance)
+				g.Expect(k8s_errors.IsNotFound(err)).To(BeTrue())
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+	})
+
 	When("A BaremetalSet with PassThrough mode missing OSContainerImageURL", func() {
 		BeforeEach(func() {
 			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))

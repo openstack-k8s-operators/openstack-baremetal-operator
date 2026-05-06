@@ -7,8 +7,8 @@ require (
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/metal3-io/baremetal-operator/apis v0.9.3
 	github.com/onsi/ginkgo/v2 v2.28.2
-	github.com/onsi/gomega v1.39.1
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20260417092244-81c71b39e981
+	github.com/onsi/gomega v1.40.0
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20260506154724-30a976ba8ef0
 	k8s.io/api v0.31.14
 	k8s.io/apimachinery v0.31.14
 	sigs.k8s.io/controller-runtime v0.19.7
