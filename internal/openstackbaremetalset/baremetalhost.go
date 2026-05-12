@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/backup"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
@@ -71,7 +72,11 @@ func BaremetalHostProvision(
 		templateParameters["CloudUserName"] = instance.Spec.CloudUserName
 
 		// Prepare cloudinit (create secret)
-		secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{})
+		backupLabels := util.MergeStringMaps(
+			backup.GetBackupLabels(backup.CategoryDataPlane),
+			backup.GetRestoreLabels(backup.RestoreOrder10, backup.CategoryDataPlane),
+		)
+		secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), backupLabels)
 		if passwordSecret != nil && len(passwordSecret.Data["NodeRootPassword"]) > 0 {
 			templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
 		}
@@ -152,9 +157,12 @@ func BaremetalHostProvision(
 		networkDataSecretName := fmt.Sprintf(CloudInitNetworkDataSecretName, instance.Name, hostName)
 
 		// Flag the network data secret as safe to collect with must-gather
-		secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), map[string]string{
-			MustGatherSecret: "yes",
-		})
+		networkDataLabels := util.MergeStringMaps(
+			map[string]string{MustGatherSecret: "yes"},
+			backup.GetBackupLabels(backup.CategoryDataPlane),
+			backup.GetRestoreLabels(backup.RestoreOrder10, backup.CategoryDataPlane),
+		)
+		secretLabelsWithMustGather := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), networkDataLabels)
 
 		networkDataSt := util.Template{
 			Name:               networkDataSecretName,
