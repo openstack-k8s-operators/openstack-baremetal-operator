@@ -119,6 +119,9 @@ func (instance *OpenStackProvisionServer) IsReady() bool {
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenStackProvisionServer"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
 // +kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
+// +kubebuilder:metadata:labels=backup.openstack.org/restore=true
+// +kubebuilder:metadata:labels=backup.openstack.org/category=dataplane
+// +kubebuilder:metadata:labels=backup.openstack.org/restore-order=55
 
 // OpenStackProvisionServer used to serve custom images for baremetal provisioning with Metal3
 type OpenStackProvisionServer struct {
