@@ -186,6 +186,9 @@ type OpenStackBaremetalSetStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenStack BaremetalSet"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
 // +kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
+// +kubebuilder:metadata:labels=backup.openstack.org/restore=true
+// +kubebuilder:metadata:labels=backup.openstack.org/category=dataplane
+// +kubebuilder:metadata:labels=backup.openstack.org/restore-order=55
 
 // OpenStackBaremetalSet is the Schema for the openstackbaremetalsets API
 type OpenStackBaremetalSet struct {
