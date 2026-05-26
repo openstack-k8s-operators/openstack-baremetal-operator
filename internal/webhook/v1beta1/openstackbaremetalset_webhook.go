@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/openstack-k8s-operators/lib-common/modules/common/annotations"
 	baremetalv1beta1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 )
 
@@ -35,6 +36,9 @@ var (
 	// ErrInvalidOpenStackBaremetalSetType is returned when the object is not an OpenStackBaremetalSet
 	ErrInvalidOpenStackBaremetalSetType = errors.New("expected an OpenStackBaremetalSet object")
 )
+
+const skipValidationWarning = "webhook validation is being skipped due to the " +
+	annotations.SkipValidationAnnotation + " annotation; remove it when no longer needed"
 
 // nolint:unused
 // log is for logging in this package.
@@ -104,6 +108,11 @@ func (v *OpenStackBaremetalSetCustomValidator) ValidateCreate(_ context.Context,
 	}
 	openstackbaremetalsetlog.Info("Validation for OpenStackBaremetalSet upon creation", "name", openstackbaremetalset.GetName())
 
+	if annotations.SkipValidation(openstackbaremetalset) {
+		openstackbaremetalsetlog.Info("Skipping webhook validation", "name", openstackbaremetalset.GetName())
+		return admission.Warnings{skipValidationWarning}, nil
+	}
+
 	// Call the validation function from api/v1beta1
 	return openstackbaremetalset.ValidateCreate()
 }
@@ -116,6 +125,11 @@ func (v *OpenStackBaremetalSetCustomValidator) ValidateUpdate(_ context.Context,
 	}
 	openstackbaremetalsetlog.Info("Validation for OpenStackBaremetalSet upon update", "name", openstackbaremetalset.GetName())
 
+	if annotations.SkipValidation(openstackbaremetalset) {
+		openstackbaremetalsetlog.Info("Skipping webhook validation", "name", openstackbaremetalset.GetName())
+		return admission.Warnings{skipValidationWarning}, nil
+	}
+
 	// Call the validation function from api/v1beta1
 	return openstackbaremetalset.ValidateUpdate(oldObj)
 }
@@ -127,6 +141,11 @@ func (v *OpenStackBaremetalSetCustomValidator) ValidateDelete(_ context.Context,
 		return nil, fmt.Errorf("%w but got %T", ErrInvalidOpenStackBaremetalSetType, obj)
 	}
 	openstackbaremetalsetlog.Info("Validation for OpenStackBaremetalSet upon deletion", "name", openstackbaremetalset.GetName())
+
+	if annotations.SkipValidation(openstackbaremetalset) {
+		openstackbaremetalsetlog.Info("Skipping webhook validation", "name", openstackbaremetalset.GetName())
+		return admission.Warnings{skipValidationWarning}, nil
+	}
 
 	// Call the validation function from api/v1beta1
 	return openstackbaremetalset.ValidateDelete()
