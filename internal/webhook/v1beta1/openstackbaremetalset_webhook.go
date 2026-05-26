@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	baremetalv1beta1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
+	baremetalset "github.com/openstack-k8s-operators/openstack-baremetal-operator/internal/openstackbaremetalset"
 )
 
 var (
@@ -104,6 +105,11 @@ func (v *OpenStackBaremetalSetCustomValidator) ValidateCreate(_ context.Context,
 	}
 	openstackbaremetalsetlog.Info("Validation for OpenStackBaremetalSet upon creation", "name", openstackbaremetalset.GetName())
 
+	if _, ok := openstackbaremetalset.GetAnnotations()[baremetalset.SkipWebhookValidationAnnotation]; ok {
+		openstackbaremetalsetlog.Info("Skipping webhook validation", "name", openstackbaremetalset.GetName())
+		return nil, nil
+	}
+
 	// Call the validation function from api/v1beta1
 	return openstackbaremetalset.ValidateCreate()
 }
@@ -116,6 +122,11 @@ func (v *OpenStackBaremetalSetCustomValidator) ValidateUpdate(_ context.Context,
 	}
 	openstackbaremetalsetlog.Info("Validation for OpenStackBaremetalSet upon update", "name", openstackbaremetalset.GetName())
 
+	if _, ok := openstackbaremetalset.GetAnnotations()[baremetalset.SkipWebhookValidationAnnotation]; ok {
+		openstackbaremetalsetlog.Info("Skipping webhook validation", "name", openstackbaremetalset.GetName())
+		return nil, nil
+	}
+
 	// Call the validation function from api/v1beta1
 	return openstackbaremetalset.ValidateUpdate(oldObj)
 }
@@ -127,6 +138,11 @@ func (v *OpenStackBaremetalSetCustomValidator) ValidateDelete(_ context.Context,
 		return nil, fmt.Errorf("%w but got %T", ErrInvalidOpenStackBaremetalSetType, obj)
 	}
 	openstackbaremetalsetlog.Info("Validation for OpenStackBaremetalSet upon deletion", "name", openstackbaremetalset.GetName())
+
+	if _, ok := openstackbaremetalset.GetAnnotations()[baremetalset.SkipWebhookValidationAnnotation]; ok {
+		openstackbaremetalsetlog.Info("Skipping webhook validation", "name", openstackbaremetalset.GetName())
+		return nil, nil
+	}
 
 	// Call the validation function from api/v1beta1
 	return openstackbaremetalset.ValidateDelete()
