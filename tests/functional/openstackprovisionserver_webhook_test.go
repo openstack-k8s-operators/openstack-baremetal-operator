@@ -46,19 +46,7 @@ var _ = Describe("OpenStackProvisionServer Webhook", func() {
 				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
 				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
 			}
-			raw := map[string]interface{}{
-				"apiVersion": "baremetal.openstack.org/v1beta1",
-				"kind":       "OpenStackProvisionServer",
-				"metadata": map[string]interface{}{
-					"name":      provisionServerName.Name,
-					"namespace": provisionServerName.Namespace,
-				},
-				"spec": spec,
-			}
-			unstructuredObj := &unstructured.Unstructured{Object: raw}
-			_, err := controllerutil.CreateOrPatch(
-				th.Ctx, th.K8sClient, unstructuredObj, func() error { return nil })
-			Expect(err).ShouldNot(HaveOccurred())
+			DeferCleanup(th.DeleteInstance, CreateProvisionServer(provisionServerName, spec))
 		})
 	})
 
@@ -195,19 +183,7 @@ var _ = Describe("OpenStackProvisionServer Webhook", func() {
 				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
 				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
 			}
-			raw := map[string]interface{}{
-				"apiVersion": "baremetal.openstack.org/v1beta1",
-				"kind":       "OpenStackProvisionServer",
-				"metadata": map[string]interface{}{
-					"name":      provisionServer2Name.Name,
-					"namespace": provisionServer2Name.Namespace,
-				},
-				"spec": spec,
-			}
-			unstructuredObj := &unstructured.Unstructured{Object: raw}
-			_, err := controllerutil.CreateOrPatch(
-				th.Ctx, th.K8sClient, unstructuredObj, func() error { return nil })
-			Expect(err).ShouldNot(HaveOccurred())
+			DeferCleanup(th.DeleteInstance, CreateProvisionServer(provisionServer2Name, spec))
 		})
 	})
 

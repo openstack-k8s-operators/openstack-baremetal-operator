@@ -200,6 +200,20 @@ var _ = BeforeEach(func() {
 	// We still request the delete of the Namespace to properly cleanup if
 	// we run the test in an existing cluster.
 	DeferCleanup(th.DeleteNamespace, namespace)
+
+	// Explicitly delete all OpenStackProvisionServer resources after each
+	// spec. envtest does not run the Kubernetes garbage collector, so
+	// ProvisionServers created as owned children of BaremetalSets are not
+	// cascade-deleted when the parent is removed. Without this cleanup,
+	// ports in the 6190-6210 range accumulate across specs until exhausted.
+	DeferCleanup(func() {
+		provServerList := &baremetalv1.OpenStackProvisionServerList{}
+		if err := k8sClient.List(ctx, provServerList); err == nil {
+			for i := range provServerList.Items {
+				k8sClient.Delete(ctx, &provServerList.Items[i]) //nolint:errcheck,gosec
+			}
+		}
+	})
 })
 
 var _ = AfterSuite(func() {
