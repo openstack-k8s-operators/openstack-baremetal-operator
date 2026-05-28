@@ -72,7 +72,10 @@ func (r *OpenStackProvisionServer) ValidateUpdate(old runtime.Object) (admission
 }
 
 func (r *OpenStackProvisionServer) validateCr() error {
-	// TODO: Create a specific context here instead of passing TODO()?
+	if r.Spec.Port == 0 {
+		return fmt.Errorf("no available ports in range %d-%d", ProvisionServerPortStart, ProvisionServerPortEnd)
+	}
+
 	existingPorts, err := GetExistingProvServerPorts(context.TODO(), webhookClient, r)
 	if err != nil {
 		return err

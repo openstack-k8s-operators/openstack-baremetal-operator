@@ -4,5 +4,4 @@ metadata:
   name: openstackprovisionserver
 spec:
   interface: enp1s0
-  port: 8080
   osImage: edpm-hardened-uefi.qcow2

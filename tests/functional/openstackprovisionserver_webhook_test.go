@@ -17,9 +17,11 @@ package functional
 
 import (
 	"errors"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2" //revive:disable:dot-imports
 	. "github.com/onsi/gomega"    //revive:disable:dot-imports
+	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -127,6 +129,23 @@ var _ = Describe("OpenStackProvisionServer Webhook", func() {
 		})
 	})
 
+	When("Creating ProvisionServer with port 0 (auto-assign)", func() {
+		It("should auto-assign a valid port via the defaulting webhook", func() {
+			spec := map[string]interface{}{
+				"osImage":             "edpm-hardened-uefi.qcow2",
+				"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
+				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
+				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
+				"port":                int64(0),
+			}
+			DeferCleanup(th.DeleteInstance, CreateProvisionServer(provisionServerName, spec))
+
+			instance := GetProvisionServerDirect(provisionServerName)
+			Expect(instance.Spec.Port).Should(BeNumerically(">=", baremetalv1.ProvisionServerPortStart))
+			Expect(instance.Spec.Port).Should(BeNumerically("<=", baremetalv1.ProvisionServerPortEnd))
+		})
+	})
+
 	When("Creating ProvisionServer with duplicate port", func() {
 		var provisionServer2Name types.NamespacedName
 
@@ -202,6 +221,45 @@ var _ = Describe("OpenStackProvisionServer Webhook", func() {
 			Expect(instance.Spec.OSContainerImageURL).ShouldNot(BeEmpty())
 			Expect(instance.Spec.ApacheImageURL).ShouldNot(BeEmpty())
 			Expect(instance.Spec.AgentImageURL).ShouldNot(BeEmpty())
+		})
+	})
+
+	When("Port range is exhausted", func() {
+		BeforeEach(func() {
+			spec := map[string]interface{}{
+				"osImage":             "edpm-hardened-uefi.qcow2",
+				"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
+				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
+				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
+			}
+			portCount := baremetalv1.ProvisionServerPortEnd - baremetalv1.ProvisionServerPortStart + 1
+			for i := 0; i < int(portCount); i++ {
+				name := types.NamespacedName{
+					Name:      fmt.Sprintf("provserver-exhaust-%d", i),
+					Namespace: namespace,
+				}
+				DeferCleanup(th.DeleteInstance, CreateProvisionServer(name, spec))
+			}
+		})
+
+		It("should reject creation when no ports are available", func() {
+			raw := map[string]interface{}{
+				"apiVersion": "baremetal.openstack.org/v1beta1",
+				"kind":       "OpenStackProvisionServer",
+				"metadata": map[string]interface{}{
+					"name":      "provserver-over-limit",
+					"namespace": namespace,
+				},
+				"spec": map[string]interface{}{
+					"osImage":             "edpm-hardened-uefi.qcow2",
+					"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
+					"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
+					"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
+				},
+			}
+			unstructuredObj := &unstructured.Unstructured{Object: raw}
+			err := k8sClient.Create(ctx, unstructuredObj)
+			Expect(err).Should(HaveOccurred())
 		})
 	})
 })
