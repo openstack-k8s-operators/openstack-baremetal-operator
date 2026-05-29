@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 
+	baremetalset "github.com/openstack-k8s-operators/openstack-baremetal-operator/internal/openstackbaremetalset"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -148,6 +149,30 @@ var _ = Describe("OpenStackBaremetalSet Webhook", func() {
 				ContainSubstring(
 					"unable to find 2 requested BaremetalHosts"),
 			)
+		})
+	})
+
+	When("When creating BaremetalSet with skip webhook validation annotation", func() {
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+
+		It("It should not fail even with insufficient BMHs when annotation is set", func() {
+			spec := TwoNodeBaremetalSetSpec(baremetalSetName.Namespace)
+			object := DefaultBaremetalSetTemplate(baremetalSetName, spec)
+			metadata := object["metadata"].(map[string]any)
+			metadata["annotations"] = map[string]any{
+				baremetalset.SkipWebhookValidationAnnotation: "",
+			}
+			unstructuredObj := &unstructured.Unstructured{Object: object}
+			_, err := controllerutil.CreateOrPatch(
+				th.Ctx, th.K8sClient, unstructuredObj, func() error { return nil })
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
 

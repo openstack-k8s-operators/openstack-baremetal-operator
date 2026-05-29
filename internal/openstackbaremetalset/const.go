@@ -17,4 +17,7 @@ const (
 
 	// MustGatherSecret - Label placed on secrets that are safe to collect with must-gater
 	MustGatherSecret = "baremetal.openstack.org/must-gather-secret"
+
+	// SkipWebhookValidationAnnotation - Annotation key placed on OpenStackBaremetalSet resources to skip webhook validation
+	SkipWebhookValidationAnnotation = "baremetal.openstack.org/skip-webhook-validation"
 )
