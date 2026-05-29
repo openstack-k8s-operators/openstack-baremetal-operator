@@ -25,6 +25,9 @@ func GetExistingProvServerPorts(
 	}
 
 	for _, provServer := range provServerList.Items {
+		if provServer.Spec.Port == 0 {
+			continue
+		}
 		namespacedName := types.NamespacedName{
 			Namespace: provServer.Namespace,
 			Name:      provServer.Name}

@@ -57,7 +57,7 @@ type OpenStackProvisionServerSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Minimum=6190
 	// +kubebuilder:validation:Maximum=6220
-	Port int32 `json:"port,omitempty"`
+	Port int32 `json:"port"`
 	// +kubebuilder:validation:Optional
 	// Interface - An optional interface to use instead of the cluster's default provisioning interface (if any)
 	Interface string `json:"interface,omitempty"`
