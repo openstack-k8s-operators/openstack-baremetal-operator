@@ -15,3 +15,31 @@
 - job:
     name: openstack-baremetal-operator-edpm-baremetal-minor-update
     parent: cifmw-crc-podified-edpm-baremetal-minor-update
+- job:
+    name: openstack-baremetal-operator-hotstack-bm
+    parent: vexxhost-hotstack-multi-nodeset
+    description: |
+      Pilot baremetal job using hotstack with PR-built operator images.
+      Deploys infrastructure on OpenStack via Heat, installs OCP,
+      configures content provider insecure registry on the OCP cluster,
+      and deploys RHOSO with PR operator images via hotloop automation.
+    timeout: 10800
+    attempts: 1
+    dependencies:
+      - openstack-baremetal-operator-content-provider
+    required-projects:
+      - openstack-k8s-operators/hotstack
+      - openstack-k8s-operators/ci-framework
+    vars:
+      openstack_operators_image: >-
+        {{
+          cifmw_operator_build_output.operators['openstack-operator'].image_catalog
+          if (cifmw_operator_build_output is defined and
+              cifmw_operator_build_output.operators is defined and
+              'openstack-operator' in cifmw_operator_build_output.operators)
+          else 'quay.io/openstack-k8s-operators/openstack-operator-index:latest'
+        }}
+    pre-run:
+      - ci/scenarios/default/playbooks/hotstack-pre-deploy.yml
+    run:
+      - ci/scenarios/default/playbooks/run-deploy.yml

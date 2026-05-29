@@ -1,0 +1,62 @@
+---
+- name: Create hotstack scenario
+  hosts: hotstack
+  gather_facts: false
+  vars:
+    hotstack_work_dir: "{{ ansible_user_dir }}/hotstack"
+  tasks:
+
+    - name: Fetch bootstrap vars from remote to zuul executor
+      ansible.builtin.fetch:
+        src: "{{ scenario_dir }}/{{ scenario }}/bootstrap_vars.yml"
+        dest: "{{ zuul.executor.work_root }}/bootstrap_vars.yml"
+        flat: true
+
+    - name: Load bootstrap vars with template resolution
+      ansible.builtin.include_vars:
+        file: "{{ zuul.executor.work_root }}/bootstrap_vars.yml"
+        name: bootstrap_vars
+
+    - name: Fetch automation vars from remote to zuul executor
+      ansible.builtin.fetch:
+        src: "{{ bootstrap_vars.automation_vars_file }}"
+        dest: "{{ zuul.executor.work_root }}/{{ bootstrap_vars.automation_vars_file | basename }}"
+        flat: true
+
+    - name: Load automation vars with template resolution
+      ansible.builtin.include_vars:
+        file: "{{ zuul.executor.work_root }}/{{ bootstrap_vars.automation_vars_file | basename }}"
+        name: deploy_automation_vars
+
+    - name: Fetch stack outputs from remote to zuul executor
+      no_log: true
+      ansible.builtin.fetch:
+        src: "{{ hotstack_work_dir }}/hs-{{ zuul.build }}-outputs.yaml"
+        dest: "{{ zuul.executor.work_root }}/hs-{{ zuul.build }}-outputs.yaml"
+        flat: true
+
+    - name: Load stack output vars with template resolution
+      no_log: true
+      ansible.builtin.include_vars:
+        file: "{{ zuul.executor.work_root }}/hs-{{ zuul.build }}-outputs.yaml"
+        name: stack_outputs
+
+    - name: Add Hotstack controller-0 to ansible inventory
+      no_log: true
+      ansible.builtin.add_host: "{{ stack_outputs.controller_ansible_host }}"
+
+    - name: Wait for Hotstack controller-0 to be ready
+      no_log: true
+      delegate_to: "{{ stack_outputs.controller_ansible_host.name }}"
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 300
+
+    - name: Run scenario RHOSO deploy automation
+      vars:
+        work_dir: "{{ scenario_dir }}/{{ scenario }}"
+        automation: "{{ deploy_automation_vars }}"
+      ansible.builtin.include_role:
+        name: hotloop
+        apply:
+          delegate_to: controller-0
