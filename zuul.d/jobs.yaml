@@ -12,6 +12,54 @@
 - job:
     name: openstack-baremetal-operator-crc-podified-edpm-baremetal
     parent: cifmw-crc-podified-edpm-baremetal
+
+- job:
+    name: openstack-baremetal-operator-content-provider-bootc
+    parent: openstack-k8s-operators-content-provider-bootc
+    nodeset: centos-stream-10
+    timeout: 5000
+    vars:
+      cifmw_repo_setup_dist_major_version: 10
+      cifmw_repo_setup_branch: master
+      cifmw_repo_setup_promotion: current
+      cifmw_edpm_build_images_base_image: quay.io/centos/centos:stream10-minimal
+      cifmw_edpm_build_images_bootc_base_image: quay.io/centos-bootc/centos-bootc:stream10
+      # Test with prebuilt image from s2i PR 274 instead of building here
+      cifmw_edpm_build_images_bootc: false
+
+- job:
+    name: openstack-baremetal-operator-crc-podified-edpm-baremetal-bootc
+    parent: cifmw-crc-podified-edpm-baremetal-bootc
+    vars:
+      cifmw_install_yamls_vars_patch_cs10:
+        dataplane_repo_setup_repo: current
+        dataplane_repo_setup_branch: master
+
+- job:
+    name: openstack-baremetal-operator-crc-podified-edpm-baremetal-bootc-passthrough
+    parent: cifmw-crc-podified-edpm-baremetal-bootc
+    vars:
+      cifmw_update_containers: true
+      cifmw_update_containers_openstack: true
+      cifmw_install_yamls_vars:
+        BAREMETAL_OS_IMG_TYPE: PassThrough
+        BMO_DEFAULT_DEPLOY_INTERFACE: bootc
+        BM_INSTANCE_MEMORY: 16384
+        BMAAS_INSTANCE_DISK_SIZE: 40
+        # Upstream IPA now ships podman in the ramdisk (builder commit
+        # b8b145b6), so use the published artifacts instead of a custom
+        # CI build.
+        BMO_IPA_BASEURI: https://tarballs.opendev.org/openstack/ironic-python-agent/dib
+        BMO_IPA_FLAVOR: centos10
+        BMO_IPA_BRANCH: master
+      cifmw_install_yamls_vars_patch_cs10:
+        dataplane_repo_setup_repo: current
+        dataplane_repo_setup_branch: master
+      # Prebuilt non-FIPS edpm-bootc image from s2i-openstack-containers PR 274
+      # (control test: isolates FIPS as the boot-loop trigger)
+      cifmw_edpm_prepare_bootc_passthrough_os_image_url: >-
+        oci://quay.io/rabi/openstack-edpm-bootc@sha256:be3999269215771cf3e23b57823a5bf174239938fe2b1b81b6610f20679acf27
+
 - job:
     name: openstack-baremetal-operator-edpm-baremetal-minor-update
     parent: cifmw-crc-podified-edpm-baremetal-minor-update
