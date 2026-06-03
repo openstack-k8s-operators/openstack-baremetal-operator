@@ -12,6 +12,15 @@
 - job:
     name: openstack-baremetal-operator-crc-podified-edpm-baremetal
     parent: cifmw-crc-podified-edpm-baremetal
+
+- job:
+    name: openstack-baremetal-operator-crc-podified-edpm-baremetal-bootc
+    parent: cifmw-crc-podified-edpm-baremetal-bootc
+    vars:
+      cifmw_update_containers_edpm_image_url: quay.io/openstack-k8s-operators/edpm-bootc:latest
+      cifmw_install_yamls_vars:
+        BAREMETAL_OS_IMG_TYPE: PassThrough
+
 - job:
     name: openstack-baremetal-operator-edpm-baremetal-minor-update
     parent: cifmw-crc-podified-edpm-baremetal-minor-update
