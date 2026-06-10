@@ -11,6 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/openstack-k8s-operators/lib-common/modules/common/annotations"
+	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
+	webhookv1beta1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/internal/webhook/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -148,6 +152,58 @@ var _ = Describe("OpenStackBaremetalSet Webhook", func() {
 				ContainSubstring(
 					"unable to find 2 requested BaremetalHosts"),
 			)
+		})
+	})
+
+	When("When creating BaremetalSet with skip webhook validation annotation", func() {
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+
+		It("It should not fail even with insufficient BMHs when annotation is set", func() {
+			spec := TwoNodeBaremetalSetSpec(baremetalSetName.Namespace)
+			object := DefaultBaremetalSetTemplate(baremetalSetName, spec)
+			metadata := object["metadata"].(map[string]any)
+			metadata["annotations"] = map[string]any{
+				annotations.SkipValidationAnnotation: "",
+			}
+			unstructuredObj := &unstructured.Unstructured{Object: object}
+			_, err := controllerutil.CreateOrPatch(
+				th.Ctx, th.K8sClient, unstructuredObj, func() error { return nil })
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+
+		It("should return a warning when skip-validation annotation is set", func() {
+			validator := &webhookv1beta1.OpenStackBaremetalSetCustomValidator{}
+			obj := &baremetalv1.OpenStackBaremetalSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      baremetalSetName.Name,
+					Namespace: baremetalSetName.Namespace,
+					Annotations: map[string]string{
+						annotations.SkipValidationAnnotation: "",
+					},
+				},
+			}
+
+			warnings, err := validator.ValidateCreate(th.Ctx, obj)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(warnings).To(HaveLen(1))
+			Expect(warnings[0]).To(ContainSubstring(annotations.SkipValidationAnnotation))
+
+			warnings, err = validator.ValidateUpdate(th.Ctx, obj, obj)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(warnings).To(HaveLen(1))
+			Expect(warnings[0]).To(ContainSubstring(annotations.SkipValidationAnnotation))
+
+			warnings, err = validator.ValidateDelete(th.Ctx, obj)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(warnings).To(HaveLen(1))
+			Expect(warnings[0]).To(ContainSubstring(annotations.SkipValidationAnnotation))
 		})
 	})
 
