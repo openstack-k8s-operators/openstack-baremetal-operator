@@ -43,7 +43,7 @@ jobs:
     if: needs.check-secrets.outputs.have-secrets == 'true'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
     - name: Set latest tag for non main branch
       if: github.ref_name != 'main'
@@ -54,7 +54,7 @@ jobs:
 
     - name: Buildah Action
       id: build-openstack-baremetal-operator-agent
-      uses: redhat-actions/buildah-build@v2
+      uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
       with:
         image: openstack-baremetal-operator-agent
         tags: ${{ env.latesttag }} ${{ github.sha }}
@@ -62,7 +62,7 @@ jobs:
           ./Dockerfile.agent
 
     - name: Push agent To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@v2
+      uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
       with:
         image: ${{ steps.build-openstack-baremetal-operator-agent.outputs.image }}
         tags: ${{ steps.build-openstack-baremetal-operator-agent.outputs.tags }}
