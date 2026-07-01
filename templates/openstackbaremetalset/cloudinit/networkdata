@@ -8,19 +8,17 @@ links:
 - name: {{ .CtlplaneInterface }}
   id: {{ .CtlplaneInterface }}
   type: bond
-  bond_interfaces:
+  bond_links:
   {{- range $iface := .CtlplaneBondInterfaces }}
     - {{ $iface }}
   {{- end }}
   bond_mode: {{ if .CtlplaneBondMode }}{{ .CtlplaneBondMode }}{{ else }}active-backup{{ end }}
   {{- if (index . "CtlplaneBondOptions") }}
-  params:
-    {{- range $key, $value := .CtlplaneBondOptions }}
-    {{ $key }}: {{ $value }}
-    {{- end }}
+  {{- range $key, $value := .CtlplaneBondOptions }}
+  {{ $key }}: {{ $value }}
+  {{- end }}
   {{- else }}
-  params:
-    bond-miimon: 100
+  bond_miimon: 100
   {{- end }}
 {{- else }}
 - name: {{ .CtlplaneInterface }}
@@ -39,9 +37,11 @@ networks:
 {{- if (index . "CtlplaneVlan") }}
 - link: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
   id: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
+  network_id: {{ .CtlplaneInterface }}.{{ .CtlplaneVlan }}
 {{- else }}
 - link: {{ .CtlplaneInterface }}
   id: {{ .CtlplaneInterface }}
+  network_id: {{ .CtlplaneInterface }}
 {{- end }}
   type: {{ .CtlplaneIpVersion }}
   ip_address: {{ .CtlplaneIp }}
