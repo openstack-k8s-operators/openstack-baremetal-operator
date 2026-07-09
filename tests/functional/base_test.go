@@ -219,7 +219,7 @@ func DefaultBMHTemplate(name types.NamespacedName) map[string]any {
 			},
 		},
 		"spec": map[string]any{
-			"bmc": map[string]any{
+			"bmc": map[string]any{ //nolint:gosec
 				"address":         "fake_address",
 				"credentialsName": "fake_credential",
 			},
@@ -245,7 +245,7 @@ func BMHTemplateWithNodeLabels(name types.NamespacedName, nodeLabels map[string]
 			},
 		},
 		"spec": map[string]any{
-			"bmc": map[string]any{
+			"bmc": map[string]any{ //nolint:gosec
 				"address":         "fake_address",
 				"credentialsName": "fake_credential",
 			},
