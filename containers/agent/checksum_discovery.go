@@ -2,10 +2,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -132,6 +134,12 @@ func runChecksumStartCmd(_ *cobra.Command, _ []string) {
 		panic(fmt.Errorf("%w in %s", ErrOSImageNotFound, checksumStartOpts.osImageDir))
 	}
 
+	// Generate per-image checksum files from the combined checksum file.
+	// When the combined file contains multiple entries (e.g. for both
+	// 9.4 and 9.6 images), each image should be individually
+	// addressable via <image>.sha256 (or .md5sum/.sha512) by convention.
+	generatePerImageChecksumFiles(checksumStartOpts.osImageDir, checksumFileName)
+
 	// Try to update status with checksum data until it succeeds, as it's possible to hit "object has been modified" k8s error here
 	for {
 		unstructured, err := provServerClient.Namespace(checksumStartOpts.provServerNamespace).Get(context.Background(), checksumStartOpts.provServerName, metav1.GetOptions{}, "/status")
@@ -169,4 +177,53 @@ func runChecksumStartCmd(_ *cobra.Command, _ []string) {
 	}
 
 	glog.V(0).Info("Shutting down ChecksumDiscoveryAgent")
+}
+
+// generatePerImageChecksumFiles parses a combined checksum file and creates
+// individual per-image checksum files for each entry whose corresponding
+// file does not already exist. This enables the <image>.<ext> naming
+// convention (e.g. edpm-hardened-uefi-9.6.qcow2.sha256) that consumers
+// expect when referencing a specific image's checksum by URL.
+func generatePerImageChecksumFiles(imageDir, checksumFileName string) {
+	checksumPath := filepath.Join(imageDir, checksumFileName)
+
+	f, err := os.Open(checksumPath)
+	if err != nil {
+		glog.V(0).Infof("Warning: could not open checksum file %s for per-image generation: %v", checksumPath, err)
+		return
+	}
+	defer f.Close()
+
+	ext := filepath.Ext(checksumFileName)
+	if ext == "" {
+		ext = ".sha256"
+	}
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		// GNU coreutils format: "<hash>  <filename>" or "<hash> *<filename>"
+		parts := strings.Fields(line)
+		if len(parts) < 2 {
+			continue
+		}
+
+		imageName := strings.TrimPrefix(parts[1], "*")
+		perImageFile := filepath.Join(imageDir, imageName+ext)
+
+		if _, err := os.Stat(perImageFile); err == nil {
+			continue
+		}
+
+		content := parts[0] + "  " + imageName + "\n"
+		if writeErr := os.WriteFile(perImageFile, []byte(content), 0644); writeErr != nil {
+			glog.V(0).Infof("Warning: could not write per-image checksum file %s: %v", perImageFile, writeErr)
+		} else {
+			glog.V(0).Infof("Generated per-image checksum file: %s", perImageFile)
+		}
+	}
 }
