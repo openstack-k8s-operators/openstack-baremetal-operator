@@ -27,8 +27,8 @@ jobs:
     needs: [build-openstack-baremetal-operator-agent]
     with:
       operator_name: openstack-baremetal
-      go_version: 1.24.x
-      operator_sdk_version: 1.41.1
+      go_version: 1.26.x
+      operator_sdk_version: 1.42.3
     secrets:
       IMAGENAMESPACE: ${{ secrets.IMAGENAMESPACE }}
       QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
