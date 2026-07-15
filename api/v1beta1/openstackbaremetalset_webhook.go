@@ -51,7 +51,7 @@ func SetupWebhookClient(client goClient.Client) {
 // log is for logging in this package.
 var openstackbaremetalsetlog = logf.Log.WithName("openstackbaremetalset-resource")
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate validates the OpenStackBaremetalSet on creation
 func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 	openstackbaremetalsetlog.Info("validate create", "name", r.Name)
 	var errors field.ErrorList
