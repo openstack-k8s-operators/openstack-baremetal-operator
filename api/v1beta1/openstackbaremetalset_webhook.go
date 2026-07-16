@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -51,8 +50,6 @@ func SetupWebhookClient(client goClient.Client) {
 
 // log is for logging in this package.
 var openstackbaremetalsetlog = logf.Log.WithName("openstackbaremetalset-resource")
-
-var _ webhook.Validator = &OpenStackBaremetalSet{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
