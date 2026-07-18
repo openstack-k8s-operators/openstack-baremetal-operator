@@ -44,7 +44,7 @@ func SetupOpenStackProvisionServerDefaults(defaults OpenStackProvisionServerDefa
 	openstackprovisionserverlog.Info("OpenStackProvisionServer defaults initialized", "defaults", defaults)
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate validates the OpenStackProvisionServer on creation
 func (r *OpenStackProvisionServer) ValidateCreate() (admission.Warnings, error) {
 	openstackprovisionserverlog.Info("validate create", "name", r.Name)
 	var errors field.ErrorList
@@ -95,7 +95,7 @@ func (r *OpenStackProvisionServer) ValidateDelete() (admission.Warnings, error) 
 	return nil, nil
 }
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default sets default values for the OpenStackProvisionServer
 func (r *OpenStackProvisionServer) Default() {
 	openstackprovisionserverlog.Info("default", "name", r.Name)
 
