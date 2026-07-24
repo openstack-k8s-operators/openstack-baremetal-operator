@@ -69,8 +69,8 @@ func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 			errors)
 	}
 
-	// Validate userData and networkData secrets namespace
-	err := r.ValidateCloudInitSecrets()
+	// Validate secret reference namespaces
+	err := r.ValidateSecretNamespaces()
 	if err != nil {
 		return nil, err
 	}
@@ -94,22 +94,28 @@ func (r *OpenStackBaremetalSet) ValidateCreate() (admission.Warnings, error) {
 	return nil, nil
 }
 
-// ValidateCloudInitSecrets checks if userData and networkData secrets are in the same namespace as bmh
-func (r *OpenStackBaremetalSet) ValidateCloudInitSecrets() error {
+// ValidateSecretNamespaces checks if secret references are in their expected namespaces
+func (r *OpenStackBaremetalSet) ValidateSecretNamespaces() error {
 	var secretsWithIssue []string
+
+	if r.Spec.PasswordSecret != nil && r.Spec.PasswordSecret.Namespace != r.Namespace {
+		secretsWithIssue = append(secretsWithIssue,
+			fmt.Sprintf("%s (must be in OpenStackBaremetalSet namespace %s)", r.Spec.PasswordSecret.Name, r.Namespace))
+	}
 
 	for _, host := range r.Spec.BaremetalHosts {
 		if host.NetworkData != nil && host.NetworkData.Namespace != r.Spec.BmhNamespace {
-			secretsWithIssue = append(secretsWithIssue, host.NetworkData.Name)
+			secretsWithIssue = append(secretsWithIssue,
+				fmt.Sprintf("%s (must be in bmh namespace %s)", host.NetworkData.Name, r.Spec.BmhNamespace))
 		}
 		if host.UserData != nil && host.UserData.Namespace != r.Spec.BmhNamespace {
-			secretsWithIssue = append(secretsWithIssue, host.UserData.Name)
+			secretsWithIssue = append(secretsWithIssue,
+				fmt.Sprintf("%s (must be in bmh namespace %s)", host.UserData.Name, r.Spec.BmhNamespace))
 		}
 	}
 
 	if len(secretsWithIssue) > 0 {
-		return fmt.Errorf("userData and networkData secrets %v should exist in the bmh namespace %s",
-			secretsWithIssue, r.Spec.BmhNamespace)
+		return fmt.Errorf("invalid secret namespace references: %v", secretsWithIssue)
 	}
 	return nil
 }
@@ -137,6 +143,10 @@ func (r *OpenStackBaremetalSet) ValidateUpdate(old runtime.Object) (admission.Wa
 
 	if err := r.Spec.ValidateTemplate(len(oldInstance.Spec.BaremetalHosts),
 		oldInstance.Spec.OpenStackBaremetalSetTemplateSpec); err != nil {
+		return nil, err
+	}
+
+	if err := r.ValidateSecretNamespaces(); err != nil {
 		return nil, err
 	}
 
