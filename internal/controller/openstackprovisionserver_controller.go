@@ -82,7 +82,6 @@ type OpenStackProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch
 // service account permissions that are needed to grant permission to the above
 // +kubebuilder:rbac:groups="security.openshift.io",resourceNames=hostnetwork,resources=securitycontextconstraints,verbs=use
-// +kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch
 
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers/status,verbs=get;list;update;patch
@@ -246,11 +245,6 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 			ResourceNames: []string{"hostnetwork"},
 			Resources:     []string{"securitycontextconstraints"},
 			Verbs:         []string{"use"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"pods"},
-			Verbs:     []string{"create", "get", "list", "watch", "update", "patch", "delete"},
 		},
 		{
 			APIGroups: []string{"baremetal.openstack.org"},
