@@ -4,13 +4,13 @@ go 1.26.3
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/golang/glog v1.2.5
 	github.com/google/uuid v1.6.0
 	github.com/metal3-io/baremetal-operator/apis v0.11.7
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20260720124130-43c2e8c4a368
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20260725150913-e043d277ea5b
 	github.com/openstack-k8s-operators/openstack-baremetal-operator/api v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.10.2
 	k8s.io/api v0.33.13
