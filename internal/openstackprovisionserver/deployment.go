@@ -86,13 +86,14 @@ func Deployment(
 			Command: []string{
 				"/bin/bash",
 			},
-			Args:           args,
-			Image:          instance.Spec.ApacheImageURL,
-			VolumeMounts:   getVolumeMounts(instance),
-			Resources:      instance.Spec.Resources,
-			StartupProbe:   startupProbe,
-			ReadinessProbe: readinessProbe,
-			LivenessProbe:  livenessProbe,
+			Args:            args,
+			Image:           instance.Spec.ApacheImageURL,
+			SecurityContext: hardenedSecurityContext(),
+			VolumeMounts:    getVolumeMounts(instance),
+			Resources:       instance.Spec.Resources,
+			StartupProbe:    startupProbe,
+			ReadinessProbe:  readinessProbe,
+			LivenessProbe:   livenessProbe,
 			Env: []corev1.EnvVar{
 				{
 					Name:  "CONFIG_HASH",
@@ -108,6 +109,8 @@ func Deployment(
 			Command:         []string{"/openstack-baremetal-agent", "provision-ip-discovery"},
 			Image:           instance.Spec.AgentImageURL,
 			ImagePullPolicy: corev1.PullIfNotPresent,
+			SecurityContext: hardenedSecurityContext(),
+			VolumeMounts:    getScratchVolumeMounts(),
 			Env: []corev1.EnvVar{
 				{
 					Name:  "PROV_INTF",
