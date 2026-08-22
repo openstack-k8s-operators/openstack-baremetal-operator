@@ -649,6 +649,62 @@ var _ = Describe("BaremetalSet Test", func() {
 		})
 	})
 
+	When("BMH provisioned with an SSH secret holding multiple authorized keys", func() {
+		const (
+			sshKey1 = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABkey1 admin@host1"
+			sshKey2 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5key2 admin@host2"
+		)
+
+		BeforeEach(func() {
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			Eventually(func(g Gomega) {
+				bmh := GetBaremetalHost(bmhName)
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			DeferCleanup(th.DeleteInstance, th.CreateSecret(
+				deploymentSecretName,
+				map[string][]byte{
+					"ssh-privatekey":  []byte("blah"),
+					"authorized_keys": []byte(sshKey1 + "\n\n" + sshKey2 + "\n"),
+				},
+			))
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, DefaultBaremetalSetSpec(bmhName, true)))
+
+			Eventually(func(g Gomega) {
+				provServer := GetProvisionServer(baremetalSetName)
+				provServer.Status.LocalImageURL = "http://192.168.1.100:6190/images/edpm-hardened-uefi.qcow2"
+				provServer.Status.LocalImageChecksumURL = "http://192.168.1.100:6190/images/edpm-hardened-uefi.qcow2.md5sum"
+				provServer.Status.OSImageChecksumType = metal3v1.MD5
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, provServer)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+
+		It("Should render ssh_authorized_keys as a YAML list with every key", func() {
+			Eventually(func(g Gomega) {
+				baremetalSet := GetBaremetalSet(baremetalSetName)
+				g.Expect(baremetalSet.Status.BaremetalHosts).To(HaveKey("compute-0"))
+				g.Expect(baremetalSet.Status.BaremetalHosts["compute-0"].UserDataSecretName).ToNot(BeEmpty())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			baremetalSet := GetBaremetalSet(baremetalSetName)
+			userDataSecretName := baremetalSet.Status.BaremetalHosts["compute-0"].UserDataSecretName
+
+			userDataSecret := th.GetSecret(types.NamespacedName{
+				Name:      userDataSecretName,
+				Namespace: bmhName.Namespace,
+			})
+			userData := string(userDataSecret.Data["userData"])
+
+			Expect(userData).To(ContainSubstring("ssh_authorized_keys:"))
+			Expect(userData).To(ContainSubstring("      - \"" + sshKey1 + "\""))
+			Expect(userData).To(ContainSubstring("      - \"" + sshKey2 + "\""))
+			Expect(userData).ToNot(ContainSubstring("- \"\""))
+			Expect(userData).ToNot(ContainSubstring("ssh_authorized_keys: " + sshKey1))
+		})
+	})
+
 	When("BMH provisioned with custom UserData and NetworkData", func() {
 		var customUserDataSecret types.NamespacedName
 		var customNetworkDataSecret types.NamespacedName
