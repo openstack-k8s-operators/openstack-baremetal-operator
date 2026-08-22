@@ -89,7 +89,6 @@ type OpenStackProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;create;update;delete;watch;patch
 // +kubebuilder:rbac:groups=core,resources=configmaps/finalizers,verbs=get;list;create;update;delete;watch;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;delete;patch;watch;
-// +kubebuilder:rbac:groups=core,resources=volumes,verbs=get;list;create;update;delete;watch;patch
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;update;watch;patch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;update;watch;patch
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete;

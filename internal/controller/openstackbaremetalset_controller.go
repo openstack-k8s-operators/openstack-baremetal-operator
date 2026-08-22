@@ -74,8 +74,8 @@ type OpenStackBaremetalSetReconciler struct {
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts/status,verbs=get
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;delete;get;list;patch;update;watch
-// +kubebuilder:rbac:groups=core,resources=secrets/finalizers,verbs=create;delete;get;list;patch;update;watch
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;delete;get;patch;update
+// +kubebuilder:rbac:groups=core,resources=secrets/finalizers,verbs=update;patch
 
 // Reconcile -
 func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
