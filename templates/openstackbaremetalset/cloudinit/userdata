@@ -4,15 +4,20 @@ hostname: {{ .HostName }}
 fqdn: {{ .FQDN }}
 users:
   - name: {{ .CloudUserName }}
-    ssh-authorized-keys: {{ .AuthorizedKeys }}
+    ssh_authorized_keys:
+{{- range .AuthorizedKeys }}
+      - {{ printf "%q" . }}
+{{- end }}
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     shell: /bin/bash
 {{- if (index . "NodeRootPassword") }}
 disable_root: false
 ssh_pwauth:   true
 chpasswd:
-  list: |
-    root:{{ .NodeRootPassword }}
+  users:
+    - name: root
+      type: text
+      password: {{ .NodeRootPassword }}
   expire: False
 {{- end }}
 bootcmd:

@@ -113,7 +113,9 @@ type OpenStackBaremetalSetTemplateSpec struct {
 	// ProvisioningInterface - Optional. If not provided along with ProvisionServerName, it would be discovered from CBO.  This is the provisioning interface on the OCP masters/workers. Ignored when osImageDeploymentType is PassThrough.
 	// +kubebuilder:validation:Optional
 	ProvisioningInterface string `json:"provisioningInterface,omitempty"`
-	// DeploymentSSHSecret - Name of secret holding the cloud-admin ssh keys
+	// DeploymentSSHSecret - Name of a secret with an "authorized_keys" data entry holding the SSH
+	// public key(s) authorized for the provisioned user (see CloudUserName). A single key or
+	// multiple newline-separated keys are both supported.
 	DeploymentSSHSecret string `json:"deploymentSSHSecret"`
 	// CtlplaneInterface - Interface on the provisioned nodes to use for ctlplane network
 	CtlplaneInterface string `json:"ctlplaneInterface"`
