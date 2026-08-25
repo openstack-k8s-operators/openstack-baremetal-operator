@@ -14,7 +14,9 @@ spec:
   # The image to install on the provisioned nodes
   osImage: edpm-hardened-uefi.qcow2
   # provisionServerName: openstack  # uncomment if you pre-deploy a separate OsProvServer (use its name for the value)
-  # The secret containing the SSH pub key to place on the provisioned nodes
+  # Secret with an "authorized_keys" data entry holding the SSH pub key(s) to place on the
+  # provisioned nodes. One key, or multiple keys newline-separated, are both supported. E.g.:
+  #   kubectl create secret generic baremetalset-deploy-secret --from-file=authorized_keys=<path>
   deploymentSSHSecret: baremetalset-deploy-secret
   domainName: osptest.openstack.org
   # The interface on the nodes that will be assigned an IP from the mgmtCidr
@@ -39,7 +41,9 @@ spec:
   # PassThrough deployment using direct container URL passing
   osImageDeploymentType: PassThrough
   osContainerImageUrl: quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified
-  # The secret containing the SSH pub key to place on the provisioned nodes
+  # Secret with an "authorized_keys" data entry holding the SSH pub key(s) to place on the
+  # provisioned nodes. One key, or multiple keys newline-separated, are both supported. E.g.:
+  #   kubectl create secret generic baremetalset-deploy-secret --from-file=authorized_keys=<path>
   deploymentSSHSecret: baremetalset-deploy-secret
   domainName: osptest.openstack.org
   ctlplaneInterface: enp1s0
