@@ -61,7 +61,16 @@ func BaremetalHostProvision(
 	// User data cloud-init secret
 	if userDataSecret == nil {
 		templateParameters := make(map[string]any)
-		templateParameters["AuthorizedKeys"] = strings.TrimSuffix(string(sshSecret.Data["authorized_keys"]), "\n")
+
+		// cloud-init needs ssh_authorized_keys as a list; a multi-key string breaks the whole config.
+		var authorizedKeys []string
+		for _, key := range strings.Split(string(sshSecret.Data["authorized_keys"]), "\n") {
+			if key = strings.TrimSpace(key); key != "" {
+				authorizedKeys = append(authorizedKeys, key)
+			}
+		}
+		templateParameters["AuthorizedKeys"] = authorizedKeys
+
 		templateParameters["HostName"] = hostName
 		//If Hostname is fqdn, use it
 		if !hostNameIsFQDN(hostName) && instance.Spec.DomainName != "" {
