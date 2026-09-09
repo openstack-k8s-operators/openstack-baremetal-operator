@@ -16,22 +16,22 @@ limitations under the License.
 package openstackprovisionserver
 
 import (
+	"github.com/openstack-k8s-operators/lib-common/modules/common/pod"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
-// hardenedSecurityContext returns the baseline restricted SecurityContext applied
-// to every provision server container.
+// hardenedSecurityContext returns a SecurityContext based on lib-common's
+// RestrictiveSecurityContext with SeccompProfile set to nil — OpenShift's
+// hostnetwork SCC (required for HostNetwork: true) rejects seccomp annotations
+// — and ReadOnlyRootFilesystem enabled.
 func hardenedSecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		RunAsNonRoot:             ptrBool(true),
-		AllowPrivilegeEscalation: ptrBool(false),
-		ReadOnlyRootFilesystem:   ptrBool(true),
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{"ALL"},
-		},
-	}
-}
-
-func ptrBool(b bool) *bool {
-	return &b
+	sc := pod.RestrictiveSecurityContext(1001, 0)
+	sc.SeccompProfile = nil
+	// hostnetwork SCC allocates UID/GID from its own range; explicit values
+	// are rejected. RunAsNonRoot (set above) is sufficient to enforce non-root.
+	sc.RunAsUser = nil
+	sc.RunAsGroup = nil
+	sc.ReadOnlyRootFilesystem = ptr.To(true)
+	return sc
 }
