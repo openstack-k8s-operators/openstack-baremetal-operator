@@ -35,14 +35,3 @@ func hardenedSecurityContext() *corev1.SecurityContext {
 func ptrBool(b bool) *bool {
 	return &b
 }
-
-// scratchVolume returns a writable emptyDir volume, for containers that need
-// scratch space (e.g. /tmp) while running with a read-only root filesystem.
-func scratchVolume(name string) corev1.Volume {
-	return corev1.Volume{
-		Name: name,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
-	}
-}
