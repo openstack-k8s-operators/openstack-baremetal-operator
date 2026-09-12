@@ -20,6 +20,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// scratchVolume returns a writable emptyDir volume, for containers that need
+// scratch space (e.g. /tmp) while running with a read-only root filesystem.
+func scratchVolume(name string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
 // getVolumes - general provisioning service volumes
 func getInitVolumes() []corev1.Volume {
 	return []corev1.Volume{
@@ -29,6 +40,7 @@ func getInitVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+		scratchVolume("tmp"),
 	}
 }
 
@@ -44,6 +56,9 @@ func getVolumes(name string) []corev1.Volume {
 			},
 		},
 	},
+		scratchVolume("httpd-conf-etc"),
+		scratchVolume("run-httpd"),
+		scratchVolume("var-log-httpd"),
 	)
 }
 
@@ -53,6 +68,21 @@ func getInitVolumeMounts(instance *baremetalv1.OpenStackProvisionServer) []corev
 		{
 			Name:      "image-data",
 			MountPath: *instance.Spec.OSImageDir,
+		},
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
+		},
+	}
+}
+
+// getScratchVolumeMounts - VolumeMounts for containers that only need writable
+// scratch space (e.g. /tmp) and no other data
+func getScratchVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
 		},
 	}
 }
@@ -69,6 +99,31 @@ func getVolumeMounts(instance *baremetalv1.OpenStackProvisionServer) []corev1.Vo
 			MountPath: HttpdConfPath,
 			SubPath:   "httpd.conf",
 			ReadOnly:  true,
+		},
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
+		},
+		{
+			// writable destination for the "cp httpd.conf /etc/httpd/conf/httpd.conf"
+			// startup step, required since the container runs with a read-only
+			// root filesystem
+			Name:      "httpd-conf-etc",
+			MountPath: "/etc/httpd/conf",
+		},
+		{
+			// run-httpd wrapper creates /run/httpd at startup for the mutex
+			// file and other runtime state; mount as emptyDir so writes
+			// succeed with ReadOnlyRootFilesystem: true
+			Name:      "run-httpd",
+			MountPath: "/run/httpd",
+		},
+		{
+			// ModSecurity writes its debug log to /var/log/httpd at module
+			// initialization; mount as emptyDir to allow writes with
+			// ReadOnlyRootFilesystem: true
+			Name:      "var-log-httpd",
+			MountPath: "/var/log/httpd",
 		},
 	}
 }
