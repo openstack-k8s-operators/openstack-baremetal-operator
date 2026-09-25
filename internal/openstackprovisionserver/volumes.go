@@ -20,6 +20,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// scratchVolume returns a writable emptyDir volume, for containers that need
+// scratch space (e.g. /tmp) while running with a read-only root filesystem.
+func scratchVolume(name string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
 // getVolumes - general provisioning service volumes
 func getInitVolumes() []corev1.Volume {
 	return []corev1.Volume{
@@ -44,6 +55,8 @@ func getVolumes(name string) []corev1.Volume {
 			},
 		},
 	},
+		scratchVolume("run-httpd"),
+		scratchVolume("var-log-httpd"),
 	)
 }
 
@@ -69,6 +82,19 @@ func getVolumeMounts(instance *baremetalv1.OpenStackProvisionServer) []corev1.Vo
 			MountPath: HttpdConfPath,
 			SubPath:   "httpd.conf",
 			ReadOnly:  true,
+		},
+		{
+			// httpd uses /run/httpd for its mutex file, mount as emptyDir so
+			// writes succeed with ReadOnlyRootFilesystem: true
+			Name:      "run-httpd",
+			MountPath: "/run/httpd",
+		},
+		{
+			// ModSecurity writes its debug log to /var/log/httpd at module
+			// initialization; mount as emptyDir to allow writes with
+			// ReadOnlyRootFilesystem: true
+			Name:      "var-log-httpd",
+			MountPath: "/var/log/httpd",
 		},
 	}
 }

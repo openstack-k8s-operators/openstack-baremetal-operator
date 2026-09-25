@@ -22,5 +22,5 @@ const (
 	AppLabel = "osp-provisionserver"
 
 	// HttpdConfPath -
-	HttpdConfPath = "/usr/local/apache2/conf/httpd.conf"
+	HttpdConfPath = "/etc/httpd/conf/httpd.conf"
 )

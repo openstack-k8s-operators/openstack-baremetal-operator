@@ -9,7 +9,6 @@ import (
 type InitContainerDetails struct {
 	ContainerImage string
 	OsImageDir     string
-	Privileged     bool
 	VolumeMounts   []corev1.VolumeMount
 }
 
@@ -25,13 +24,11 @@ func InitContainer(init InitContainerDetails) []corev1.Container {
 
 	return []corev1.Container{
 		{
-			Name:  "init",
-			Image: init.ContainerImage,
-			SecurityContext: &corev1.SecurityContext{
-				Privileged: &init.Privileged,
-			},
-			Env:          envs,
-			VolumeMounts: init.VolumeMounts,
+			Name:            "init",
+			Image:           init.ContainerImage,
+			SecurityContext: hardenedSecurityContext(),
+			Env:             envs,
+			VolumeMounts:    init.VolumeMounts,
 		},
 	}
 }
