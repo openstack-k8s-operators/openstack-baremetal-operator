@@ -18,6 +18,7 @@ package openstackprovisionserver
 import (
 	"fmt"
 
+	"github.com/openstack-k8s-operators/lib-common/modules/common/pod"
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -88,7 +89,7 @@ func Deployment(
 			},
 			Args:            args,
 			Image:           instance.Spec.ApacheImageURL,
-			SecurityContext: hardenedSecurityContext(),
+			SecurityContext: pod.RestrictiveHostNetworkV2SecurityContext(),
 			VolumeMounts:    getVolumeMounts(instance),
 			Resources:       instance.Spec.Resources,
 			StartupProbe:    startupProbe,
@@ -109,7 +110,7 @@ func Deployment(
 			Command:         []string{"/openstack-baremetal-agent", "provision-ip-discovery"},
 			Image:           instance.Spec.AgentImageURL,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			SecurityContext: hardenedSecurityContext(),
+			SecurityContext: pod.RestrictiveHostNetworkV2SecurityContext(),
 			Env: []corev1.EnvVar{
 				{
 					Name:  "PROV_INTF",

@@ -80,9 +80,7 @@ type OpenStackProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch
-// service account permissions that are needed to grant permission to the above
-// +kubebuilder:rbac:groups="security.openshift.io",resourceNames=hostnetwork,resources=securitycontextconstraints,verbs=use
-
+// +kubebuilder:rbac:groups="security.openshift.io",resourceNames=hostnetwork-v2,resources=securitycontextconstraints,verbs=use
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers/status,verbs=get;list;update;patch
 // +kubebuilder:rbac:groups=baremetal.openstack.org,resources=openstackprovisionservers/finalizers,verbs=update;patch
@@ -241,7 +239,7 @@ func (r *OpenStackProvisionServerReconciler) Reconcile(ctx context.Context, req 
 	rbacRules := []rbacv1.PolicyRule{
 		{
 			APIGroups:     []string{"security.openshift.io"},
-			ResourceNames: []string{"hostnetwork"},
+			ResourceNames: []string{"hostnetwork-v2"},
 			Resources:     []string{"securitycontextconstraints"},
 			Verbs:         []string{"use"},
 		},
