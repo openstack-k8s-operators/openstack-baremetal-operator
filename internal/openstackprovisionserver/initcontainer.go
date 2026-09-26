@@ -2,6 +2,7 @@ package openstackprovisionserver
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/pod"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -26,7 +27,7 @@ func InitContainer(init InitContainerDetails) []corev1.Container {
 		{
 			Name:            "init",
 			Image:           init.ContainerImage,
-			SecurityContext: hardenedSecurityContext(),
+			SecurityContext: pod.RestrictiveHostNetworkV2SecurityContext(),
 			Env:             envs,
 			VolumeMounts:    init.VolumeMounts,
 		},

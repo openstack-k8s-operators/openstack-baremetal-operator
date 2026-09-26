@@ -21,6 +21,7 @@ import (
 	baremetalv1 "github.com/openstack-k8s-operators/openstack-baremetal-operator/api/v1beta1"
 
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/pod"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -71,7 +72,7 @@ func ChecksumJob(
 							},
 							Args:            args,
 							Image:           instance.Spec.AgentImageURL,
-							SecurityContext: hardenedSecurityContext(),
+							SecurityContext: pod.RestrictiveHostNetworkV2SecurityContext(),
 							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts:    volumeMounts,
 						},
