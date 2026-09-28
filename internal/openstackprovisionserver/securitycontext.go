@@ -22,16 +22,16 @@ import (
 )
 
 // hardenedSecurityContext returns a SecurityContext based on lib-common's
-// RestrictiveSecurityContext with SeccompProfile set to nil — OpenShift's
-// hostnetwork SCC (required for HostNetwork: true) rejects seccomp annotations
-// — and ReadOnlyRootFilesystem enabled.
+// RestrictiveSecurityContext with the seccomp profile kept at RuntimeDefault
+// and runAsUser unset (hostnetwork-v2 SCC requires the UID to be allocated
+// from the namespace's range), and ReadOnlyRootFilesystem enabled.
 func hardenedSecurityContext() *corev1.SecurityContext {
 	sc := pod.RestrictiveSecurityContext(1001, 0)
-	sc.SeccompProfile = nil
-	// hostnetwork SCC allocates UID/GID from its own range; explicit values
-	// are rejected. RunAsNonRoot (set above) is sufficient to enforce non-root.
+	// hostnetwork-v2 SCC requires runAsUser to stay within the namespace's
+	// allocated UID range; explicit values are rejected. Leave it unset so
+	// admission allocates a UID from that range. RunAsNonRoot (set above) is
+	// sufficient to enforce non-root.
 	sc.RunAsUser = nil
-	sc.RunAsGroup = nil
 	sc.ReadOnlyRootFilesystem = ptr.To(true)
 	return sc
 }
