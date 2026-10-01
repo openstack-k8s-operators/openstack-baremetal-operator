@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("ProvisionServer Test", func() {
@@ -68,6 +69,47 @@ var _ = Describe("ProvisionServer Test", func() {
 			instance := GetProvisionServerDirect(provisionServerName)
 			Expect(instance.Spec.OSImageDir).ShouldNot(BeNil())
 			Expect(*instance.Spec.OSImageDir).Should(Equal("/usr/local/apache2/htdocs"))
+		})
+	})
+
+	When("A ProvisionServer resource is created with a provisioning interface", func() {
+		var deploymentName types.NamespacedName
+
+		BeforeEach(func() {
+			spec := map[string]interface{}{
+				"osImage":             "edpm-hardened-uefi.qcow2",
+				"osContainerImageUrl": "quay.io/podified-antelope-centos9/edpm-hardened-uefi:current-podified",
+				"apacheImageUrl":      "registry.redhat.io/ubi9/httpd-24:latest",
+				"agentImageUrl":       "quay.io/openstack-k8s-operators/openstack-baremetal-operator-agent:latest",
+				"interface":           "eth1",
+			}
+			DeferCleanup(th.DeleteInstance, CreateProvisionServer(provisionServerName, spec))
+			deploymentName = types.NamespacedName{
+				Name:      provisionServerName.Name + "-openstackprovisionserver",
+				Namespace: namespace,
+			}
+		})
+
+		It("should harden every container for the hostnetwork-v2 SCC", func() {
+			podSpec := th.GetDeployment(deploymentName).Spec.Template.Spec
+			// runAsUser/runAsGroup unset: the SCC allocates the UID
+			hardened := &corev1.SecurityContext{
+				RunAsNonRoot:             ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+				Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+			}
+
+			Expect(podSpec.HostNetwork).Should(BeTrue())
+			Expect(podSpec.ServiceAccountName).Should(
+				Equal(GetProvisionServerDirect(provisionServerName).RbacResourceName()))
+
+			containers := append(podSpec.Containers, podSpec.InitContainers...)
+			Expect(containers).Should(HaveLen(3))
+			for _, c := range containers {
+				Expect(c.SecurityContext).Should(Equal(hardened), c.Name)
+			}
 		})
 	})
 
