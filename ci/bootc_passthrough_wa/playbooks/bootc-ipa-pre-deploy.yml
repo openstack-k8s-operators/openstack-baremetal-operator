@@ -1,0 +1,387 @@
+---
+- name: Build and host bootc IPA artifacts
+  hosts: "{{ cifmw_target_hook_host | default(cifmw_target_host | default('localhost')) }}"
+  gather_facts: false
+  vars:
+    cifmw_bootc_ipa_artifact_dir: "{{ cifmw_basedir }}/artifacts/bootc-ipa"
+    cifmw_bootc_ipa_build_dir: "{{ ansible_user_dir }}/bootc-ipa-build"
+    cifmw_bootc_ipa_build_enabled: false
+    cifmw_bootc_ipa_build_output_prefix: "ipa-centos10-stable-2025.2-podman"
+    cifmw_bootc_ipa_release: "10-stream"
+    cifmw_bootc_ipa_branch: "stable/2025.2"
+    cifmw_bootc_ipa_flavor: "centos10"
+    cifmw_bootc_ipa_distro: "centos"
+    cifmw_bootc_ipa_server_namespace: "openstack"
+    cifmw_bootc_ipa_server_name: "bootc-ipa-artifacts"
+    cifmw_bootc_ipa_server_port: 8080
+    cifmw_bootc_ipa_server_image: "registry.access.redhat.com/ubi9/ubi:latest"
+    cifmw_bootc_ipa_published_basename: >-
+      ipa-{{ cifmw_bootc_ipa_flavor }}-{{ cifmw_bootc_ipa_branch | replace('/', '-') }}
+    cifmw_bootc_ipa_raw_kernel_file: >-
+      {{ cifmw_bootc_ipa_artifact_dir }}/{{ cifmw_bootc_ipa_build_output_prefix }}.kernel
+    cifmw_bootc_ipa_raw_initramfs_file: >-
+      {{ cifmw_bootc_ipa_artifact_dir }}/{{ cifmw_bootc_ipa_build_output_prefix }}.initramfs
+    cifmw_bootc_ipa_kernel_file: >-
+      {{ cifmw_bootc_ipa_artifact_dir }}/{{ cifmw_bootc_ipa_published_basename }}.kernel
+    cifmw_bootc_ipa_initramfs_file: >-
+      {{ cifmw_bootc_ipa_artifact_dir }}/{{ cifmw_bootc_ipa_published_basename }}.initramfs
+    cifmw_bootc_ipa_tarball: >-
+      {{ cifmw_bootc_ipa_artifact_dir }}/{{ cifmw_bootc_ipa_published_basename }}.tar.gz
+    cifmw_bootc_ipa_source_dir: "{{ cifmw_bootc_ipa_build_dir }}/ironic-python-agent"
+    cifmw_bootc_ipa_fips_patch_enabled: true
+    cifmw_bootc_ipa_insecure_registry_injection_enabled: true
+    cifmw_bootc_ipa_service_ip: ""
+    cifmw_bootc_ipa_service_url: ""
+    cifmw_bootc_ipa_ironic_namespace: "baremetal-operator-system"
+    cifmw_bootc_ipa_ironic_deployment_name: "baremetal-operator-ironic"
+  tasks:
+    - name: Ensure IPA artifact directory exists
+      ansible.builtin.file:
+        path: "{{ cifmw_bootc_ipa_artifact_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Ensure IPA build directory exists
+      when: cifmw_bootc_ipa_build_enabled | bool
+      ansible.builtin.file:
+        path: "{{ cifmw_bootc_ipa_build_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write minimal container steps file
+      when: cifmw_bootc_ipa_build_enabled | bool
+      ansible.builtin.copy:
+        dest: "{{ cifmw_bootc_ipa_build_dir }}/mysteps.yaml"
+        content: |
+          steps: []
+        mode: "0644"
+
+    - name: Clone IPA source for FIPS boot karg patch
+      when: cifmw_bootc_ipa_build_enabled | bool and cifmw_bootc_ipa_fips_patch_enabled | bool
+      ansible.builtin.git:
+        repo: "https://opendev.org/openstack/ironic-python-agent.git"
+        dest: "{{ cifmw_bootc_ipa_source_dir }}"
+        version: "{{ cifmw_bootc_ipa_branch }}"
+
+    - name: Patch IPA with FIPS boot karg fixup
+      when: cifmw_bootc_ipa_build_enabled | bool and cifmw_bootc_ipa_fips_patch_enabled | bool
+      ansible.builtin.command:
+        cmd: >-
+          python3 {{ playbook_dir }}/../scripts/patch_ipa_fips_boot_karg.py
+          {{ cifmw_bootc_ipa_source_dir }}/ironic_python_agent/extensions/standby.py
+
+    # DIB source-repositories clones/checkouts by git ref only, so the
+    # uncommitted patch above must be committed and referenced as HEAD.
+    - name: Commit FIPS boot karg patch for DIB source install
+      when: cifmw_bootc_ipa_build_enabled | bool and cifmw_bootc_ipa_fips_patch_enabled | bool
+      ansible.builtin.shell: |
+        set -euo pipefail
+        git -C "{{ cifmw_bootc_ipa_source_dir }}" config user.email "ci@localhost"
+        git -C "{{ cifmw_bootc_ipa_source_dir }}" config user.name "ci"
+        git -C "{{ cifmw_bootc_ipa_source_dir }}" add ironic_python_agent/extensions/standby.py
+        git -C "{{ cifmw_bootc_ipa_source_dir }}" commit \
+          -m "CI: inject boot=UUID for FIPS bootc installs"
+
+    - name: Ensure DIB element directory exists for registry config
+      when:
+        - cifmw_bootc_ipa_build_enabled | bool
+        - cifmw_bootc_ipa_insecure_registry_injection_enabled | bool
+        - content_provider_registry_ip is defined
+        - content_provider_registry_ip | length > 0
+      ansible.builtin.file:
+        path: "{{ cifmw_bootc_ipa_build_dir }}/dib-elements/content-provider-registry/static/etc/containers/registries.conf.d"
+        state: directory
+        mode: "0755"
+
+    - name: Add insecure content provider registry during IPA build
+      when:
+        - cifmw_bootc_ipa_build_enabled | bool
+        - cifmw_bootc_ipa_insecure_registry_injection_enabled | bool
+        - content_provider_registry_ip is defined
+        - content_provider_registry_ip | length > 0
+      vars:
+        cifmw_bootc_ipa_insecure_registry: "{{ content_provider_registry_ip }}:5001"
+      ansible.builtin.copy:
+        dest: "{{ cifmw_bootc_ipa_build_dir }}/dib-elements/content-provider-registry/static/etc/containers/registries.conf.d/001-content-provider.conf"
+        mode: "0644"
+        content: |
+          [[registry]]
+          location = "{{ cifmw_bootc_ipa_insecure_registry }}"
+          insecure = true
+
+    - name: Build podman-enabled IPA artifacts
+      when: cifmw_bootc_ipa_build_enabled | bool
+      args:
+        chdir: "{{ cifmw_bootc_ipa_artifact_dir }}"
+        creates: "{{ cifmw_bootc_ipa_raw_initramfs_file }}"
+        executable: /bin/bash
+      ansible.builtin.shell: |
+        set -euo pipefail
+        python3 -m venv "{{ cifmw_bootc_ipa_build_dir }}/.venv"
+        . "{{ cifmw_bootc_ipa_build_dir }}/.venv/bin/activate"
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install ironic-python-agent-builder
+        export DIB_ALLOW_ARBITRARY_CONTAINERS=true
+        export DIB_RUNNER=podman
+        export DIB_STEPS_FILE_PATH="{{ cifmw_bootc_ipa_build_dir }}/mysteps.yaml"
+        {% if cifmw_bootc_ipa_fips_patch_enabled | bool %}
+        export DIB_INSTALLTYPE_ironic_python_agent=source
+        export DIB_REPOLOCATION_ironic_python_agent="{{ cifmw_bootc_ipa_source_dir }}"
+        export DIB_REPOREF_ironic_python_agent=HEAD
+        {% endif %}
+        extra_elements=()
+        {% if cifmw_bootc_ipa_insecure_registry_injection_enabled | bool and content_provider_registry_ip is defined and content_provider_registry_ip | length > 0 %}
+        extra_elements+=(--elements-path "{{ cifmw_bootc_ipa_build_dir }}/dib-elements")
+        extra_elements+=(-e install-static)
+        extra_elements+=(-e content-provider-registry)
+        {% endif %}
+        ironic-python-agent-builder \
+          -o "{{ cifmw_bootc_ipa_build_output_prefix }}" \
+          -r "{{ cifmw_bootc_ipa_release }}" \
+          -b "{{ cifmw_bootc_ipa_branch }}" \
+          -e ironic-python-agent-podman \
+          -v "{{ cifmw_bootc_ipa_distro }}" \
+          "${extra_elements[@]}"
+
+    - name: Prepare IPA artifacts for hosting
+      when: cifmw_bootc_ipa_build_enabled | bool
+      block:
+        - name: Check for raw IPA artifacts
+          ansible.builtin.stat:
+            path: "{{ item }}"
+          loop:
+            - "{{ cifmw_bootc_ipa_raw_kernel_file }}"
+            - "{{ cifmw_bootc_ipa_raw_initramfs_file }}"
+          register: cifmw_bootc_ipa_raw_artifacts
+
+        - name: Assert raw IPA artifacts exist
+          ansible.builtin.assert:
+            that:
+              - cifmw_bootc_ipa_raw_artifacts.results | map(attribute='stat.exists') | min
+            fail_msg: >-
+              Missing raw IPA artifacts. Expected
+              {{ cifmw_bootc_ipa_raw_kernel_file }} and
+              {{ cifmw_bootc_ipa_raw_initramfs_file }}.
+
+        - name: Copy kernel to published filename
+          ansible.builtin.copy:
+            src: "{{ cifmw_bootc_ipa_raw_kernel_file }}"
+            dest: "{{ cifmw_bootc_ipa_kernel_file }}"
+            mode: "0644"
+            remote_src: true
+
+        - name: Copy initramfs to published filename
+          ansible.builtin.copy:
+            src: "{{ cifmw_bootc_ipa_raw_initramfs_file }}"
+            dest: "{{ cifmw_bootc_ipa_initramfs_file }}"
+            mode: "0644"
+            remote_src: true
+
+        - name: Package IPA tarball with downloader-compatible filenames
+          args:
+            chdir: "{{ cifmw_bootc_ipa_artifact_dir }}"
+            creates: "{{ cifmw_bootc_ipa_tarball }}"
+            executable: /bin/bash
+          ansible.builtin.shell: |
+            set -euo pipefail
+            tar -caf "{{ cifmw_bootc_ipa_tarball }}" \
+              "{{ cifmw_bootc_ipa_published_basename }}.kernel" \
+              "{{ cifmw_bootc_ipa_published_basename }}.initramfs"
+
+    - name: Ensure IPA hosting namespace exists
+      kubernetes.core.k8s:
+        kubeconfig: "{{ cifmw_openshift_kubeconfig }}"
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ cifmw_bootc_ipa_server_namespace }}"
+
+    - name: Create IPA hosting deployment
+      kubernetes.core.k8s:
+        kubeconfig: "{{ cifmw_openshift_kubeconfig }}"
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: "{{ cifmw_bootc_ipa_server_name }}"
+            namespace: "{{ cifmw_bootc_ipa_server_namespace }}"
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: "{{ cifmw_bootc_ipa_server_name }}"
+            template:
+              metadata:
+                labels:
+                  app: "{{ cifmw_bootc_ipa_server_name }}"
+              spec:
+                containers:
+                  - name: server
+                    image: "{{ cifmw_bootc_ipa_server_image }}"
+                    command:
+                      - python3
+                      - -m
+                      - http.server
+                      - "{{ cifmw_bootc_ipa_server_port | string }}"
+                      - --directory
+                      - /srv
+                    ports:
+                      - containerPort: "{{ cifmw_bootc_ipa_server_port }}"
+                    volumeMounts:
+                      - name: content
+                        mountPath: /srv
+                volumes:
+                  - name: content
+                    emptyDir: {}
+
+    - name: Create IPA hosting service
+      kubernetes.core.k8s:
+        kubeconfig: "{{ cifmw_openshift_kubeconfig }}"
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: "{{ cifmw_bootc_ipa_server_name }}"
+            namespace: "{{ cifmw_bootc_ipa_server_namespace }}"
+          spec:
+            selector:
+              app: "{{ cifmw_bootc_ipa_server_name }}"
+            ports:
+              - name: http
+                port: "{{ cifmw_bootc_ipa_server_port }}"
+                targetPort: "{{ cifmw_bootc_ipa_server_port }}"
+
+    - name: Get IPA hosting service cluster IP
+      kubernetes.core.k8s_info:
+        kubeconfig: "{{ cifmw_openshift_kubeconfig }}"
+        api_version: v1
+        kind: Service
+        name: "{{ cifmw_bootc_ipa_server_name }}"
+        namespace: "{{ cifmw_bootc_ipa_server_namespace }}"
+      register: cifmw_bootc_ipa_service
+
+    - name: Set IPA hosting service URL from cluster IP
+      ansible.builtin.set_fact:
+        cifmw_bootc_ipa_service_ip: "{{ cifmw_bootc_ipa_service.resources[0].spec.clusterIP }}"
+        cifmw_bootc_ipa_service_url: "http://{{ cifmw_bootc_ipa_service.resources[0].spec.clusterIP }}:{{ cifmw_bootc_ipa_server_port }}"
+
+    # oc wait on pods fails immediately if none match yet; wait for the
+    # Deployment rollout, then resolve the pod name with retries.
+    - name: Wait for IPA hosting deployment rollout
+      environment:
+        KUBECONFIG: "{{ cifmw_openshift_kubeconfig }}"
+        PATH: "{{ cifmw_path }}"
+      ansible.builtin.command:
+        cmd: >-
+          oc rollout status deployment/{{ cifmw_bootc_ipa_server_name }}
+          -n {{ cifmw_bootc_ipa_server_namespace }}
+          --timeout=300s
+
+    - name: Get IPA hosting pod name
+      environment:
+        KUBECONFIG: "{{ cifmw_openshift_kubeconfig }}"
+        PATH: "{{ cifmw_path }}"
+      ansible.builtin.command:
+        cmd: >-
+          oc get pod -n {{ cifmw_bootc_ipa_server_namespace }}
+          -l app={{ cifmw_bootc_ipa_server_name }}
+          -o jsonpath='{.items[0].metadata.name}'
+      register: cifmw_bootc_ipa_server_pod
+      until: cifmw_bootc_ipa_server_pod.stdout | default('') | length > 0
+      retries: 30
+      delay: 5
+      changed_when: false
+
+    - name: Copy IPA tarball into hosting pod
+      environment:
+        KUBECONFIG: "{{ cifmw_openshift_kubeconfig }}"
+        PATH: "{{ cifmw_path }}"
+      ansible.builtin.command:
+        cmd: >-
+          oc cp
+          "{{ cifmw_bootc_ipa_tarball }}"
+          "{{ cifmw_bootc_ipa_server_namespace }}/{{ cifmw_bootc_ipa_server_pod.stdout }}:/srv/{{ cifmw_bootc_ipa_tarball | basename }}"
+
+    - name: Verify IPA tarball is served from hosting pod
+      environment:
+        KUBECONFIG: "{{ cifmw_openshift_kubeconfig }}"
+        PATH: "{{ cifmw_path }}"
+      ansible.builtin.command:
+        cmd: >-
+          oc exec -n {{ cifmw_bootc_ipa_server_namespace }}
+          {{ cifmw_bootc_ipa_server_pod.stdout }} --
+          sh -c "curl -sf -o /dev/null http://127.0.0.1:{{ cifmw_bootc_ipa_server_port }}/{{ cifmw_bootc_ipa_tarball | basename }}"
+
+    - name: Feed generated bootc IPA values back to main play
+      ansible.builtin.copy:
+        dest: "{{ cifmw_basedir }}/artifacts/{{ step }}_{{ hook_name }}.yml"
+        mode: "0644"
+        content: |
+          cifmw_bootc_ipa_service_url: "{{ cifmw_bootc_ipa_service_url }}"
+          cifmw_edpm_prepare_extra_vars:
+            BMO_IPA_BASEURI: "{{ cifmw_bootc_ipa_service_url }}"
+            BMO_IPA_BRANCH: "{{ cifmw_bootc_ipa_branch }}"
+            BMO_IPA_FLAVOR: "{{ cifmw_bootc_ipa_flavor }}"
+
+    - name: Reconfigure live ironic deployment to use hosted IPA
+      when: not cifmw_bootc_ipa_build_enabled | bool
+      block:
+        - name: Find ironic configmap from deployment
+          environment:
+            KUBECONFIG: "{{ cifmw_openshift_kubeconfig }}"
+            PATH: "{{ cifmw_path }}"
+          ansible.builtin.command:
+            argv:
+              - oc
+              - get
+              - deployment
+              - "{{ cifmw_bootc_ipa_ironic_deployment_name }}"
+              - -n
+              - "{{ cifmw_bootc_ipa_ironic_namespace }}"
+              - -o
+              - >-
+                jsonpath={.spec.template.spec.initContainers[?(@.name=="ironic-ipa-downloader")].envFrom[0].configMapRef.name}
+          register: cifmw_bootc_ipa_ironic_configmap
+          changed_when: false
+
+        - name: Set ironic configmap name
+          ansible.builtin.set_fact:
+            cifmw_bootc_ipa_ironic_configmap_name: "{{ cifmw_bootc_ipa_ironic_configmap.stdout }}"
+
+        - name: Patch live ironic configmap with bootc IPA source
+          kubernetes.core.k8s:
+            kubeconfig: "{{ cifmw_openshift_kubeconfig }}"
+            state: patched
+            definition:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: "{{ cifmw_bootc_ipa_ironic_configmap_name }}"
+                namespace: "{{ cifmw_bootc_ipa_ironic_namespace }}"
+              data:
+                IPA_BASEURI: "{{ cifmw_bootc_ipa_service_url }}"
+                IPA_BRANCH: "{{ cifmw_bootc_ipa_branch }}"
+                IPA_FLAVOR: "{{ cifmw_bootc_ipa_flavor }}"
+
+        - name: Restart ironic deployment to re-run IPA downloader
+          environment:
+            KUBECONFIG: "{{ cifmw_openshift_kubeconfig }}"
+            PATH: "{{ cifmw_path }}"
+          ansible.builtin.command:
+            cmd: >-
+              oc rollout restart deployment/{{ cifmw_bootc_ipa_ironic_deployment_name }}
+              -n {{ cifmw_bootc_ipa_ironic_namespace }}
+
+        - name: Wait for ironic rollout after configmap patch
+          environment:
+            KUBECONFIG: "{{ cifmw_openshift_kubeconfig }}"
+            PATH: "{{ cifmw_path }}"
+          ansible.builtin.command:
+            cmd: >-
+              oc rollout status deployment/{{ cifmw_bootc_ipa_ironic_deployment_name }}
+              -n {{ cifmw_bootc_ipa_ironic_namespace }}
+              --timeout=10m
