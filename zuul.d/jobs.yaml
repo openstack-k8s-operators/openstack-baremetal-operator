@@ -12,6 +12,54 @@
 - job:
     name: openstack-baremetal-operator-crc-podified-edpm-baremetal
     parent: cifmw-crc-podified-edpm-baremetal
+
+- job:
+    name: openstack-baremetal-operator-content-provider-bootc
+    parent: openstack-k8s-operators-content-provider-bootc
+    nodeset: centos-stream-10
+    timeout: 5000
+    vars:
+      cifmw_repo_setup_dist_major_version: 10
+      cifmw_repo_setup_branch: master
+      cifmw_repo_setup_promotion: current
+      cifmw_edpm_build_images_base_image: quay.io/centos/centos:stream10-minimal
+      cifmw_edpm_build_images_bootc_base_image: quay.io/centos-bootc/centos-bootc:stream10
+
+- job:
+    name: openstack-baremetal-operator-crc-podified-edpm-baremetal-bootc
+    parent: cifmw-crc-podified-edpm-baremetal-bootc
+    vars:
+      cifmw_install_yamls_vars_patch_cs10:
+        dataplane_repo_setup_repo: current
+        dataplane_repo_setup_branch: master
+
+- job:
+    name: openstack-baremetal-operator-crc-podified-edpm-baremetal-bootc-passthrough
+    parent: cifmw-crc-podified-edpm-baremetal-bootc
+    vars:
+      cifmw_update_containers: true
+      cifmw_update_containers_openstack: true
+      pre_deploy:
+        - name: 61 Bootc IPA artifacts
+          type: playbook
+          source: "{{ ansible_user_dir }}/src/github.com/openstack-k8s-operators/openstack-baremetal-operator/ci/bootc_passthrough_wa/playbooks/bootc-ipa-pre-deploy.yml"
+          extra_vars:
+            cifmw_bootc_ipa_build_enabled: true
+      post_ctlplane_deploy:
+        - name: 61 Bootc IPA reconfigure ironic
+          type: playbook
+          source: "{{ ansible_user_dir }}/src/github.com/openstack-k8s-operators/openstack-baremetal-operator/ci/bootc_passthrough_wa/playbooks/bootc-ipa-pre-deploy.yml"
+          extra_vars:
+            cifmw_bootc_ipa_build_enabled: false
+      cifmw_install_yamls_vars:
+        BAREMETAL_OS_IMG_TYPE: PassThrough
+        BMO_DEFAULT_DEPLOY_INTERFACE: bootc
+        BM_INSTANCE_MEMORY: 16384
+        BMAAS_INSTANCE_DISK_SIZE: 40
+      cifmw_install_yamls_vars_patch_cs10:
+        dataplane_repo_setup_repo: current
+        dataplane_repo_setup_branch: master
+
 - job:
     name: openstack-baremetal-operator-edpm-baremetal-minor-update
     parent: cifmw-crc-podified-edpm-baremetal-minor-update
