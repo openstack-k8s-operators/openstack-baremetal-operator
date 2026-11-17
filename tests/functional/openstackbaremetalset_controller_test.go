@@ -650,6 +650,75 @@ var _ = Describe("BaremetalSet Test", func() {
 		})
 	})
 
+	When("BMH provisioned with CA certs secret", func() {
+		var caCertsSecretName types.NamespacedName
+		const testCACert = `-----BEGIN CERTIFICATE-----
+MIIBkTCB+wIJAKHBfTESTCACERTBASE64
+-----END CERTIFICATE-----`
+
+		BeforeEach(func() {
+			caCertsSecretName = types.NamespacedName{
+				Name:      "cacerts-secret",
+				Namespace: namespace,
+			}
+
+			DeferCleanup(th.DeleteInstance, CreateBaremetalHost(bmhName))
+			bmh := GetBaremetalHost(bmhName)
+			Eventually(func(g Gomega) {
+				bmh.Status.Provisioning.State = metal3v1.StateAvailable
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, bmh)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			DeferCleanup(th.DeleteInstance, CreateSSHSecret(deploymentSecretName))
+
+			DeferCleanup(th.DeleteInstance, th.CreateSecret(
+				caCertsSecretName,
+				map[string][]byte{
+					"ca.crt": []byte(testCACert),
+				},
+			))
+
+			spec := DefaultBaremetalSetSpec(bmhName, true)
+			spec["caCertsSecret"] = map[string]any{
+				"name":      caCertsSecretName.Name,
+				"namespace": caCertsSecretName.Namespace,
+			}
+			spec["caCertsRemoveDefaults"] = true
+			DeferCleanup(th.DeleteInstance, CreateBaremetalSet(baremetalSetName, spec))
+
+			Eventually(func(g Gomega) {
+				provServer := GetProvisionServer(baremetalSetName)
+				provServer.Status.LocalImageURL = "http://192.168.1.100:6190/images/edpm-hardened-uefi.qcow2"
+				provServer.Status.LocalImageChecksumURL = "http://192.168.1.100:6190/images/edpm-hardened-uefi.qcow2.md5sum"
+				provServer.Status.OSImageChecksumType = metal3v1.MD5
+				g.Expect(th.K8sClient.Status().Update(th.Ctx, provServer)).To(Succeed())
+			}, th.Timeout, th.Interval).Should(Succeed())
+		})
+
+		It("Should include ca_certs in userdata", func() {
+			Eventually(func(g Gomega) {
+				baremetalSet := GetBaremetalSet(baremetalSetName)
+				g.Expect(baremetalSet.Status.BaremetalHosts).To(HaveKey("compute-0"))
+				g.Expect(baremetalSet.Status.BaremetalHosts["compute-0"].UserDataSecretName).ToNot(BeEmpty())
+			}, th.Timeout, th.Interval).Should(Succeed())
+
+			baremetalSet := GetBaremetalSet(baremetalSetName)
+			userDataSecretName := baremetalSet.Status.BaremetalHosts["compute-0"].UserDataSecretName
+
+			userDataSecret := th.GetSecret(types.NamespacedName{
+				Name:      userDataSecretName,
+				Namespace: bmhName.Namespace,
+			})
+			userData := string(userDataSecret.Data["userData"])
+			Expect(userData).To(ContainSubstring("ca_certs:"))
+			Expect(userData).To(ContainSubstring("remove_defaults: true"))
+			Expect(userData).To(ContainSubstring("trusted:"))
+			Expect(userData).To(ContainSubstring("-----BEGIN CERTIFICATE-----"))
+			Expect(userData).To(ContainSubstring("MIIBkTCB+wIJAKHBfTESTCACERTBASE64"))
+			Expect(userData).To(ContainSubstring("-----END CERTIFICATE-----"))
+		})
+	})
+
 	When("BMH provisioned with an SSH secret holding multiple authorized keys", func() {
 		const (
 			sshKey1 = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABkey1 admin@host1"

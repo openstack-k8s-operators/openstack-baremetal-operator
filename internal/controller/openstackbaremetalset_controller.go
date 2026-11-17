@@ -361,6 +361,38 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 		}
 		configMapVars[passwordSecret.Name] = env.SetValue(hash)
 	}
+
+	//
+	// check if a CA certs secret was provided and add hash to the vars map if so
+	//
+	var caCertsSecret *corev1.Secret
+
+	if instance.Spec.CACertsSecret != nil {
+		caCertsSecret, hash, err = oko_secret.GetSecret(
+			ctx, helper, instance.Spec.CACertsSecret.Name,
+			instance.Spec.CACertsSecret.Namespace)
+		if err != nil {
+			if k8s_errors.IsNotFound(err) {
+				// Since the CA certs secret should have been manually created by the user and referenced in the spec,
+				// we treat this as a warning because provisioned hosts will not receive the expected trust anchors.
+				l.Info("CA certs secret not found", "CA certs secret", instance.Spec.CACertsSecret)
+				instance.Status.Conditions.Set(condition.FalseCondition(
+					condition.InputReadyCondition,
+					condition.ErrorReason,
+					condition.SeverityWarning,
+					condition.InputReadyWaitingMessage))
+				return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+			}
+			instance.Status.Conditions.Set(condition.FalseCondition(
+				condition.InputReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityWarning,
+				condition.InputReadyErrorMessage,
+				err.Error()))
+			return ctrl.Result{}, err
+		}
+		configMapVars[caCertsSecret.Name] = env.SetValue(hash)
+	}
 	// run check OpenStack secret - end
 
 	//
@@ -531,6 +563,7 @@ func (r *OpenStackBaremetalSetReconciler) reconcileNormal(ctx context.Context, i
 		provisionServer,
 		sshSecret,
 		passwordSecret,
+		caCertsSecret,
 		bmhLabels,
 		&configMapVars,
 	); err != nil {
@@ -716,6 +749,7 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	provisionServer *baremetalv1.OpenStackProvisionServer,
 	sshSecret *corev1.Secret,
 	passwordSecret *corev1.Secret,
+	caCertsSecret *corev1.Secret,
 	bmhLabels map[string]string,
 	envVars *map[string]env.Setter,
 ) error {
@@ -757,6 +791,7 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 			provisionServer,
 			sshSecret,
 			passwordSecret,
+			caCertsSecret,
 			envVars,
 		)
 		if err != nil {
