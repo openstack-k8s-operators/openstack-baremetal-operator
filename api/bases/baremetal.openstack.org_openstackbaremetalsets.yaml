@@ -148,6 +148,28 @@ spec:
                 items:
                   type: string
                 type: array
+              caCertsRemoveDefaults:
+                default: false
+                description: |-
+                  CACertsRemoveDefaults - When true, sets cloud-init ca_certs.remove_defaults so the
+                  distro's default trusted CA certificates are disabled/removed.
+                type: boolean
+              caCertsSecret:
+                description: |-
+                  CACertsSecret - Secret holding PEM-encoded trusted CA certificate(s) to inject into
+                  provisioned hosts via cloud-init ca_certs.trusted. Each data entry may contain a
+                  single certificate or a multi-PEM bundle.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               cloudUserName:
                 default: cloud-admin
                 description: CloudUser to be configured for remote access

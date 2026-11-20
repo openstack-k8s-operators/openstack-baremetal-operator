@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"sort"
 	"strings"
 
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -33,6 +34,7 @@ func BaremetalHostProvision(
 	provServer *baremetalv1.OpenStackProvisionServer,
 	sshSecret *corev1.Secret,
 	passwordSecret *corev1.Secret,
+	caCertsSecret *corev1.Secret,
 	envVars *map[string]env.Setter,
 ) error {
 	l := log.FromContext(ctx)
@@ -88,6 +90,15 @@ func BaremetalHostProvision(
 		secretLabels := labels.GetLabels(instance, labels.GetGroupLabel(baremetalv1.ServiceName), backupLabels)
 		if passwordSecret != nil && len(passwordSecret.Data["NodeRootPassword"]) > 0 {
 			templateParameters["NodeRootPassword"] = string(passwordSecret.Data["NodeRootPassword"])
+		}
+
+		if instance.Spec.CACertsRemoveDefaults {
+			templateParameters["CACertsRemoveDefaults"] = true
+		}
+		if caCertsSecret != nil {
+			if trustedCACerts := trustedCACertsFromSecret(caCertsSecret); len(trustedCACerts) > 0 {
+				templateParameters["TrustedCACerts"] = trustedCACerts
+			}
 		}
 
 		userDataSecretName := fmt.Sprintf(CloudInitUserDataSecretName, instance.Name, hostName)
@@ -360,4 +371,48 @@ func hostNameIsFQDN(hostname string) bool {
 
 	match, _ := regexp.MatchString(regex, hostname)
 	return match
+}
+
+const pemBeginCertificate = "-----BEGIN CERTIFICATE-----"
+
+// trustedCACertsFromSecret extracts PEM certificates from a secret and returns
+// them already indented for the cloud-init userdata YAML block scalar.
+func trustedCACertsFromSecret(secret *corev1.Secret) []string {
+	keys := make([]string, 0, len(secret.Data))
+	for key := range secret.Data {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	var certs []string
+	for _, key := range keys {
+		for _, cert := range splitPEMCerts(string(secret.Data[key])) {
+			certs = append(certs, indentLines(cert, 4))
+		}
+	}
+	return certs
+}
+
+// splitPEMCerts splits a PEM bundle into individual certificate strings.
+func splitPEMCerts(data string) []string {
+	parts := strings.Split(data, pemBeginCertificate)
+	var certs []string
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		certs = append(certs, strings.TrimSpace(pemBeginCertificate+"\n"+part))
+	}
+	return certs
+}
+
+// indentLines prefixes each line of s with the given number of spaces.
+func indentLines(s string, spaces int) string {
+	pad := strings.Repeat(" ", spaces)
+	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
+	for i, line := range lines {
+		lines[i] = pad + line
+	}
+	return strings.Join(lines, "\n")
 }

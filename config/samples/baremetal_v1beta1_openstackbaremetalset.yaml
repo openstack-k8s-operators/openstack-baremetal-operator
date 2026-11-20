@@ -25,6 +25,13 @@ spec:
   # An optional secret holding a data entry called "NodeRootPassword"
   # This will be set as the root password on all provisioned BaremetalHosts
   passwordSecret: baremetalset-password-secret
+  # Optional secret with PEM-encoded CA certificate(s) injected via cloud-init ca_certs.
+  # Each secret data entry may be a single cert or a multi-PEM bundle. E.g.:
+  #   kubectl create secret generic baremetalset-cacerts --from-file=ca.crt=<path>
+  # caCertsSecret:
+  #   name: baremetalset-cacerts
+  #   namespace: openstack
+  # caCertsRemoveDefaults: false
 
 ---
 # PassThrough deployment using direct container URL passing
