@@ -8,7 +8,7 @@ require (
 	github.com/metal3-io/baremetal-operator/apis v0.11.7
 	github.com/onsi/ginkgo/v2 v2.34.0
 	github.com/onsi/gomega v1.44.0
-	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20261113070913-5152d1d626f9
+	github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20261120143313-344125315151
 	k8s.io/api v0.33.13
 	k8s.io/apimachinery v0.33.13
 	sigs.k8s.io/controller-runtime v0.21.0
@@ -30,6 +30,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
