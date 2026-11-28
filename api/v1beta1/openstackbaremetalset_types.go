@@ -137,6 +137,16 @@ type OpenStackBaremetalSetTemplateSpec struct {
 	// NodeRootPassword: <base64 enc pwd>
 	// to the secret data
 	PasswordSecret *corev1.SecretReference `json:"passwordSecret,omitempty"`
+	// +kubebuilder:validation:Optional
+	// CACertsSecret - Secret holding PEM-encoded trusted CA certificate(s) to inject into
+	// provisioned hosts via cloud-init ca_certs.trusted. Each data entry may contain a
+	// single certificate or a multi-PEM bundle.
+	CACertsSecret *corev1.SecretReference `json:"caCertsSecret,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// CACertsRemoveDefaults - When true, sets cloud-init ca_certs.remove_defaults so the
+	// distro's default trusted CA certificates are disabled/removed.
+	CACertsRemoveDefaults bool `json:"caCertsRemoveDefaults,omitempty"`
 	// +kubebuilder:default=cloud-admin
 	// CloudUser to be configured for remote access
 	CloudUserName string `json:"cloudUserName"`

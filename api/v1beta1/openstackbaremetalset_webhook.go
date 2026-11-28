@@ -103,6 +103,11 @@ func (r *OpenStackBaremetalSet) ValidateSecretNamespaces() error {
 			fmt.Sprintf("%s (must be in OpenStackBaremetalSet namespace %s)", r.Spec.PasswordSecret.Name, r.Namespace))
 	}
 
+	if r.Spec.CACertsSecret != nil && r.Spec.CACertsSecret.Namespace != r.Namespace {
+		secretsWithIssue = append(secretsWithIssue,
+			fmt.Sprintf("%s (must be in OpenStackBaremetalSet namespace %s)", r.Spec.CACertsSecret.Name, r.Namespace))
+	}
+
 	for _, host := range r.Spec.BaremetalHosts {
 		if host.NetworkData != nil && host.NetworkData.Namespace != r.Spec.BmhNamespace {
 			secretsWithIssue = append(secretsWithIssue,
